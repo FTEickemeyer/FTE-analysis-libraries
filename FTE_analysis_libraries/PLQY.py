@@ -87,7 +87,7 @@ def get_Andor_metadata(f, showall = False):
             print(lp)
 
         # OD filter
-        OD = f.split('OD')[1].split('--')[0]
+        OD = f.split('_OD')[1].split('--')[0]
         OD = float(OD)
         metadata['OD_filter'] = OD
         if showall:
@@ -155,7 +155,9 @@ def raw_to_asset_with_metadata(container, asset_type, db, show_FN = False, show_
         """
         Creates a new asset with metadata.
         """
-        f = os.path.basename(asset.file)
+        f = asset.file
+        f = f.replace( '\\', '/' )
+        f = os.path.basename(f)
         if show_FN:
             print(f)
         metadata = get_Andor_metadata(f, showall = False)
@@ -197,8 +199,10 @@ def add_graph(db, fn, graph):
 
 def find(dic, assets, show_details = False):
     asts = thot.filter(dic, assets)
-    if len(asts) != 1:
+    if len(asts) == 0:
         print(f'Error: {dic} in assets not found!')
+    elif len(asts) > 1:
+        print(f'Error: {dic} found more than one instance!')
     else:
         if show_details:
             print(asts[0].metadata['orig_fn'])
@@ -285,6 +289,15 @@ class exp_param:
             self.corr_offs_right = 30 # nm
             self.PL_peak_auto = True # determine automatically
             self.eval_Pb = False
+        elif which_sample == 'Cs2AgBiBr6':
+            self.excitation_laser = 421 #nm
+            self.PL_left = 500 #nm
+            self.PL_right = 920 #nm
+            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right 
+            self.corr_offs_left = 20 # nm
+            self.corr_offs_right = 30 # nm
+            self.PL_peak_auto = True # determine automatically
+            self.eval_Pb = False
         else:
             if excitation_laser is None:
                 #self.excitation_laser = 403 #nm
@@ -353,6 +366,9 @@ class exp_param:
         elif self.excitation_laser == 419:
             self.laser_marker = '420BPF'
             self.PL_marker = '450LPF'
+        elif self.excitation_laser == 421:
+            self.laser_marker = '420BPF'
+            self.PL_marker = '450LPF'
         elif self.excitation_laser == 657:
             self.laser_marker = '650BPF'
             #self.laser_marker = '660BPF'
@@ -404,7 +420,7 @@ class PLQY_dataset:
         self.all.plot(*args, **kwargs)
         all_graph = self.all.plot(*args, return_fig = True, show_plot = False, **kwargs)
         lqy.add_graph(self.db, self.sample_name+'_all.png', all_graph)
-        del all_graph
+        plt.close( all_graph )
         
     def find_PL_peak(self):
         #Finds the PL peak of the free space spectrum between PL_left and PL_right
@@ -479,11 +495,11 @@ class PLQY_dataset:
             
             fssp_lin_graph = fssp.plot(yscale = 'linear', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = False)
             lqy.add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(linear).png', fssp_lin_graph)
-            del fssp_lin_graph
+            plt.close( fssp_lin_graph )
             
             fssp_log_graph = fssp.plot(yscale = 'log', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = False)
             lqy.add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(semilog).png', fssp_log_graph)
-            del fssp_log_graph
+            plt.close( fssp_log_graph )
         
     def inb_adjust(self, adj_factor = None, show_adjust_factor = False, show = False, divisor = 1e3):
             self.inb_oob_adjust(what = 'inb', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, show = show, divisor = divisor)
@@ -513,7 +529,7 @@ class PLQY_dataset:
         if show_details:
             abs_graph = s.plot(title = 'Absorptance spectrum', hline = 0, bottom = -0.2, top = 1, figsize = (8,5), return_fig = True, show_plot = False)
             lqy.add_graph(self.db, f'{self.sample_name}_absorptance_with_{what}.png', abs_graph)
-            del abs_graph
+            plt.close( abs_graph )
 
         
         
@@ -543,11 +559,11 @@ class PLQY_dataset:
         if show:
             laser_graph = self.L.plot(yscale = 'linear', left = self.param.laser_left, right = self.param.laser_right, title = 'Laser signal', showindex = False, in_name = self.param.laser_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = False)
             lqy.add_graph(self.db, f'{self.sample_name}_L.png', laser_graph)
-            del laser_graph
+            plt.close( laser_graph )
 
             PL_graph = self.P.plot(yscale = show_lum, left = self.param.PL_left, right = self.param.PL_right, divisor = 1e7, title = 'Luminescence signal', showindex = False, in_name = self.param.PL_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = False)
             lqy.add_graph(self.db, f'{self.sample_name}_P.png', PL_graph)
-            del PL_graph
+            plt.close( PL_graph )
 
             print(f'La = {La:.2e} 1/(s m2)')
             print(f'Lb = {Lb:.2e} 1/(s m2)')

@@ -14,9 +14,11 @@ import matplotlib.colors as mcolors
 from IPython import embed
 from pathlib import Path
 import sys
-import winsound
 from os.path import join
 import warnings
+
+if sys.platform == 'Win32':
+    import winsound
 
 # Constants
 pi = math.pi
@@ -278,8 +280,9 @@ def how_long(process, arr = np.arange(1, 2, 1)):
     return total_time
 
 def beep(freq = 600, duration = 1000):
-    winsound.Beep(freq, duration)
-    
+    if sys.platform == 'Win32':
+        winsound.beep( freq, duration )
+
 
 def plot_first_n_lines(dir, FN, n=20):
     
