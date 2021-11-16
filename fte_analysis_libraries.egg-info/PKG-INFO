@@ -1,0 +1,34 @@
+Metadata-Version: 2.1
+Name: fte-analysis-libraries
+Version: 0.0.1
+Summary: An assortment of analysis libraries.
+Home-page: UNKNOWN
+Author: Felix Eickemeyer
+Author-email: Felix.Eickemeyer@EPFL.ch
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# Analysis Libraries
+
+> python -m pip install FTE-analysis-libraries 
+
+An assortment of analysis libraries.
+
+## Components
+
+**Use**
+
+To `import` the modules use the form
+```python
+from FTE_analysis_libraries[.<component>] import <module>
+# or
+import FTE_analysis_libraries[.<component>].<module>
+```
+where `<component>` is the name of the component (if needed) and `<module>` is the name of the module. Any modules in the Standard Component do not require a component name, while modules in all other components do.
+
+

@@ -1,0 +1,22 @@
+LICENSE
+README.md
+setup.py
+FTE_analysis_libraries/Biologic.py
+FTE_analysis_libraries/General.py
+FTE_analysis_libraries/IV.py
+FTE_analysis_libraries/Spectrum.py
+FTE_analysis_libraries/TRPL.py
+FTE_analysis_libraries/Tkdialogs.py
+FTE_analysis_libraries/XYdata.py
+FTE_analysis_libraries/__init__.py
+FTE_analysis_libraries/System_data/089430477_HL-3 plus-CAL_cc_20181119_VIS.txt
+FTE_analysis_libraries/System_data/Astmg173.xls
+FTE_analysis_libraries/System_data/OSRAM_930.txt
+FTE_analysis_libraries/System_data/Vocsq.csv
+FTE_analysis_libraries/System_data/Vocsq_0.01 eV.csv
+FTE_analysis_libraries/System_data/high CRI LED (YJ-VTC-2835MX-G2) 5000 K.csv
+FTE_analysis_libraries/System_data/luminosity function CIE 1931.csv
+fte_analysis_libraries.egg-info/PKG-INFO
+fte_analysis_libraries.egg-info/SOURCES.txt
+fte_analysis_libraries.egg-info/dependency_links.txt
+fte_analysis_libraries.egg-info/top_level.txt
