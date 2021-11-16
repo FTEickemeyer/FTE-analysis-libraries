@@ -422,17 +422,19 @@ class PLQY_dataset:
         lqy.add_graph(self.db, self.sample_name+'_all.png', all_graph)
         plt.close( all_graph )
         
+
     def find_PL_peak(self):
         #Finds the PL peak of the free space spectrum between PL_left and PL_right
         if self.PL_peak == None:
             if self.param.PL_peak_auto:
                 ra = self.fs.idx_range(left = self.param.PL_left, right = self.param.PL_right)
-                PL_peak = self.fs.x_of(max(self.fs.y[ra]))
+                PL_peak = self.fs.x_of(max(self.fs.y[ra]), start = self.param.PL_left) #changed by Felix
             self.PL_peak = PL_peak
         #PL_peak_x is the wavelength of the PL peak, needed in the method "abs_pf_spec"
         self.PL_peak_x = self.fs.x_of(PL_peak, start = self.param.PL_left)
         self.Eg = f1240/self.PL_peak #eV
         self.Vsq = Vsq(self.Eg) #V
+    
         
     def inb_oob_adjust(self, what = 'inb', adj_factor = None, show_adjust_factor = False, show = False, divisor = 1e3):
         # adj_factor: manual adjustment factor. It is advisable to run this routine first with show_adjust_factor = True and then take this as a basis for the adj_factor
