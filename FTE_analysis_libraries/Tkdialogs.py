@@ -69,4 +69,3 @@ if __name__ == "__main__":
     print(save_FN)
     
     load_FNs = tk.getFilenames('Load files', types = [('csv files','*.csv'), ('txt files', '*.txt'), ('all', '*.*')], initialdir = getcwd())
-    print(load_FNs)

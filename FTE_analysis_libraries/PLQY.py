@@ -622,4 +622,3 @@ class PLQY_dataset:
         #print(fn)
         directory = os.path.dirname(TFN)
         self.absolutePFspec.save(directory, fn, check_existing = False)
-        print(f'File saved: {join(directory,fn)}')

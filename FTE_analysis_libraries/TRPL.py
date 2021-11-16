@@ -1581,4 +1581,3 @@ if __name__ == "__main__":
     # Standard values for k2 and k3: k2 = 1e-10, k3 = 8.8e-29
     pset2 = TRPL_param(thickness = thickness, finaltime = finaltime, N_points = 50, alpha = alpha, P_exc = P_exc, pulse_len = pulse_len, mu = mu_0, k1 = k1_0, k2 = k2_0 * 1e-0, k3 = k3_0 * 1e-1, SL = SL_1)
     
-    plot_animation(pset1, pset2, interval = 1, ylim = (1e-1, 10))

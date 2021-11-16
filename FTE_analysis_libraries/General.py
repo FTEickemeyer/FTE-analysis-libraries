@@ -282,7 +282,7 @@ def how_long(process, arr = np.arange(1, 2, 1)):
 def beep(freq = 600, duration = 1000):
     if sys.platform == 'Win32':
         winsound.beep( freq, duration )
-
+    
 
 def plot_first_n_lines(dir, FN, n=20):
     
@@ -395,4 +395,4 @@ def copy_to_clipboard(text):
 
     import pyperclip
     pyperclip.copy(text)
-
+>>>>>>> remote
