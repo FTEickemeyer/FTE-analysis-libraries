@@ -1,7 +1,7 @@
 # Analysis Libraries
 
 Installation:
-1. save the (unzipped) directory "FTE-analysis-libraries-main" on your computer
+1. save the content of this directory in a new directory "FTE-analysis-libraries-main" on your computer
 2. open a command prompt
 3. in the prompt, go to the directory in which "FTE-analysis-libraries-main" is in (via cd ...)
 4. type: python -m pip install FTE-analysis-libraries-main

@@ -1308,6 +1308,3 @@ class mIV_data(mxy_data):
     def __init__(self, sa):
         super().__init__(sa)
 
-
-    
-      

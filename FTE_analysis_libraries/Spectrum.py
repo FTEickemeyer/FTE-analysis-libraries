@@ -1715,5 +1715,3 @@ def calc_laser_power(laser_nm, bg_eV = None, pf = None, A = None, Nsun = None, o
                 if not(only90deg):
                     print(f'... at 45°: {LP * math.sqrt(2) * 1000:.2e} mW')
         return LP
-    
-    
