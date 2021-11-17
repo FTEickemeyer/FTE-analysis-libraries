@@ -284,12 +284,12 @@ def beep(freq = 600, duration = 1000):
         winsound.beep( freq, duration )
     
 
-def plot_first_n_lines(dir, FN, n=20):
+def plot_first_n_lines(dir, FN, n=20, encoding = "ISO-8859-1"):
     
     TFN = join(dir,FN)
         
     count = 0
-    with open(TFN) as z:
+    with open(TFN, encoding = encoding) as z:
         
         for line in z:
             
@@ -395,4 +395,3 @@ def copy_to_clipboard(text):
 
     import pyperclip
     pyperclip.copy(text)
->>>>>>> remote
