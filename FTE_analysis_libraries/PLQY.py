@@ -27,13 +27,8 @@ from os.path import join
 system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
 
 
-from . import General, XYdata
 from . import Spectrum as spc
-from . import PLQY as lqy
-
-reload(General)
 from .General import findind, int_arr, linfit, save_ok, q, k, T_RT, h, c, f1240, pi
-reload(XYdata)
 from .XYdata import xy_data, mxy_data
 
 
@@ -50,6 +45,11 @@ def get_Andor_metadata(f, showall = False):
     metadata = dict(name = name)
     if showall:
         print(name)
+        
+    # add original filename
+    metadata['orig_fn'] = f
+
+    #f = f.split('--')[1]
 
     # fs or ip
     fsip = f.split('--')[1].split('_')[0]
@@ -138,8 +138,6 @@ def get_Andor_metadata(f, showall = False):
     ef = f.split('--')[3].split('_')[-1].split('.')[0]
     metadata['em_filter'] = ef
     
-    # add original filename
-    metadata['orig_fn'] = f
     if showall:
         print(ef)
         
@@ -357,7 +355,7 @@ class exp_param:
             self.laser_left = 640
             self.laser_right = 670
         else:
-            print('No valid laser wavelength!')
+            print('No valid laser wavelength! Valid wavelengths are: 403, 419, 421, 422, 657')
 
         # Laser and PL marker
         if self.excitation_laser == 403:
@@ -375,7 +373,7 @@ class exp_param:
             #self.PL_marker = '685LPF'
             self.PL_marker = '700LPF'
         else:
-            print('No valid laser wavelength!')
+            print('No valid laser wavelength! Valid wavelengths are: 403, 419, 421, 657')
 
 
 class PLQY_dataset:
@@ -419,7 +417,7 @@ class PLQY_dataset:
     def plot(self, *args, **kwargs):
         self.all.plot(*args, **kwargs)
         all_graph = self.all.plot(*args, return_fig = True, show_plot = False, **kwargs)
-        lqy.add_graph(self.db, self.sample_name+'_all.png', all_graph)
+        add_graph(self.db, self.sample_name+'_all.png', all_graph)
         plt.close( all_graph )
         
 
@@ -428,10 +426,8 @@ class PLQY_dataset:
         if self.PL_peak == None:
             if self.param.PL_peak_auto:
                 ra = self.fs.idx_range(left = self.param.PL_left, right = self.param.PL_right)
-                PL_peak = self.fs.x_of(max(self.fs.y[ra]), start = self.param.PL_left) #changed by Felix
+                PL_peak = self.fs.x_of(max(self.fs.y[ra]), start = self.param.PL_left)
             self.PL_peak = PL_peak
-        #PL_peak_x is the wavelength of the PL peak, needed in the method "abs_pf_spec"
-        self.PL_peak_x = self.fs.x_of(PL_peak, start = self.param.PL_left)
         self.Eg = f1240/self.PL_peak #eV
         self.Vsq = Vsq(self.Eg) #V
     
@@ -496,11 +492,11 @@ class PLQY_dataset:
             fssp.label([what, 'adjusted'])
             
             fssp_lin_graph = fssp.plot(yscale = 'linear', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = False)
-            lqy.add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(linear).png', fssp_lin_graph)
+            add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(linear).png', fssp_lin_graph)
             plt.close( fssp_lin_graph )
             
             fssp_log_graph = fssp.plot(yscale = 'log', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = False)
-            lqy.add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(semilog).png', fssp_log_graph)
+            add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(semilog).png', fssp_log_graph)
             plt.close( fssp_log_graph )
         
     def inb_adjust(self, adj_factor = None, show_adjust_factor = False, show = False, divisor = 1e3):
@@ -530,7 +526,7 @@ class PLQY_dataset:
         s.qy = 'A'
         if show_details:
             abs_graph = s.plot(title = 'Absorptance spectrum', hline = 0, bottom = -0.2, top = 1, figsize = (8,5), return_fig = True, show_plot = False)
-            lqy.add_graph(self.db, f'{self.sample_name}_absorptance_with_{what}.png', abs_graph)
+            add_graph(self.db, f'{self.sample_name}_absorptance_with_{what}.png', abs_graph)
             plt.close( abs_graph )
 
         
@@ -560,11 +556,11 @@ class PLQY_dataset:
 
         if show:
             laser_graph = self.L.plot(yscale = 'linear', left = self.param.laser_left, right = self.param.laser_right, title = 'Laser signal', showindex = False, in_name = self.param.laser_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = False)
-            lqy.add_graph(self.db, f'{self.sample_name}_L.png', laser_graph)
+            add_graph(self.db, f'{self.sample_name}_L.png', laser_graph)
             plt.close( laser_graph )
 
             PL_graph = self.P.plot(yscale = show_lum, left = self.param.PL_left, right = self.param.PL_right, divisor = 1e7, title = 'Luminescence signal', showindex = False, in_name = self.param.PL_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = False)
-            lqy.add_graph(self.db, f'{self.sample_name}_P.png', PL_graph)
+            add_graph(self.db, f'{self.sample_name}_P.png', PL_graph)
             plt.close( PL_graph )
 
             print(f'La = {La:.2e} 1/(s m2)')
@@ -597,11 +593,10 @@ class PLQY_dataset:
         :param nsuns: number of suns
         """
         PF = self.fs.photonflux(start = self.param.PL_left, stop = self.param.PL_right)
-        #print(PF)
 
         # 1 sun photon flux
         #Bandgap in eV
-        Eg = f1240/self.PL_peak_x #eV
+        Eg = f1240/self.PL_peak #eV
         sun_PF = spc.above_bg_photon_flux(Eg)
 
         nsun_PF = nsuns * sun_PF
@@ -611,6 +606,10 @@ class PLQY_dataset:
         sp = self.fs.copy()
         sp.y = sp.y * fac
         sp = sp.cut_data_outside(left = self.param.PL_left, right = self.param.PL_right)
+        
+        PF_new = sp.photonflux(start = self.param.PL_left, stop = self.param.PL_right)
+        #print(f'PF of absolute spectrum: {PF_new:.1e} 1/(s m2) (PLQY {self.PLQY:.1e})')
+        #print(f'sun_PF = {sun_PF:.1e}, Eg = {Eg:.2f} eV, PL peak = {self.PL_peak:.0f} nm')
         self.absolutePFspec = sp
         
     def save_asset(self):

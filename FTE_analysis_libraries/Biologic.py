@@ -25,12 +25,8 @@ import matplotlib.pyplot as plt
 from impedance.visualization import plot_nyquist, plot_bode
 
 
-from . import General, XYdata, IV
-reload(General)
 from .General import linfit, findind, save_ok, plx, q, k, T_RT, str_round_sig, colors, idx_range
-reload(XYdata)
 from .XYdata import xy_data, mxy_data
-reload(IV)
 from .IV import IV_data
 
 

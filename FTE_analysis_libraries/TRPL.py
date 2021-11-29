@@ -20,11 +20,7 @@ from importlib import reload
 import pkg_resources
 system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
 
-
-from . import General, XYdata
-reload(General)
 from .General import h, c, pi, k, q, T_RT, f1240, findind, interpolated_array
-reload(XYdata)
 from .XYdata import xy_data, mxy_data
 from .Spectrum import above_bg_photon_flux
 

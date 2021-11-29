@@ -21,12 +21,8 @@ from scipy.optimize import fsolve, fmin
 import pkg_resources
 system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
 
-from . import General, XYdata, Spectrum
-reload(General)
 from .General import linfit, findind, save_ok, plx, q, k, T_RT
-reload(XYdata)
 from .XYdata import xy_data, mxy_data
-reload(Spectrum)
 from .Spectrum import diff_spectrum, abs_spectrum
 
 
@@ -142,6 +138,40 @@ class perf_dat:
             return f'Light intensity $= {self.light_int*1000:.2f} \; uW/cm^2$'
         else:
             return f'Light intensity $= {self.light_int:.2f} \; mW/cm^2$'
+        
+    @staticmethod
+    def SQ_limit(bg, illumspec_eV = None, light_int = 100, show = False):
+        """
+        Calculates the performance data of the Shockley-Queisser limit.
+
+        Parameters
+        ----------
+        bg : FLOAT
+            Bandgap in eV.
+        illumspec_eV: diff_spectrum
+            Illumination spectrum other than AM1.5GT        
+            If None then AM1.5GT spectrum is taken
+        light_int: FLOAT
+            If AM1.5GT spectrum as illumination spectrum used, then with light_int the light intensity in mW/cm2 can be chosen.
+            If None than 100 mW/cm2 (1 sun) is used.
+        show : BOOLEAN, optional
+            If True it will show the performance data as formatted text. The default is False.
+    
+        Returns
+        -------
+        fp : instance of perf_dat.
+        
+        Example
+        -------
+        bg = 2.30 #eV
+        pd = perf_dat.SQ_limit(bg, show = True)
+
+        """
+        fp = IV_data.SQ_limit(bg, illumspec_eV = illumspec_eV, light_int = light_int)
+        x_arr = np.linspace(0, fp.Voc*1.01,  int(round((fp.Voc*1.01)/0.001)+1))
+        IV = IV_data.from_fp(x_arr, fp, name = '', light_int = light_int, T = T_RT, perfparam = True)
+        IV.det_perfparam(show = show)
+        return IV.pd
     
 
 class IV_data(xy_data):
@@ -1251,13 +1281,7 @@ class IV_data(xy_data):
         """
             
         if illumspec_eV == None:
-            # Load Astmg173 spectrum
-            AM15_nm = diff_spectrum.load_ASTMG173()
-            AM15_nm.equidist()
-            #AM15_nm.plot(left = 300, right = 1000)    
-            AM15_eV = AM15_nm.nm_to_eV()
-            AM15_eV.equidist(left = 0.414, right = 4.27, delta = 0.001)
-            #AM15_eV.plot()
+            AM15_eV = diff_spectrum.AM15_eV(left = 0.310, right = 4.428, delta = 0.001, y_unit = 'Spectral photon flux')
             if light_int != None:
                 AM15_eV.y = AM15_eV.y * light_int/100
             illumspec_eV = AM15_eV
@@ -1267,6 +1291,7 @@ class IV_data(xy_data):
         
         return fivep(cell_area = 1, Voc = Vsq, Jsc = Jsq, nid = 1, Rs = 0, Rsh = np.inf)
     
+        
     def calc_resistance_curve(self, left = None, right = None):
         if left == None:
             left = min(self.x)
@@ -1307,4 +1332,4 @@ class mIV_data(mxy_data):
     
     def __init__(self, sa):
         super().__init__(sa)
-
+        
