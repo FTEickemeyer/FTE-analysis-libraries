@@ -20,6 +20,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires = [
-        'winsound; platform_system=="Windows"'
     ]
 )

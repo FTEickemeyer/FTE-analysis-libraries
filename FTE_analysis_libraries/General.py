@@ -395,4 +395,3 @@ def copy_to_clipboard(text):
 
     import pyperclip
     pyperclip.copy(text)
->>>>>>> remote
