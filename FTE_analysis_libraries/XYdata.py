@@ -22,8 +22,7 @@ from importlib import reload
 import pkg_resources
 system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
 
-from . import General
-reload(General)
+
 from .General import findind, int_arr, save_ok, q, k, T_RT, linfit, idx_range
 
 

@@ -20,10 +20,8 @@ import pkg_resources
 system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
 
 
-from . import General, XYdata
-reload(General)
 from .General import findind, int_arr, linfit, save_ok, q, k, T_RT, h, c, f1240, pi
-reload(XYdata)
+
 from .XYdata import xy_data, mxy_data
 
 class spectrum(xy_data):
