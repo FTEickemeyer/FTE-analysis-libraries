@@ -1238,7 +1238,7 @@ class spectra(mxy_data):
         return self 
     
     @classmethod
-    def load_individual(cls, directory, FNs = [], delimiter = ',', header = 'infer', quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False):
+    def load_individual(cls, directory, FNs = [], delimiter = ',', header = 'infer', quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False, check_data = False):
 
         """
         Loads all xy data in individual files in directory.
@@ -1256,13 +1256,13 @@ class spectra(mxy_data):
             y = npdat[:,1]
 
             if cls.__name__ == 'spectra':
-                sp = spectrum(x, y, quants, units, FN)
+                sp = spectrum(x, y, quants, units, FN, check_data = False)
             elif cls.__name__ == 'abs_spectra':
-                sp = abs_spectrum(x, y, quants, units, FN)
+                sp = abs_spectrum(x, y, quants, units, FN, check_data = False)
             elif cls.__name__ == 'diff_spectra':
-                sp = diff_spectrum(x, y, quants, units, FN)
+                sp = diff_spectrum(x, y, quants, units, FN, check_data = False)
             elif cls.__name__ == 'PEL_spectra':
-                sp = PEL_spectrum(x, y, quants, units, FN)
+                sp = PEL_spectrum(x, y, quants, units, FN, check_data = False)
        
             if take_quants_and_units_from_file:
 

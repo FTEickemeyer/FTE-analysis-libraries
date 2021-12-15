@@ -1328,12 +1328,17 @@ class TRPL_data(xy_data):
             
     def shift_to_max(self, plot_details = False, left = None, right = None):
         """
-        Shift the data so that it starts at maximum.
+        Shift the data so that the maximum value is at x = 0.
         """
         idx_shift = findind(self.y,max(self.y))
+        x_shift = self.x[idx_shift]
         
         dat = self.copy()
-        dat.shift_zero(dat.x[idx_shift])
+        #if start_with_xeq0:
+        #    dat.shift_zero(dat.x[idx_shift])
+        #else:
+        dat.x -= x_shift
+        
 
         if plot_details:
             if left == None:

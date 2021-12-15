@@ -213,7 +213,15 @@ class exp_param:
 
         # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right 
 
-    
+        self.excitation_laser = excitation_laser
+        self.PL_left = PL_left
+        self.PL_right = PL_right
+        self.PL_peak = PL_peak        
+        self.corr_offs_left = corr_offs_left
+        self.corr_offs_right = corr_offs_right
+        self.eval_Pb = eval_Pb
+        self.PL_peak_auto = PL_peak_auto
+
         if which_sample == 'FAPbI3':
             self.excitation_laser = 657 #nm
             self.PL_left = 700 #nm
@@ -367,6 +375,9 @@ class exp_param:
         elif self.excitation_laser == 421:
             self.laser_marker = '420BPF'
             self.PL_marker = '450LPF'
+        elif self.excitation_laser == 422:
+            self.laser_marker = '420BPF'
+            self.PL_marker = '450LPF'
         elif self.excitation_laser == 657:
             self.laser_marker = '650BPF'
             #self.laser_marker = '660BPF'
@@ -404,7 +415,7 @@ class PLQY_dataset:
         self.Pc = load_spectrum(Pc)
         self.fs_asset = fs
         self.fs = load_spectrum(fs)
-        self.PL_peak = None
+        self.PL_peak = param.PL_peak
 
         self.all = spc.PEL_spectra([self.La, self.Lb, self.Lc, self.Pa, self.Pb, self.Pc, self.fs])
         self.all.label(['La', 'Lb', 'Lc', 'Pa', 'Pb', 'Pc', 'fs'])
@@ -422,17 +433,18 @@ class PLQY_dataset:
         
 
     def find_PL_peak(self):
-        #Finds the PL peak of the free space spectrum between PL_left and PL_right
-        if self.PL_peak == None:
-            if self.param.PL_peak_auto:
-                ra = self.fs.idx_range(left = self.param.PL_left, right = self.param.PL_right)
-                PL_peak = self.fs.x_of(max(self.fs.y[ra]), start = self.param.PL_left)
-            self.PL_peak = PL_peak
+        if self.param.PL_peak_auto:
+            #Finds the PL peak of the free space spectrum between PL_left and PL_right
+            if self.PL_peak == None:
+                if self.param.PL_peak_auto:
+                    ra = self.fs.idx_range(left = self.param.PL_left, right = self.param.PL_right)
+                    PL_peak = self.fs.x_of(max(self.fs.y[ra]), start = self.param.PL_left)
+                self.PL_peak = PL_peak
         self.Eg = f1240/self.PL_peak #eV
         self.Vsq = Vsq(self.Eg) #V
     
         
-    def inb_oob_adjust(self, what = 'inb', adj_factor = None, show_adjust_factor = False, show = False, divisor = 1e3):
+    def inb_oob_adjust(self, what = 'inb', adj_factor = None, show_adjust_factor = False, save_plots = False, divisor = 1e3):
         # adj_factor: manual adjustment factor. It is advisable to run this routine first with show_adjust_factor = True and then take this as a basis for the adj_factor
         # automatically calculate the factor
 
@@ -487,7 +499,7 @@ class PLQY_dataset:
             self.Pb_corrfac = factor
         sp.y = fs.y * factor  
 
-        if show:
+        if save_plots:
             fssp = spc.PEL_spectra([sp_orig, sp])
             fssp.label([what, 'adjusted'])
             
@@ -499,12 +511,12 @@ class PLQY_dataset:
             add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(semilog).png', fssp_log_graph)
             plt.close( fssp_log_graph )
         
-    def inb_adjust(self, adj_factor = None, show_adjust_factor = False, show = False, divisor = 1e3):
-            self.inb_oob_adjust(what = 'inb', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, show = show, divisor = divisor)
-    def oob_adjust(self, adj_factor = None, show_adjust_factor = False, show = False, divisor = 1e3):
-            self.inb_oob_adjust(what = 'oob', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, show = show, divisor = divisor)
+    def inb_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, divisor = 1e3):
+            self.inb_oob_adjust(what = 'inb', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, divisor = divisor)
+    def oob_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, divisor = 1e3):
+            self.inb_oob_adjust(what = 'oob', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, divisor = divisor)
 
-    def calc_abs(self, what = 'inb', show_details = False):
+    def calc_abs(self, what = 'inb', save_plots = False):
         #Calculates the absorptance spectrum from the fs and inbeam or outofbeam PL spectrum
         if what == 'inb':
             sp_orig = self.Pc_orig
@@ -524,14 +536,14 @@ class PLQY_dataset:
         A = 1-y_ib[zero_mask]/y_fs[zero_mask]
         s = spc.abs_spectrum(x[zero_mask], A)
         s.qy = 'A'
-        if show_details:
+        if save_plots:
             abs_graph = s.plot(title = 'Absorptance spectrum', hline = 0, bottom = -0.2, top = 1, figsize = (8,5), return_fig = True, show_plot = False)
             add_graph(self.db, f'{self.sample_name}_absorptance_with_{what}.png', abs_graph)
             plt.close( abs_graph )
 
         
         
-    def calc_PLQY(self, eval_Pa = False, show = False, show_lum = 'log'):
+    def calc_PLQY(self, eval_Pa = False, show = False, save_plots = False, show_lum = 'log'):
         
         La = self.La.photonflux(start = self.param.laser_left, stop = self.param.laser_right)
         Lb = self.Lb.photonflux(start = self.param.laser_left, stop = self.param.laser_right)
@@ -554,7 +566,7 @@ class PLQY_dataset:
         A = 1 - Lc/Lb
         PLQY = (Pc - (1 - A) * Pb) / (La * A)
 
-        if show:
+        if save_plots:
             laser_graph = self.L.plot(yscale = 'linear', left = self.param.laser_left, right = self.param.laser_right, title = 'Laser signal', showindex = False, in_name = self.param.laser_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = False)
             add_graph(self.db, f'{self.sample_name}_L.png', laser_graph)
             plt.close( laser_graph )
@@ -563,6 +575,7 @@ class PLQY_dataset:
             add_graph(self.db, f'{self.sample_name}_P.png', PL_graph)
             plt.close( PL_graph )
 
+        if show:
             print(f'La = {La:.2e} 1/(s m2)')
             print(f'Lb = {Lb:.2e} 1/(s m2)')
             print(f'Lc = {Lc:.2e} 1/(s m2)')
@@ -617,9 +630,9 @@ class PLQY_dataset:
         metadata = dict(A = self.A, PLQY = self.PLQY, Peak = self.PL_peak, Eg = self.Eg, Vsq = self.Vsq, dV = self.V_loss, QFLS = self.QFLS, adj_fac = self.adj_factor, fs_absint_factor = self.fs_absint_factor)
         #print(metadata)
         asset_name = f'{self.sample_name}_absolute PL spectrum'
-        asset_prop = dict(name = asset_name, type = 'absolute PL spectrum', metadata = metadata)
+        asset_prop = dict(name = asset_name + '.csv', type = 'absolute PL spectrum', metadata = metadata)
         TFN = self.db.add_asset(asset_prop)
-        fn = os.path.basename(TFN) + '.csv'
+        fn = os.path.basename(TFN) 
         #print(fn)
         directory = os.path.dirname(TFN)
         self.absolutePFspec.save(directory, fn, check_existing = False)
