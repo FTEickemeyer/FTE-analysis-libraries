@@ -28,7 +28,7 @@ system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_
 
 
 from . import Spectrum as spc
-from .General import findind, int_arr, linfit, save_ok, q, k, T_RT, h, c, f1240, pi
+from .General import int_arr, linfit, save_ok, q, k, T_RT, h, c, f1240, pi
 from .XYdata import xy_data, mxy_data
 
 
@@ -444,7 +444,7 @@ class PLQY_dataset:
         self.Vsq = Vsq(self.Eg) #V
     
         
-    def inb_oob_adjust(self, what = 'inb', adj_factor = None, show_adjust_factor = False, save_plots = False, divisor = 1e3):
+    def inb_oob_adjust(self, what = 'inb', adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = True, divisor = 1e3):
         # adj_factor: manual adjustment factor. It is advisable to run this routine first with show_adjust_factor = True and then take this as a basis for the adj_factor
         # automatically calculate the factor
 
@@ -503,18 +503,18 @@ class PLQY_dataset:
             fssp = spc.PEL_spectra([sp_orig, sp])
             fssp.label([what, 'adjusted'])
             
-            fssp_lin_graph = fssp.plot(yscale = 'linear', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = False)
+            fssp_lin_graph = fssp.plot(yscale = 'linear', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = show_plots)
             add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(linear).png', fssp_lin_graph)
             plt.close( fssp_lin_graph )
             
-            fssp_log_graph = fssp.plot(yscale = 'log', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = False)
+            fssp_log_graph = fssp.plot(yscale = 'log', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = show_plots)
             add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(semilog).png', fssp_log_graph)
             plt.close( fssp_log_graph )
         
-    def inb_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, divisor = 1e3):
-            self.inb_oob_adjust(what = 'inb', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, divisor = divisor)
-    def oob_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, divisor = 1e3):
-            self.inb_oob_adjust(what = 'oob', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, divisor = divisor)
+    def inb_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = False, divisor = 1e3):
+            self.inb_oob_adjust(what = 'inb', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, show_plots = show_plots, divisor = divisor)
+    def oob_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = False, divisor = 1e3):
+            self.inb_oob_adjust(what = 'oob', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, show_plots = show_plots, divisor = divisor)
 
     def calc_abs(self, what = 'inb', save_plots = False):
         #Calculates the absorptance spectrum from the fs and inbeam or outofbeam PL spectrum
