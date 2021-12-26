@@ -442,7 +442,7 @@ class xy_data:
     
     @classmethod
     def load(cls, directory, FN = '', delimiter = ',', header = 'infer', 
-             quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False):
+             quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False,  check_data = True):
 
         """
         Loads a single xy data. If a filename is given it will be used, if not the first file in the directory will be used.
@@ -487,7 +487,7 @@ class xy_data:
             if ' (' in col1:
                 uy = col1.split(' (')[1].split(')')[0]
         
-        return cls(x, y, quants = dict(x = qx, y = qy), units = dict(x = ux, y = uy), name = FN)
+        return cls(x, y, quants = dict(x = qx, y = qy), units = dict(x = ux, y = uy), name = FN,  check_data = check_data)
     
     def save(self, save_dir, FN, check_existing = True):
         
