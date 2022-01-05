@@ -28,7 +28,7 @@ system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_
 
 
 from . import Spectrum as spc
-from .General import findind, int_arr, linfit, save_ok, q, k, T_RT, h, c, f1240, pi
+from .General import int_arr, linfit, save_ok, q, k, T_RT, h, c, f1240, pi
 from .XYdata import xy_data, mxy_data
 
 
@@ -49,17 +49,17 @@ def get_Andor_metadata(f, showall = False):
     # add original filename
     metadata['orig_fn'] = f
 
-    #f = f.split('--')[1]
+    mdat = f.split(name+'--')[1]
 
     # fs or ip
-    fsip = f.split('--')[1].split('_')[0]
+    fsip = mdat.split('--')[0].split('_')[0]
     metadata['fsip'] = fsip
     if showall:
         print(fsip)
 
     # calibration lamp
     if name.lower() == 'calibration':
-        cl = f.split('--')[2]
+        cl = mdat.split('--')[1]
         metadata['calib_lamp'] = cl
         if showall:
             print(cl)
@@ -67,27 +67,27 @@ def get_Andor_metadata(f, showall = False):
     else:
         # inbeam or outofbeam
         if fsip == 'ip':
-            inout = f.split('--')[1].split('_')[1]
+            inout = mdat.split('--')[0].split('_')[1]
             metadata['inboob'] = inout
             if showall:
                 print(inout)
 
         # laser wavelength
-        lw = f.split('laser_')[1].split('nm')[0]
+        lw = mdat.split('laser_')[1].split('nm')[0]
         lw = int(lw)
         metadata['laser_nm'] = lw
         if showall:
             print(lw)
 
         # laser power
-        lp = f.split('laser_')[1].split('_')[1].split('mW')[0]
+        lp = mdat.split('laser_')[1].split('_')[1].split('mW')[0]
         lp = float(lp)
         metadata['laser_mW'] = lp
         if showall:
             print(lp)
 
         # OD filter
-        OD = f.split('_OD')[1].split('--')[0]
+        OD = mdat.split('_OD')[1].split('--')[0]
         OD = float(OD)
         metadata['OD_filter'] = OD
         if showall:
@@ -95,7 +95,7 @@ def get_Andor_metadata(f, showall = False):
 
 
     # integration time
-    it = f.split('Andor_')[1].split('s_')[0]
+    it = mdat.split('Andor_')[1].split('s_')[0]
     it = float(it)
     metadata['int_s'] = it
     if showall:
@@ -103,7 +103,7 @@ def get_Andor_metadata(f, showall = False):
 
     # accumulations
     acc_pattern = '(\d+)acc'
-    acc_match = re.search(acc_pattern, f.lower())
+    acc_match = re.search(acc_pattern, mdat.lower())
     acc = int(acc_match.group(1))
     metadata['acc'] = acc
     if showall:
@@ -111,31 +111,30 @@ def get_Andor_metadata(f, showall = False):
 
     # grating
     lmm_pattern = '(\d+)lmm'
-    lmm_match = re.search(lmm_pattern, f.lower())
+    lmm_match = re.search(lmm_pattern, mdat.lower())
     lmm = int(lmm_match.group(1))
     metadata['grating'] = lmm
     if showall:
         print(lmm)
 
     center_pattern = 'center(\d+)'
-    center_match = re.search(center_pattern, f.lower())
+    center_match = re.search(center_pattern, mdat.lower())
     center = int(center_match.group(1))
     metadata['grating_center_nm'] = center
     if showall:
         print(center)
     
     # slit (is only used for the new Andor system)
-    if 'slit' in f.lower():
+    if 'slit' in mdat.lower():
         slit_pattern = '(\d+)'+ 'umslit'
-        slit_match = re.search(slit_pattern, f.lower())
+        slit_match = re.search(slit_pattern, mdat.lower())
         sl = int(slit_match.group(1))
         metadata['slit_um'] = sl
-        #sl = f.split('--')[3].split('_')[-2]
         if showall:
             print(f'slit size = {sl} um')
 
     # emission filter
-    ef = f.split('--')[3].split('_')[-1].split('.')[0]
+    ef = mdat.split('--')[2].split('_')[-1].split('.')[0]
     metadata['em_filter'] = ef
     
     if showall:
@@ -444,7 +443,7 @@ class PLQY_dataset:
         self.Vsq = Vsq(self.Eg) #V
     
         
-    def inb_oob_adjust(self, what = 'inb', adj_factor = None, show_adjust_factor = False, save_plots = False, divisor = 1e3):
+    def inb_oob_adjust(self, what = 'inb', adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = True, divisor = 1e3):
         # adj_factor: manual adjustment factor. It is advisable to run this routine first with show_adjust_factor = True and then take this as a basis for the adj_factor
         # automatically calculate the factor
 
@@ -499,24 +498,25 @@ class PLQY_dataset:
             self.Pb_corrfac = factor
         sp.y = fs.y * factor  
 
-        if save_plots:
-            fssp = spc.PEL_spectra([sp_orig, sp])
-            fssp.label([what, 'adjusted'])
-            
-            fssp_lin_graph = fssp.plot(yscale = 'linear', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = False)
-            add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(linear).png', fssp_lin_graph)
-            plt.close( fssp_lin_graph )
-            
-            fssp_log_graph = fssp.plot(yscale = 'log', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = False)
-            add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(semilog).png', fssp_log_graph)
-            plt.close( fssp_log_graph )
+        fssp = spc.PEL_spectra([sp_orig, sp])
+        fssp.label([what, 'adjusted'])
         
-    def inb_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, divisor = 1e3):
-            self.inb_oob_adjust(what = 'inb', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, divisor = divisor)
-    def oob_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, divisor = 1e3):
-            self.inb_oob_adjust(what = 'oob', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, divisor = divisor)
+        fssp_lin_graph = fssp.plot(yscale = 'linear', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = show_plots)
+        if save_plots:
+            add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(linear).png', fssp_lin_graph)
+        plt.close( fssp_lin_graph )
+        
+        fssp_log_graph = fssp.plot(yscale = 'log', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = show_plots)
+        if save_plots:
+            add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(semilog).png', fssp_log_graph)
+        plt.close( fssp_log_graph )
+        
+    def inb_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = False, divisor = 1e3):
+            self.inb_oob_adjust(what = 'inb', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, show_plots = show_plots, divisor = divisor)
+    def oob_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = False, divisor = 1e3):
+            self.inb_oob_adjust(what = 'oob', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, show_plots = show_plots, divisor = divisor)
 
-    def calc_abs(self, what = 'inb', save_plots = False):
+    def calc_abs(self, what = 'inb', save_plots = False, show_plot = False):
         #Calculates the absorptance spectrum from the fs and inbeam or outofbeam PL spectrum
         if what == 'inb':
             sp_orig = self.Pc_orig
@@ -536,14 +536,17 @@ class PLQY_dataset:
         A = 1-y_ib[zero_mask]/y_fs[zero_mask]
         s = spc.abs_spectrum(x[zero_mask], A)
         s.qy = 'A'
+        abs_graph = s.plot(title = 'Absorptance spectrum', hline = 0, bottom = -0.2, top = 1, figsize = (8,5), return_fig = True, show_plot = show_plot)
+
         if save_plots:
-            abs_graph = s.plot(title = 'Absorptance spectrum', hline = 0, bottom = -0.2, top = 1, figsize = (8,5), return_fig = True, show_plot = False)
             add_graph(self.db, f'{self.sample_name}_absorptance_with_{what}.png', abs_graph)
-            plt.close( abs_graph )
+        
+        plt.close( abs_graph )
+           
 
         
         
-    def calc_PLQY(self, eval_Pa = False, show = False, save_plots = False, show_lum = 'log'):
+    def calc_PLQY(self, eval_Pa = False, show = False, show_plots = False, save_plots = False, show_lum = 'log'):
         
         La = self.La.photonflux(start = self.param.laser_left, stop = self.param.laser_right)
         Lb = self.Lb.photonflux(start = self.param.laser_left, stop = self.param.laser_right)
@@ -566,14 +569,15 @@ class PLQY_dataset:
         A = 1 - Lc/Lb
         PLQY = (Pc - (1 - A) * Pb) / (La * A)
 
-        if save_plots:
-            laser_graph = self.L.plot(yscale = 'linear', left = self.param.laser_left, right = self.param.laser_right, title = 'Laser signal', showindex = False, in_name = self.param.laser_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = False)
-            add_graph(self.db, f'{self.sample_name}_L.png', laser_graph)
-            plt.close( laser_graph )
+        laser_graph = self.L.plot(yscale = 'linear', left = self.param.laser_left, right = self.param.laser_right, title = 'Laser signal', showindex = False, in_name = self.param.laser_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = show_plots)
+        PL_graph = self.P.plot(yscale = show_lum, left = self.param.PL_left, right = self.param.PL_right, divisor = 1e7, title = 'Luminescence signal', showindex = False, in_name = self.param.PL_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = show_plots)
 
-            PL_graph = self.P.plot(yscale = show_lum, left = self.param.PL_left, right = self.param.PL_right, divisor = 1e7, title = 'Luminescence signal', showindex = False, in_name = self.param.PL_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = False)
+        if save_plots:
+            add_graph(self.db, f'{self.sample_name}_L.png', laser_graph)
             add_graph(self.db, f'{self.sample_name}_P.png', PL_graph)
-            plt.close( PL_graph )
+        
+        plt.close( laser_graph )
+        plt.close( PL_graph )
 
         if show:
             print(f'La = {La:.2e} 1/(s m2)')

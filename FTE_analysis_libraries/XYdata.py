@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from os import listdir, getcwd
 from os.path import join
+import platform
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import math
@@ -23,7 +24,7 @@ import pkg_resources
 system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
 
 
-from .General import findind, int_arr, save_ok, q, k, T_RT, linfit, idx_range
+from .General import findind, findind_exact, int_arr, save_ok, q, k, T_RT, linfit, idx_range
 
 
 
@@ -198,7 +199,7 @@ class xy_data:
             f_interp = interp1d(y_arr_new, x_arr_new, 'cubic', bounds_error=False, fill_value=0)
             x = f_interp(y_value)                
         else:
-            x = self.x[idx_start + findind(self.y[idx_start:], y_value)]
+            x = self.x[idx_start + findind_exact(self.y[idx_start:], y_value)]
 
         return float(x)
 
@@ -441,7 +442,7 @@ class xy_data:
     
     @classmethod
     def load(cls, directory, FN = '', delimiter = ',', header = 'infer', 
-             quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False):
+             quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False,  check_data = True):
 
         """
         Loads a single xy data. If a filename is given it will be used, if not the first file in the directory will be used.
@@ -449,7 +450,19 @@ class xy_data:
         
         if FN == '':
             FN = listdir(directory)[0]
-        dat = pd.read_csv(join(directory, FN), delimiter = delimiter, header = header)
+            
+        
+        windows_long_file_prefix = '\\\\?\\'
+        
+        file = join(directory, FN)
+        if (
+            ( platform.system() == 'Windows' ) and
+            ( len( file ) > 255 ) and
+            ( not file.startswith( windows_long_file_prefix ) )
+        ):
+            file = windows_long_file_prefix + file
+        
+        dat = pd.read_csv(file, delimiter = delimiter, header = header)
         
         #The conversion to np.float64 should be done after the conversion into an should be done
         #after the np.array() function. Then it is possible to also read in data where some columns
@@ -474,7 +487,7 @@ class xy_data:
             if ' (' in col1:
                 uy = col1.split(' (')[1].split(')')[0]
         
-        return cls(x, y, quants = dict(x = qx, y = qy), units = dict(x = ux, y = uy), name = FN)
+        return cls(x, y, quants = dict(x = qx, y = qy), units = dict(x = ux, y = uy), name = FN,  check_data = check_data)
     
     def save(self, save_dir, FN, check_existing = True):
         

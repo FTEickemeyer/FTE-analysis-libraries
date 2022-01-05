@@ -183,10 +183,10 @@ def Vsq(Eg):
     return 0.932*Eg - 0.167
 
 def V_loss(PLQY, T = T_RT):
-    return - k * T_RT / q * np.log(PLQY)
+    return k * T_RT / q * np.log(PLQY)
 
 def QFLS(Eg, PLQY):
-    return Vsq(Eg) - V_loss(PLQY)
+    return Vsq(Eg) + V_loss(PLQY)
 
 def Diff_coeff(mu):
     # Calculates the diffusion coefficient from the mobility

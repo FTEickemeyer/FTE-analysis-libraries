@@ -317,7 +317,7 @@ class abs_spectrum(spectrum):
         self.y[0:idx] = UE_fit.y[0:idx] 
         
     
-    def Tauc_plot(self, Efit_start, Efit_stop, left_offs, right_offs, showplot = True, title = '', save = False, save_dir = ''):
+    def Tauc_plot(self, Efit_start, Efit_stop, left_offs, right_offs, showplot = True, title = '', save = False, save_dir = '', save_name = None, return_fig = True):
         """
         Plots the Tauc plot, calculates the direct bandgap and Shockley-Queisser limit of Voc.
         """
@@ -341,13 +341,23 @@ class abs_spectrum(spectrum):
         sa.label([name_Tp, name_Tpfit])
 
         if save:
-            sa.save(save_dir, 'Tauc plot.csv') 
+            if save_name is None:
+                FN = 'Tauc plot.csv'
+            else:
+                FN = save_name
+            sa.save(save_dir, FN) 
         
-        if showplot:
-            sa.plot(left = Efit_start + left_offs, right = Efit_stop + right_offs, bottom = 0, top = Tp.y_of(Efit_stop + right_offs) * 1.2, title = title)
-
         self.Eg_Tauc = Eg
         self.Vocsq = Vocsq
+        
+        graph = sa.plot(left = Efit_start + left_offs, right = Efit_stop + right_offs, bottom = 0, top = Tp.y_of(Efit_stop + right_offs) * 1.2, title = title, return_fig = True, show_plot = showplot)
+
+        if return_fig:
+            return graph
+
+
+
+
 
     def emission_pf(self, E_start, E_stop, T = T_RT):
         """
@@ -1610,7 +1620,7 @@ class PEL_spectra(diff_spectra):
         """
         self.sa[1].y = self.sa[1].y * factor  
         
-    def Udata_plot(self, overlap, yscale = 'log', left = None, right = None, save = False, save_dir = ''):
+    def Udata_plot(self, overlap, yscale = 'log', left = None, right = None, save = False, save_dir = '', save_name = None, return_fig = False, show_plot = True):
         ab = self.sa[0]
         uf = self.sa[1]
         sp = self.sa[2].copy()
@@ -1627,10 +1637,17 @@ class PEL_spectra(diff_spectra):
         sa = spectra([ab, uf, sp, bb])
         sa.label(['Absorptance', 'Exponential fit', 'Luminescence', 'Blackbody radiation'])
         
-        sa.plot(yscale = yscale, left = left, right = right, bottom = ab.y_of(left), top = ab.y_of(overlap) * 4, plotstyle = 'not auto')
+        graph = sa.plot(yscale = yscale, left = left, right = right, bottom = ab.y_of(left), top = ab.y_of(overlap) * 4, plotstyle = 'not auto', return_fig = return_fig, show_plot = show_plot)
         
         if save:
-            sa.save(save_dir, 'Urbach_data.csv') 
+            if save_name is None:
+                FN = 'Urbach_data.csv'
+            else:
+                FN = save_name
+            sa.save(save_dir, FN) 
+            
+        if return_fig:
+            return(graph)
             
             
 
