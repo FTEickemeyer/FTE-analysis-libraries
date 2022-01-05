@@ -546,7 +546,7 @@ class PLQY_dataset:
 
         
         
-    def calc_PLQY(self, eval_Pa = False, show = False, save_plots = False, show_lum = 'log'):
+    def calc_PLQY(self, eval_Pa = False, show = False, show_plots = False, save_plots = False, show_lum = 'log'):
         
         La = self.La.photonflux(start = self.param.laser_left, stop = self.param.laser_right)
         Lb = self.Lb.photonflux(start = self.param.laser_left, stop = self.param.laser_right)
@@ -569,14 +569,15 @@ class PLQY_dataset:
         A = 1 - Lc/Lb
         PLQY = (Pc - (1 - A) * Pb) / (La * A)
 
-        if save_plots:
-            laser_graph = self.L.plot(yscale = 'linear', left = self.param.laser_left, right = self.param.laser_right, title = 'Laser signal', showindex = False, in_name = self.param.laser_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = False)
-            add_graph(self.db, f'{self.sample_name}_L.png', laser_graph)
-            plt.close( laser_graph )
+        laser_graph = self.L.plot(yscale = 'linear', left = self.param.laser_left, right = self.param.laser_right, title = 'Laser signal', showindex = False, in_name = self.param.laser_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = show_plots)
+        PL_graph = self.P.plot(yscale = show_lum, left = self.param.PL_left, right = self.param.PL_right, divisor = 1e7, title = 'Luminescence signal', showindex = False, in_name = self.param.PL_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = show_plots)
 
-            PL_graph = self.P.plot(yscale = show_lum, left = self.param.PL_left, right = self.param.PL_right, divisor = 1e7, title = 'Luminescence signal', showindex = False, in_name = self.param.PL_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = False)
+        if save_plots:
+            add_graph(self.db, f'{self.sample_name}_L.png', laser_graph)
             add_graph(self.db, f'{self.sample_name}_P.png', PL_graph)
-            plt.close( PL_graph )
+        
+        plt.close( laser_graph )
+        plt.close( PL_graph )
 
         if show:
             print(f'La = {La:.2e} 1/(s m2)')
