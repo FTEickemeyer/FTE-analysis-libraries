@@ -4,36 +4,40 @@ Created on Thu Mar 19 15:05:55 2020
 
 @author: dreickem
 """
-
-from scipy.optimize import curve_fit, least_squares
 import sys
-import numpy as np
-import pandas as pd
 import os
 from os import listdir
 from os.path import join
-import math
-import matplotlib.pyplot as plt
-from importlib import reload
-from IPython import embed
-import pkg_resources
 import re
-import thot
-from scipy.optimize import least_squares
 import math
+import pkg_resources
+
 import numpy as np
-from os.path import join
-
-system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
-
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit, least_squares
+import thot
 
 from . import Spectrum as spc
-from .General import int_arr, linfit, save_ok, q, k, T_RT, h, c, f1240, pi
 from .XYdata import xy_data, mxy_data
+from .General import (
+    int_arr,
+    linfit,
+    save_ok,
+    q,
+    k,
+    T_RT,
+    h,
+    c,
+    f1240,
+    pi,
+    Vsq,
+    V_loss,
+    QFLS
+)
 
 
-from FTE_analysis_libraries.General import f1240, Vsq, V_loss, QFLS
-
+system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
 
 def get_Andor_metadata(f, showall = False):
     """
@@ -197,9 +201,11 @@ def add_graph(db, fn, graph):
 def find(dic, assets, show_details = False):
     asts = thot.filter(dic, assets)
     if len(asts) == 0:
-        print(f'Error: {dic} in assets not found!')
+        raise RuntimeError(f'{dic} in assets not found!')
+    
     elif len(asts) > 1:
-        print(f'Error: {dic} found more than one instance!')
+        raise RuntimeError(f'{dic} found more than one instance!')
+    
     else:
         if show_details:
             print(asts[0].metadata['orig_fn'])
