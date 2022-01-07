@@ -6,27 +6,23 @@ Created on Thu Mar 19 15:01:16 2020
 """
 
 # Import standard libraries and modules
-import numpy as np
-import pandas as pd
 from os import listdir, getcwd
 from os.path import join
+import math
 import platform
+import pkg_resources
+
+import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
-import math
 from scipy.signal import butter,filtfilt, savgol_filter
 from scipy.interpolate import interp1d
-import pkg_resources
-system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
-import sys
-from importlib import reload
-import pkg_resources
-system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
-
 
 from .General import findind, findind_exact, int_arr, save_ok, q, k, T_RT, linfit, idx_range
 
 
+system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
 
 class xy_data:
     
@@ -1187,7 +1183,6 @@ class mxy_data:
             
             
         for i, spec in enumerate(self.sa):
-            
             x = spec.x.copy()
             if xscale == 'log':
                 x = np.abs(x)
