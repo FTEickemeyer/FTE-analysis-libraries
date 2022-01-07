@@ -255,6 +255,7 @@ class xy_data:
         return_fig: if True than the figure is returned as an object of type matplotlib.figure.Figure. This figure can be then saved with matplotlib.figure.Figure.savefig(filename).
                     To show this returned figure one can use the function matplotlib.figure.Figure.show(); this works however only if a GUI backend is chosen, 
                     e.g. by %matplotlib qt in jupyterlab (%matplotlib inline doesn't work').
+                    if show_plot == False and retrun_fig == True: It is important to close the figure with matplotlib.pyplot.plt.close(Figure), otherwise it will be shown.
         """
         
         plt.rcParams.update({'font.size': 12})
@@ -1111,6 +1112,7 @@ class mxy_data:
         return_fig: if True than the figure is returned as an object of type matplotlib.figure.Figure. This figure can be then saved with matplotlib.figure.Figure.savefig(filename).
                     To show this returned figure one can use the function matplotlib.figure.Figure.show(); this works however only if a GUI backend is chosen, 
                     e.g. by %matplotlib qt in jupyterlab (%matplotlib inline doesn't work').
+                    if show_plot == False and retrun_fig == True: It is important to close the figure with matplotlib.pyplot.plt.close(Figure), otherwise it will be shown.
         example for kwargs:
         kwargs = dict(fontsize = 24, legend = False, save_plot = True, plot_save_dir = save_dir, plot_FN = 'IV5 - transp. limit.png')
         """

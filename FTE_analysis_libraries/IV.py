@@ -787,7 +787,7 @@ class IV_data(xy_data):
         return cell_text, row_labels
          
     def plot(self, title = 'self.name', xscale = 'linear', yscale = 'linear', 
-             left = None, right = None, bottom = None, top = None, plot_table = False, hline = None, vline = None, figsize=(9,6), return_fig = False):
+             left = None, right = None, bottom = None, top = None, plot_table = False, hline = None, vline = None, figsize=(9,6), return_fig = False, show_plot = True, **kwargs):
         
         if plot_table:
             cell_text, row_labels = IV_data.table_param(self.pd.PCE, self.Voc, self.Jsc, self.pd.FF, 
@@ -799,14 +799,10 @@ class IV_data(xy_data):
         if title == None:
             title = self.name
             
-        
-        if return_fig:
-            fig = xy_data.plot(self, title = title, xscale = xscale, yscale = yscale, left = left, right = right, 
-                               bottom = bottom, top = top, plot_table = plot_table, cell_text = cell_text, row_labels = row_labels, hline = hline, vline = vline, figsize = figsize, return_fig = return_fig)      
+        fig = xy_data.plot(self, title = title, xscale = xscale, yscale = yscale, left = left, right = right, 
+                           bottom = bottom, top = top, plot_table = plot_table, cell_text = cell_text, row_labels = row_labels, hline = hline, vline = vline, figsize = figsize, return_fig = return_fig, show_plot = show_plot, **kwargs)        
+        if return_fig:      
             return fig
-        else:
-            xy_data.plot(self, title = title, xscale = xscale, yscale = yscale, left = left, right = right, 
-                         bottom = bottom, top = top, plot_table = plot_table, cell_text = cell_text, row_labels = row_labels, hline = hline, vline = vline, figsize = figsize)
 
         
     def plot_fit(self, xscale = 'linear', yscale = 'linear', left = None, right = None, bottom = None, top = None,  title = None, plot_table = False):
