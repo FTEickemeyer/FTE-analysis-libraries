@@ -4,12 +4,10 @@ Created on Thu Mar 19 15:05:55 2020
 
 @author: dreickem
 """
-import sys
 import os
-from os import listdir
-from os.path import join
 import re
 import math
+import warnings
 import pkg_resources
 
 import numpy as np
@@ -37,7 +35,9 @@ from .General import (
 )
 
 
-system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
+system_dir = pkg_resources.resource_filename(
+    'FTE_analysis_libraries','System_data'
+)
 
 def get_Andor_metadata(f, showall = False):
     """
@@ -146,35 +146,62 @@ def get_Andor_metadata(f, showall = False):
         
     return metadata
 
-def raw_to_asset_with_metadata(container, asset_type, db, show_FN = False, show_new_asset = False):
-    # Generate new asset with metadata from raw measurements
+def raw_to_asset_with_metadata(
+    container,
+    asset_type,
+    db,
+    show_FN = False,
+    show_new_asset = False
+):
+    """
+    Generate new asset with metadata from raw measurements.
     
+    :param container: Thot Container.
+    :param asset_type: Type of Thot Assets to find.
+        [See also thot.ThotProject#find_assets]
+    :param db: ThotProject.
+    :param show_FN: Whether to print the file name.
+        [Default: False]
+    :param show_new_asset: Wherther to print the new Thot Asset.
+        [Default: False]
+    """
     raw = db.find_assets( { 'parent' : container._id, 'type': asset_type } )
     
     # Generate new calibration asset with metadata
-    for idx, asset in enumerate(raw):
-        """
-        Creates a new asset with metadata.
-        """
+    for idx, asset in enumerate( raw ):
+        # Creates a new asset with metadata.
         f = asset.file
         f = f.replace( '\\', '/' )
-        f = os.path.basename(f)
+        f = os.path.basename( f )
         if show_FN:
-            print(f)
-        metadata = get_Andor_metadata(f, showall = False)
-        #print(metadata)
-        if container.name.lower() == 'calibration':
-            asset_prop = dict(name = f'{idx}_raw calibration.csv', type = 'raw calibration', metadata = metadata, file = asset.file)
-        elif container.name.lower() == 'samples':
-            name = metadata['name']
-            asset_prop = dict(name = f'{idx}_{name}_raw PL spectrum.csv', type = 'raw PL spectrum', metadata = metadata, file = asset.file)
-        else:
-            print('Attention: No known container_name!')
-        asset = db.add_asset(asset_prop)
-        if show_new_asset:
-            print(asset)    
+            print( f )
 
-def add_graph(db, fn, graph):
+        metadata = get_Andor_metadata( f, showall = False )
+        if container.name.lower() == 'calibration':
+            asset_prop = dict(
+                name = f'{idx}_raw calibration.csv',
+                type = 'raw calibration',
+                metadata = metadata,
+                file = asset.file
+            )
+        
+        elif container.name.lower() == 'samples':
+            name = metadata[ 'name' ]
+            asset_prop = dict(
+                name = f'{idx}_{name}_raw PL spectrum.csv',
+                type = 'raw PL spectrum',
+                metadata = metadata,
+                file = asset.file
+            )
+        
+        else:
+            warnings.warn( f'Can not process Container with name `{container.name}`. Name must be `Samples` or `Calibration`.' )
+        
+        asset = db.add_asset( asset_prop )
+        if show_new_asset:
+            print( asset )    
+
+def add_graph(db, fn, graph, asset_props = None):
     """
     Adds a graph as an asset and saves it
 
@@ -186,14 +213,20 @@ def add_graph(db, fn, graph):
         filename (without path but with extension).
     graph : matplotlib.figure.Figure
         The graph to be saved.
+    asset_props: DICTIONARY | None
+        Dictionary of asset properties to use.
+        Passed in values overwrite default values.
+        If None, only default properties are used.
 
     Returns
     -------
     None.
 
     """
-    
     asset_prop = dict(name = 'plt_'+fn, type = 'graph', file = fn)
+    if asset_props is not None:
+        asset_prop = { **asset_prop, **asset_props }
+
     asset_filepath = db.add_asset(asset_prop)
     graph.savefig(asset_filepath)
 
