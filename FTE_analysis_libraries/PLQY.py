@@ -39,119 +39,120 @@ system_dir = pkg_resources.resource_filename(
     'FTE_analysis_libraries','System_data'
 )
 
-def get_Andor_metadata(f, showall = False):
+def get_Andor_metadata( f, showall = False ):
     """
     Extracts all metadata from the filename f for measurements with the Andor spectrometer.
     """
 
     # name
-    name = f.split('--')[0]
-    metadata = dict(name = name)
+    name = f.split( '--', maxsplit = 1 )[ 0 ]
+    metadata = dict( name = name )
     if showall:
-        print(name)
+        print( name )
         
     # add original filename
-    metadata['orig_fn'] = f
+    metadata[ 'orig_fn' ] = f
 
-    mdat = f.split(name+'--')[1]
+    mdat = f.split( name + '--', maxsplit = 1 )[ 1 ]
 
     # fs or ip
-    fsip = mdat.split('--')[0].split('_')[0]
-    metadata['fsip'] = fsip
+    fsip = mdat.split( '--' )[ 0 ].split( '_' )[ 0 ]
+    metadata[ 'fsip' ] = fsip
     if showall:
-        print(fsip)
+        print( fsip )
 
     # calibration lamp
     if name.lower() == 'calibration':
-        cl = mdat.split('--')[1]
-        metadata['calib_lamp'] = cl
+        cl = mdat.split( '--' )[ 1 ]
+        metadata[ 'calib_lamp' ] = cl
         if showall:
-            print(cl)
+            print( cl )
 
     else:
         # inbeam or outofbeam
         if fsip == 'ip':
-            inout = mdat.split('--')[0].split('_')[1]
-            metadata['inboob'] = inout
+            inout = mdat.split( '--' )[ 0 ].split( '_' )[ 1 ]
+            metadata[ 'inboob' ] = inout
             if showall:
-                print(inout)
+                print( inout )
 
         # laser wavelength
-        lw = mdat.split('laser_')[1].split('nm')[0]
-        lw = int(lw)
-        metadata['laser_nm'] = lw
+        lw = mdat.split( 'laser_' )[ 1 ].split( 'nm' )[ 0 ]
+        lw = int( lw )
+        metadata[ 'laser_nm' ] = lw
         if showall:
-            print(lw)
+            print( lw )
 
         # laser power
-        lp = mdat.split('laser_')[1].split('_')[1].split('mW')[0]
-        lp = float(lp)
-        metadata['laser_mW'] = lp
+        lp = mdat.split( 'laser_' )[ 1 ].split( '_' )[ 1 ].split( 'mW' )[ 0 ]
+        lp = float( lp )
+        metadata[ 'laser_mW' ] = lp
         if showall:
-            print(lp)
+            print( lp )
 
         # OD filter
-        OD = mdat.split('_OD')[1].split('--')[0]
-        OD = float(OD)
-        metadata['OD_filter'] = OD
+        OD = mdat.split( '_OD' )[ 1 ].split( '--' )[ 0 ]
+        OD = float( OD )
+        metadata[ 'OD_filter' ] = OD
         if showall:
-            print(OD)
-
+            print( OD )
 
     # integration time
-    it = mdat.split('Andor_')[1].split('s_')[0]
-    it = float(it)
-    metadata['int_s'] = it
+    it = mdat.split( 'Andor_' )[ 1 ].split( 's_' )[ 0 ]
+    it = float( it )
+    metadata[ 'int_s' ] = it
     if showall:
-        print(it)
+        print( it )
 
     # accumulations
     acc_pattern = '(\d+)acc'
-    acc_match = re.search(acc_pattern, mdat.lower())
-    acc = int(acc_match.group(1))
-    metadata['acc'] = acc
+    acc_match = re.search( acc_pattern, mdat.lower() )
+    acc = int( acc_match.group( 1 ) )
+    metadata[ 'acc' ] = acc
     if showall:
-        print(acc)
+        print( acc )
 
     # grating
     lmm_pattern = '(\d+)lmm'
-    lmm_match = re.search(lmm_pattern, mdat.lower())
-    lmm = int(lmm_match.group(1))
-    metadata['grating'] = lmm
+    lmm_match = re.search( lmm_pattern, mdat.lower() )
+    lmm = int( lmm_match.group( 1 ) )
+    metadata[ 'grating' ] = lmm
     if showall:
-        print(lmm)
+        print( lmm )
 
     center_pattern = 'center(\d+)'
-    center_match = re.search(center_pattern, mdat.lower())
-    center = int(center_match.group(1))
-    metadata['grating_center_nm'] = center
+    center_match = re.search( center_pattern, mdat.lower() )
+    center = int( center_match.group(1) )
+    metadata[ 'grating_center_nm' ] = center
     if showall:
-        print(center)
+        print( center )
     
     # slit (is only used for the new Andor system)
     if 'slit' in mdat.lower():
         slit_pattern = '(\d+)'+ 'umslit'
-        slit_match = re.search(slit_pattern, mdat.lower())
-        sl = int(slit_match.group(1))
-        metadata['slit_um'] = sl
+        slit_match = re.search( slit_pattern, mdat.lower() )
+        sl = int( slit_match.group(1) )
+        metadata[ 'slit_um' ] = sl
         if showall:
-            print(f'slit size = {sl} um')
+            print( f'slit size = {sl} um' )
 
     # emission filter
-    ef = mdat.split('--')[2].split('_')[-1].split('.')[0]
-    metadata['em_filter'] = ef
+    ef = mdat.split( '--' )[ 2 ].split( '_' )[ -1 ].split( '.' )[ 0 ]
+    metadata[ 'em_filter' ] = ef
     
     if showall:
-        print(ef)
+        print( ef )
         
     return metadata
+
 
 def raw_to_asset_with_metadata(
     container,
     asset_type,
     db,
     show_FN = False,
-    show_new_asset = False
+    show_new_asset = False,
+    strict_container = True
 ):
     """
     Generate new asset with metadata from raw measurements.
@@ -164,6 +165,10 @@ def raw_to_asset_with_metadata(
         [Default: False]
     :param show_new_asset: Wherther to print the new Thot Asset.
         [Default: False]
+    :param strict_container: Only allow containers named
+        `samples` and `calibration`, raise error otherwise.
+        If False, assumes all samples are samples unless named `calibration`.
+        [Default: True]
     """
     raw = db.find_assets( { 'parent' : container._id, 'type': asset_type } )
     
@@ -176,7 +181,15 @@ def raw_to_asset_with_metadata(
         if show_FN:
             print( f )
 
-        metadata = get_Andor_metadata( f, showall = False )
+        try:
+            metadata = get_Andor_metadata( f, showall = False )
+        
+        except Exception as err:
+            # Reraise error with filename information included.
+            err_class = err.__class__
+            err_msg = err.args[ 0 ]
+            raise err_class( f'[{f}] {err_msg}' )
+
         if container.name.lower() == 'calibration':
             asset_prop = dict(
                 name = f'{idx}_raw calibration.csv',
@@ -185,10 +198,20 @@ def raw_to_asset_with_metadata(
                 file = asset.file
             )
         
-        elif container.name.lower() == 'samples':
-            name = metadata[ 'name' ]
+        elif (
+            container.name.lower() == 'samples'
+            or not strict_container
+        ):
+            md_name = metadata[ 'name' ]
+            name = f'{md_name}_raw PL spectrum.csv'
+            if not strict_container:
+                # index asset by container name
+                name = f'{container.name}_{name}'
+                metadata[ 'name' ] = f'{container.name} - {md_name}'
+
+            name = f'{idx}_{name}'
             asset_prop = dict(
-                name = f'{idx}_{name}_raw PL spectrum.csv',
+                name = name,
                 type = 'raw PL spectrum',
                 metadata = metadata,
                 file = asset.file
@@ -200,6 +223,7 @@ def raw_to_asset_with_metadata(
         asset = db.add_asset( asset_prop )
         if show_new_asset:
             print( asset )    
+
 
 def add_graph(db, fn, graph, asset_props = None):
     """
@@ -463,6 +487,7 @@ class PLQY_dataset:
         self.L = spc.PEL_spectra([self.La, self.Lb, self.Lc])
         self.L.label(['La', 'Lb', 'Lc'])
 
+
     def plot(self, *args, **kwargs):
         self.all.plot(*args, **kwargs)
         all_graph = self.all.plot(*args, return_fig = True, show_plot = False, **kwargs)
@@ -492,6 +517,7 @@ class PLQY_dataset:
         elif what == 'oob':
             sp = self.Pb
             
+
         def guess_factor(left, right):
             """
             Returns the inbeam or outofbeam-free space adjustment factor.
@@ -550,11 +576,15 @@ class PLQY_dataset:
             add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(semilog).png', fssp_log_graph)
         plt.close( fssp_log_graph )
         
+    
     def inb_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = False, divisor = 1e3):
             self.inb_oob_adjust(what = 'inb', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, show_plots = show_plots, divisor = divisor)
+    
+
     def oob_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = False, divisor = 1e3):
             self.inb_oob_adjust(what = 'oob', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, show_plots = show_plots, divisor = divisor)
 
+    
     def calc_abs(self, what = 'inb', save_plots = False, show_plot = False):
         #Calculates the absorptance spectrum from the fs and inbeam or outofbeam PL spectrum
         if what == 'inb':
@@ -583,8 +613,6 @@ class PLQY_dataset:
         plt.close( abs_graph )
            
 
-        
-        
     def calc_PLQY(self, eval_Pa = False, show = False, show_plots = False, save_plots = False, show_lum = 'log'):
         
         La = self.La.photonflux(start = self.param.laser_left, stop = self.param.laser_right)
@@ -668,8 +696,8 @@ class PLQY_dataset:
         #print(f'sun_PF = {sun_PF:.1e}, Eg = {Eg:.2f} eV, PL peak = {self.PL_peak:.0f} nm')
         self.absolutePFspec = sp
         
+
     def save_asset(self):
-        
         metadata = dict(A = self.A, PLQY = self.PLQY, Peak = self.PL_peak, Eg = self.Eg, Vsq = self.Vsq, dV = self.V_loss, QFLS = self.QFLS, adj_fac = self.adj_factor, fs_absint_factor = self.fs_absint_factor)
         #print(metadata)
         asset_name = f'{self.sample_name}_absolute PL spectrum'
