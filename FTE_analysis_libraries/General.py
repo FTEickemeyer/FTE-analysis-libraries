@@ -5,6 +5,7 @@ Spyder Editor
 This is a temporary script file.
 """
 
+import platform
 import math
 import numpy as np
 from scipy.interpolate import interp1d
@@ -34,6 +35,7 @@ epsilon_0 = 8.8541878128e-12 #F/m = C /(Vm) = As / Vm (vacuum electric permittiv
 F =  96485.3321233 #C·mol−1 (Faraday constant)
 R = 0.99999999965e-3 #kg/mol (molar gas constant)
 f1240 = h * c / q / 1e-9
+m_e = 9.1093837015e-31 #kg (electron mass)
 
 
 class color:
@@ -65,7 +67,11 @@ def color_list(n):
 #colors = mcolors.TABLEAU_COLORS
 #colors = mcolors.CSS4_COLORS
 #col_names = list(colors)
-colors = color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10) # Will give 60 colors
+colors = color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10) # Will give 120 colors
+
+CSS_colors = mcolors.CSS4_COLORS
+by_hsv = sorted((tuple(mcolors.rgb_to_hsv(mcolors.to_rgb(color))), name) for name, color in CSS_colors.items())
+CSS_col_names = [name for hsv, name in by_hsv]
 
 
 # This function rounds a float to 'sig' significant figures
@@ -134,7 +140,11 @@ def findind_exact(array, value):
     """
     return np.where(array == value)[0][0]
 
-def linfit(array_x, array_y, von, bis):
+def linfit(array_x, array_y, von=None, bis=None):
+    if von == None:
+        von = array_x[0]
+    if bis == None:
+        bis = array_y[-1]
     m, b = np.polyfit(array_x[findind(array_x,von):findind(array_x,bis)], array_y[findind(array_x,von):findind(array_x,bis)], 1)
     return m, b
 
@@ -325,30 +335,25 @@ def idx_range(arr, left = None, right = None):
     
     #Ascending array
     if arr[-1] > arr[0]:
-        if left > right:
-            l = right
-            r = left
-        else:
-            l = left
-            r = right
-            
         if (l == None) or (l < min(arr)): 
             l = min(arr)
         if (r == None) or (r > max(arr)):
             r = max(arr)
-            
+
+        if l > r:
+            l = r
+            r = l
+                        
     #Descending array
     else:
-        if left < right:
-            l = right
-            r = left
-        else:
-            l = left
-            r = right
         if (r == None) or (r < min(arr)): 
             r = min(arr)
         if (l == None) or (l > max(arr)):
             l = max(arr)
+
+        if l < r:
+            l = r
+            r = l
     
     ra = range(findind(arr, l), findind(arr, r)+1)    
     
@@ -395,3 +400,21 @@ def copy_to_clipboard(text):
 
     import pyperclip
     pyperclip.copy(text)
+    
+def win_long_fp(fp):
+    # If the os is windows: Transforms a filepath fp that is too long for windows into a windows readable filepath
+    # in all other cases it just returns fp
+    windows_long_file_prefix = '\\\\?\\'
+    if ((platform.system() == 'Windows') and (len(fp) > 255) and (not fp.startswith(windows_long_file_prefix))):
+        return windows_long_file_prefix + fp
+    else:
+        return fp
+
+def max_len(list_of_strings):
+    #finds the max length of the strings in a list
+    #This can be used e.g. in f-strings: print(f'{conditions[idx].ljust(max_len(conditions))}: text') T
+    n = 0
+    for string in list_of_strings:
+        if len(string) > n:
+            n = len(string)
+    return n

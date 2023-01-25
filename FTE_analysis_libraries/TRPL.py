@@ -1308,7 +1308,7 @@ class TRPL_data(xy_data):
         av = np.average(self.y[r])
         dat = self.copy()
         dat.y = dat.y - av
-        if norm_val != None:
+        if not (norm_val is None):
             dat.normalize(norm_val = norm_val)
         
         if plot_details:
@@ -1316,6 +1316,9 @@ class TRPL_data(xy_data):
             self.plot(yscale = 'linear', left = self.x[start]*0, right = self.x[stop]*1.2, bottom = 0, top = m*2, vline = [self.x[start], self.x[stop]], title = 'noise')
             #Show original and bg subtracted data
             dat_all = mTRPL_data([self, dat])
+            if not (norm_val is None):
+                dat_all = dat_all.copy()
+                dat_all.normalize()
             dat_all.label(['original', 'corrected'])
             dat_all.plot(yscale = 'log', title = self.name, divisor = 1e5)
         
@@ -1345,11 +1348,11 @@ class TRPL_data(xy_data):
                 left = 0
             if right == None:
                 right = max(dat.x)
-            dat.plotstyle = dict(linestyle = '-', linewidth = 5, markersize = 5)
-            dat_max = dat.max_within(left = left, right = right)
-            dat_min = dat.min_within(left = left, right = right, absolute = True)
+            dat.plotstyle = dict(linestyle='-', linewidth=5, markersize=5)
+            #dat_max = dat.max_within(left = left, right = right)
+            #dat_min = dat.min_within(left = left, right = right, absolute = True)
             #dat_test.plot(yscale = 'log', bottom = dat_min*0.9, top = dat_max*1.1, left = left, right = right)
-            dat.plot(yscale = 'log', bottom = dat_min*0.9, top = dat_max*1.1, left = left, right = right)
+            dat.plot(yscale = 'log', left=left, right=right)
         
         return dat
 
@@ -1419,7 +1422,7 @@ class mTRPL_data(mxy_data):
             dafit_sa.append(dfit)
             if showparam:
                 dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
-                delta = d.residual(dfit)
+                delta = d.residual(dfit, relative=True)
                 print(f'chi**2 = {xy_data.chisquare(d, dfit, right = stop):.2e}')
                 delta.plot(right = stop, hline = 0, title = 'Residual plot')
                 md = mTRPL_data([d, dfit])
@@ -1438,7 +1441,7 @@ class mTRPL_data(mxy_data):
             dafit_sa.append(dfit)
             if showparam:
                 dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
-                delta = d.residual(dfit)
+                delta = d.residual(dfit, relative=True)
                 print(f'chi**2 = {xy_data.chisquare(d, dfit, right = stop):.2e}')
                 delta.plot(right = stop, hline = 0, title = 'Residual plot')
                 md = mTRPL_data([d, dfit])
@@ -1457,7 +1460,7 @@ class mTRPL_data(mxy_data):
             dafit_sa.append(dfit)
             if showparam:
                 dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
-                delta = d.residual(dfit)
+                delta = d.residual(dfit, relative=True)
                 print(f'chi**2 = {xy_data.chisquare(d, dfit, right = stop):.2e}')
                 delta.plot(right = stop, hline = 0, title = 'Residual plot')
                 md = mTRPL_data([d, dfit])
@@ -1477,7 +1480,7 @@ class mTRPL_data(mxy_data):
             dafit_sa.append(dfit)
             if showparam:
                 dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
-                delta = d.residual(dfit)
+                delta = d.residual(dfit, relative=True)
                 print(f'chi**2 = {xy_data.chisquare(d, dfit, right = stop):.2e}')
                 delta.plot(right = stop, hline = 0, title = 'Residual plot')
                 md = mTRPL_data([d, dfit])

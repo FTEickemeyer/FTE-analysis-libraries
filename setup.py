@@ -20,5 +20,10 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires = [
-    ]
+        'numpy',
+        'pandas',
+        'matplotlib',
+        'scipy',
+        'thot-cli'
+    ],
 )

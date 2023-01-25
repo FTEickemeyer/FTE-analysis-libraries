@@ -195,7 +195,7 @@ def add_graph(db, fn, graph):
     
     asset_prop = dict(name = 'plt_'+fn, type = 'graph', file = fn)
     asset_filepath = db.add_asset(asset_prop)
-    graph.savefig(asset_filepath)
+    graph.savefig(asset_filepath, dpi=300, bbox_inches = "tight")
 
 
 def find(dic, assets, show_details = False):
@@ -204,6 +204,8 @@ def find(dic, assets, show_details = False):
         raise RuntimeError(f'{dic} in assets not found!')
     
     elif len(asts) > 1:
+        for ast in asts:
+            print(ast.metadata['orig_fn'])
         raise RuntimeError(f'{dic} found more than one instance!')
     
     else:
@@ -343,7 +345,8 @@ class exp_param:
             # PL peak (for the readjustment of the inbeam PL with fs PL)
             if PL_peak == None:
                 #self.PL_peak = 540
-                self.PL_peak = 700 #nm
+                #self.PL_peak = 700 #nm
+                PL_peak == None
                 #self.PL_peak = 750 #nm
                 #self.PL_peak = 790 #nm
                 #self.PL_peak = 800 #nm
@@ -362,8 +365,8 @@ class exp_param:
             self.laser_left = 414
             self.laser_right = 428
         elif self.excitation_laser == 422:
-            self.laser_left = 415
-            self.laser_right = 428
+            self.laser_left = 416
+            self.laser_right = 426
         elif self.excitation_laser == 657:
             self.laser_left = 640
             self.laser_right = 670
@@ -407,19 +410,19 @@ class PLQY_dataset:
         self.sample_name = sample_name
         self.param = param
         self.La_asset = La
-        self.La = load_spectrum(La)
+        self.La = load_spectrum(La).cut_data_outside(left=param.laser_left, right=param.laser_right)
         self.Lb_asset = Lb
-        self.Lb = load_spectrum(Lb)
+        self.Lb = load_spectrum(Lb).cut_data_outside(left=param.laser_left, right=param.laser_right)
         self.Lc_asset = Lc
-        self.Lc = load_spectrum(Lc)
+        self.Lc = load_spectrum(Lc).cut_data_outside(left=param.laser_left, right=param.laser_right)
         self.Pa_asset = Pa
-        self.Pa = load_spectrum(Pa)
+        self.Pa = load_spectrum(Pa).cut_data_outside(left=param.PL_left, right=param.PL_right)
         self.Pb_asset = Pb
-        self.Pb = load_spectrum(Pb)
+        self.Pb = load_spectrum(Pb).cut_data_outside(left=param.PL_left, right=param.PL_right)
         self.Pc_asset = Pc
-        self.Pc = load_spectrum(Pc)
+        self.Pc = load_spectrum(Pc).cut_data_outside(left=param.PL_left, right=param.PL_right)
         self.fs_asset = fs
-        self.fs = load_spectrum(fs)
+        self.fs = load_spectrum(fs).cut_data_outside(left=param.PL_left, right=param.PL_right)
         self.PL_peak = param.PL_peak
 
         self.all = spc.PEL_spectra([self.La, self.Lb, self.Lc, self.Pa, self.Pb, self.Pc, self.fs])
@@ -449,7 +452,7 @@ class PLQY_dataset:
         self.Vsq = Vsq(self.Eg) #V
     
         
-    def inb_oob_adjust(self, what = 'inb', adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = True, divisor = 1e3):
+    def inb_oob_adjust(self, what = 'inb', adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = True, show_inbeam_correction=False, divisor = 1e3):
         # adj_factor: manual adjustment factor. It is advisable to run this routine first with show_adjust_factor = True and then take this as a basis for the adj_factor
         # automatically calculate the factor
 
@@ -507,7 +510,7 @@ class PLQY_dataset:
         fssp = spc.PEL_spectra([sp_orig, sp])
         fssp.label([what, 'adjusted'])
         
-        fssp_lin_graph = fssp.plot(yscale = 'linear', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = show_plots)
+        fssp_lin_graph = fssp.plot(yscale = 'linear', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = show_plots or show_inbeam_correction)
         if save_plots:
             add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(linear).png', fssp_lin_graph)
         plt.close( fssp_lin_graph )
@@ -517,12 +520,12 @@ class PLQY_dataset:
             add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(semilog).png', fssp_log_graph)
         plt.close( fssp_log_graph )
         
-    def inb_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = False, divisor = 1e3):
-            self.inb_oob_adjust(what = 'inb', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, show_plots = show_plots, divisor = divisor)
+    def inb_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = False, show_inbeam_correction=True, divisor = 1e3):
+            self.inb_oob_adjust(what = 'inb', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, show_plots = show_plots, show_inbeam_correction=show_inbeam_correction, divisor = divisor)
     def oob_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = False, divisor = 1e3):
             self.inb_oob_adjust(what = 'oob', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, show_plots = show_plots, divisor = divisor)
 
-    def calc_abs(self, what = 'inb', save_plots = False, show_plot = False):
+    def calc_abs(self, what = 'inb', save_plots = False, show_plot = False, return_A = False):
         #Calculates the absorptance spectrum from the fs and inbeam or outofbeam PL spectrum
         if what == 'inb':
             sp_orig = self.Pc_orig
@@ -548,35 +551,40 @@ class PLQY_dataset:
             add_graph(self.db, f'{self.sample_name}_absorptance_with_{what}.png', abs_graph)
         
         plt.close( abs_graph )
+        
+        if return_A:
+            return s
            
 
         
         
     def calc_PLQY(self, eval_Pa = False, show = False, show_plots = False, save_plots = False, show_lum = 'log'):
         
-        La = self.La.photonflux(start = self.param.laser_left, stop = self.param.laser_right)
-        Lb = self.Lb.photonflux(start = self.param.laser_left, stop = self.param.laser_right)
-        Lc = self.Lc.photonflux(start = self.param.laser_left, stop = self.param.laser_right)
+        La = self.La.calc_integrated_photonflux(start = self.param.laser_left, stop = self.param.laser_right)
+        Lb = self.Lb.calc_integrated_photonflux(start = self.param.laser_left, stop = self.param.laser_right)
+        Lc = self.Lc.calc_integrated_photonflux(start = self.param.laser_left, stop = self.param.laser_right)
 
         if eval_Pa:
-            Pa = self.Pa.photonflux(start = self.param.PL_left, stop = self.param.PL_right)
+            Pa = self.Pa.calc_integrated_photonflux(start = self.param.PL_left, stop = self.param.PL_right)
         else:
             Pa = 0
 
         if self.param.eval_Pb:
-            Pb = self.Pb.photonflux(start = self.param.PL_left, stop = self.param.PL_right)
+            Pb = self.Pb.calc_integrated_photonflux(start = self.param.PL_left, stop = self.param.PL_right)
         else:
             Pb = 0
 
-        Pc = self.Pc.photonflux(start = self.param.PL_left, stop = self.param.PL_right)
+        Pc = self.Pc.calc_integrated_photonflux(start = self.param.PL_left, stop = self.param.PL_right)
 
         Pb = Pb - Pa
         Pc = Pc - Pa
         A = 1 - Lc/Lb
         PLQY = (Pc - (1 - A) * Pb) / (La * A)
 
-        laser_graph = self.L.plot(yscale = 'linear', left = self.param.laser_left, right = self.param.laser_right, title = 'Laser signal', showindex = False, in_name = self.param.laser_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = show_plots)
-        PL_graph = self.P.plot(yscale = show_lum, left = self.param.PL_left, right = self.param.PL_right, divisor = 1e7, title = 'Luminescence signal', showindex = False, in_name = self.param.PL_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = show_plots)
+        #laser_graph = self.L.plot(yscale = 'linear', left = self.param.laser_left, right = self.param.laser_right, title = 'Laser signal', showindex = False, in_name = self.param.laser_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = show_plots)
+        #PL_graph = self.P.plot(yscale = show_lum, left = self.param.PL_left, right = self.param.PL_right, divisor = 1e7, title = 'Luminescence signal', showindex = False, in_name = self.param.PL_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = show_plots)
+        laser_graph = self.L.plot(yscale = 'linear', left = self.param.laser_left, right = self.param.laser_right, title = 'Laser signal', showindex = False, figsize = (7,5), hline = 0, return_fig = True, show_plot = show_plots)
+        PL_graph = self.P.plot(yscale = show_lum, left = self.param.PL_left, right = self.param.PL_right, divisor = 1e7, title = 'Luminescence signal', showindex = False, figsize = (7,5), hline = 0, return_fig = True, show_plot = show_plots)
 
         if save_plots:
             add_graph(self.db, f'{self.sample_name}_L.png', laser_graph)
@@ -615,7 +623,7 @@ class PLQY_dataset:
         Calculates the absolute photon flux spectrum for nsuns excitation and saves it as self.absPFspec
         :param nsuns: number of suns
         """
-        PF = self.fs.photonflux(start = self.param.PL_left, stop = self.param.PL_right)
+        PF = self.fs.calc_integrated_photonflux(start = self.param.PL_left, stop = self.param.PL_right)
 
         # 1 sun photon flux
         #Bandgap in eV
@@ -630,7 +638,7 @@ class PLQY_dataset:
         sp.y = sp.y * fac
         sp = sp.cut_data_outside(left = self.param.PL_left, right = self.param.PL_right)
         
-        PF_new = sp.photonflux(start = self.param.PL_left, stop = self.param.PL_right)
+        PF_new = sp.calc_integrated_photonflux(start = self.param.PL_left, stop = self.param.PL_right)
         #print(f'PF of absolute spectrum: {PF_new:.1e} 1/(s m2) (PLQY {self.PLQY:.1e})')
         #print(f'sun_PF = {sun_PF:.1e}, Eg = {Eg:.2f} eV, PL peak = {self.PL_peak:.0f} nm')
         self.absolutePFspec = sp

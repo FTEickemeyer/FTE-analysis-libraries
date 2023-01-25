@@ -12,7 +12,8 @@ from scipy.interpolate import interp1d
 import sys
 import numpy as np
 import pandas as pd
-from os.path import join
+from os.path import join, dirname
+import pathlib
 import math
 import matplotlib.pyplot as plt
 from importlib import reload
@@ -460,18 +461,21 @@ class IV_data(xy_data):
         return IV
 
     @staticmethod
-    def load(data_dir, sample, data_format, cell_area = 1, light_int = 100, delimiter = ',', header = 'infer', quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, 
-         take_quants_and_units_from_file = False, J_1sun = None, reverse_scan = True, raw_data = False, print_lines = False):
+    def load(filepath_or_directory, FN = '', data_format = 'csv', cell_area = 1, light_int = 100, delimiter = ',', header = 'infer', quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, 
+         take_quants_and_units_from_file = False, J_1sun = None, reverse_scan = True, raw_data = False, print_lines = False, **kwargs):
 
+        fp = join(filepath_or_directory, FN)
+        FN = pathlib.Path(fp)
+        directory = dirname(fp)
         if data_format == 'Igor':
-            IV = IV_data.load_Igor_IV(data_dir, sample, print_lines = print_lines)
+            IV = IV_data.load_Igor_IV(directory, FN = FN, print_lines = print_lines)
         elif data_format == 'csv':
-            xy = xy_data.load(data_dir, sample, delimiter = delimiter, header = header, quants = quants, units = units, 
-                                   take_quants_and_units_from_file = take_quants_and_units_from_file)
-            IV = IV_data(xy.x, xy.y, cell_area = cell_area, light_int = light_int, sweep_dir = None, name = sample, Voc = None, Jsc = None, quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, )
+            xy = xy_data.load(filepath_or_directory, FN = FN, delimiter = delimiter, header = header, quants = quants, units = units, 
+                                   take_quants_and_units_from_file = take_quants_and_units_from_file, **kwargs)
+            IV = IV_data(xy.x, xy.y, cell_area = cell_area, light_int = light_int, sweep_dir = None, name = FN.stem, Voc = None, Jsc = None, quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, **kwargs)
             #IV.y = -IV.y
         elif data_format == 'Biologic-CV':
-            IV = IV_data.load_Biologic_CV(data_dir, sample, cell_area = cell_area, light_int = light_int, J_1sun = J_1sun, reverse_scan = reverse_scan, raw_data = raw_data)
+            IV = IV_data.load_Biologic_CV(directory, FN = FN, cell_area = cell_area, light_int = light_int, J_1sun = J_1sun, reverse_scan = reverse_scan, raw_data = raw_data)
     
         return IV
     
@@ -1217,13 +1221,7 @@ class IV_data(xy_data):
             Vocsq = d.y_of(bg, interpolate = True)
         else:
             if illumspec_eV == None:
-                # Load Astmg173 spectrum
-                AM15_nm = diff_spectrum.load_ASTMG173()
-                AM15_nm.equidist()
-                #AM15_nm.plot(left = 300, right = 1000)    
-                AM15_eV = AM15_nm.nm_to_eV()
-                AM15_eV.equidist(left = 0.414, right = 4.27, delta = 0.001)
-                #AM15_eV.plot()
+                AM15_eV = diff_spectrum.AM15_eV()
                 if light_int != None:
                     AM15_eV.y = AM15_eV.y * light_int/100
                 illumspec_eV = AM15_eV
@@ -1281,9 +1279,9 @@ class IV_data(xy_data):
             if light_int != None:
                 AM15_eV.y = AM15_eV.y * light_int/100
             illumspec_eV = AM15_eV
-            
-        Vsq = IV_data.SQ_limit_Voc(bg, illumspec_eV)
-        Jsq = IV_data.SQ_limit_Jsc(bg, illumspec_eV)
+        
+        Vsq = IV_data.SQ_limit_Voc(bg, illumspec_eV, light_int = light_int, from_file = False)
+        Jsq = IV_data.SQ_limit_Jsc(bg, illumspec_eV, light_int = light_int)
         
         return fivep(cell_area = 1, Voc = Vsq, Jsc = Jsq, nid = 1, Rs = 0, Rsh = np.inf)
     
