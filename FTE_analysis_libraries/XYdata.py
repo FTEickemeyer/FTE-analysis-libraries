@@ -1166,7 +1166,7 @@ class mxy_data:
     def plot(self, title = '', xscale = 'linear', yscale = 'linear', left = None, right = None, 
              bottom = None, divisor = None, top = None, plotstyle = 'auto', showindex = False, in_name = [], not_in_name = None,
              plot_table = False, cell_text = None, row_labels = None, col_labels = None,
-             bbox = [0.3, 0.25, 0.1, 0.5], figsize=(9,6), hline = None, vline = None, nolabel = False, 
+             bbox = [0.3, 0.25, 0.1, 0.5], figsize=(9,6), hline = None, hline_colors = None, vline = None, vline_colors = None, nolabel = False, 
              return_fig = False, show_plot = True, **kwargs):
 
         """
@@ -1336,16 +1336,30 @@ class mxy_data:
         if hline != None:
             if type(hline) == list:
                 for idx, n in enumerate(hline):
-                    plt.axhline(y = n, color='black', linestyle='-')    
+                    if hline_colors is not None:
+                        color = hline_colors[idx]
+                    plt.axhline(y = n, color=color, linestyle='-')    
             else:
-                plt.axhline(y = hline, color='black', linestyle='-')
+                if hline_colors is not None:
+                    color = hline_colors
+                else:
+                    color = 'b'
+                plt.axhline(y = hline, color=color, linestyle='-')
 
         if vline != None:
             if type(vline) == list:
                 for idx, n in enumerate(vline):
-                    plt.axvline(x = n, color='r', linestyle='-')    
+                    if vline_colors is not None:
+                        color = vline_colors[idx]
+                    else:
+                        color = 'r'
+                    plt.axvline(x = n, color=color, linestyle='-')    
             else:
-                plt.axvline(x = vline, color='r', linestyle='-')
+                if vline_colors is not None:
+                    color = vline_colors
+                else:
+                    color = 'r'
+                plt.axvline(x = vline, color=color, linestyle='-')
         
         if show_plot:
             plt.show()

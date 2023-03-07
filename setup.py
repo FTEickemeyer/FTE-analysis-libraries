@@ -5,7 +5,7 @@ with open( 'README.md', 'r' ) as f:
 
 setuptools.setup(
     name='fte-analysis-libraries',
-    version = '0.0.2',
+    version = '0.0.3',
     author='Felix Eickemeyer',
     author_email = 'Felix.Eickemeyer@EPFL.ch',
     description = 'An assortment of analysis libraries.',

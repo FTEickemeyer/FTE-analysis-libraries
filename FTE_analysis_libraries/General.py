@@ -226,8 +226,8 @@ def save_ok(TFN, quitted = None):
 
     if (quitted == False) or (quitted == None):
         my_file = Path(TFN)
-        if my_file.is_file():
-            print(f'Warning: File {my_file} exists!')
+        if my_file.is_file() or my_file.is_dir():
+            print(f'Warning: "{my_file}" exists!')
             
             execute_loop = True
             while execute_loop:
@@ -237,16 +237,16 @@ def save_ok(TFN, quitted = None):
                     input_var = input("Override? (yes: y, no: n, quit: q): ")
                 if input_var == 'y':
                     save_ok = True
-                    print('File overwritten!')
+                    print('File/path overwritten!')
                     execute_loop = False
                 elif input_var == 'n':
                     save_ok = False
-                    print('File not saved!')
+                    print('File/path not saved!')
                     execute_loop = False
                 elif input_var == 'q':
                     save_ok = False
                     quitted = True
-                    print('File not saved, saving process quitted!')
+                    print('File/path not saved, saving process quitted!')
                     execute_loop = False
                 else:
                     print('Input not valid!')            
