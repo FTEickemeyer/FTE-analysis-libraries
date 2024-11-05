@@ -5,8 +5,10 @@ Spyder Editor
 This is a temporary script file.
 """
 
+import platform
 import math
 import numpy as np
+import pandas as pd
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
@@ -16,6 +18,7 @@ from pathlib import Path
 import sys
 from os.path import join
 import warnings
+from numbers import Number
 
 if sys.platform == 'Win32':
     import winsound
@@ -34,6 +37,8 @@ epsilon_0 = 8.8541878128e-12 #F/m = C /(Vm) = As / Vm (vacuum electric permittiv
 F =  96485.3321233 #C·mol−1 (Faraday constant)
 R = 0.99999999965e-3 #kg/mol (molar gas constant)
 f1240 = h * c / q / 1e-9
+m_e = 9.1093837015e-31 #kg (electron mass)
+N_A = 6.02214076e23 # 1/mol Avogadro constant
 
 
 class color:
@@ -65,7 +70,11 @@ def color_list(n):
 #colors = mcolors.TABLEAU_COLORS
 #colors = mcolors.CSS4_COLORS
 #col_names = list(colors)
-colors = color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10) # Will give 60 colors
+colors = color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10)+color_list(10) # Will give 120 colors
+
+CSS_colors = mcolors.CSS4_COLORS
+by_hsv = sorted((tuple(mcolors.rgb_to_hsv(mcolors.to_rgb(color))), name) for name, color in CSS_colors.items())
+CSS_col_names = [name for hsv, name in by_hsv]
 
 
 # This function rounds a float to 'sig' significant figures
@@ -106,6 +115,27 @@ def int_arr(arr_x, arr_y, newarr_x, kind = 'cubic'):
         arr_int_y[i] = arr_interp(new_x)
     return arr_int_y
 
+def df_interpolate(df, new_index_arr):
+    """
+    Generates an interpolated dataframe, where the index of df is replaced by new_index_arr.
+
+    Parameters
+    ----------
+    df : pandas dataframe
+        The dataframe to be interpolated.
+    new_index_arr : numpy array
+        The new index.
+
+    Returns
+    -------
+    pandas dataframe
+        with new index.
+
+    """
+    r = pd.Index(new_index_arr)
+    t = df.index
+    return df.reindex(t.union(r)).interpolate('index').loc[r]
+
 def findind(arr, value, show_warnings = False):
     """
     Works only for ascending or descending arrays!
@@ -134,7 +164,11 @@ def findind_exact(array, value):
     """
     return np.where(array == value)[0][0]
 
-def linfit(array_x, array_y, von, bis):
+def linfit(array_x, array_y, von=None, bis=None):
+    if von == None:
+        von = array_x[0]
+    if bis == None:
+        bis = array_y[-1]
     m, b = np.polyfit(array_x[findind(array_x,von):findind(array_x,bis)], array_y[findind(array_x,von):findind(array_x,bis)], 1)
     return m, b
 
@@ -216,8 +250,8 @@ def save_ok(TFN, quitted = None):
 
     if (quitted == False) or (quitted == None):
         my_file = Path(TFN)
-        if my_file.is_file():
-            print(f'Warning: File {my_file} exists!')
+        if my_file.is_file() or my_file.is_dir():
+            print(f'Warning: "{my_file}" exists!')
             
             execute_loop = True
             while execute_loop:
@@ -227,16 +261,16 @@ def save_ok(TFN, quitted = None):
                     input_var = input("Override? (yes: y, no: n, quit: q): ")
                 if input_var == 'y':
                     save_ok = True
-                    print('File overwritten!')
+                    print('File/path overwritten!')
                     execute_loop = False
                 elif input_var == 'n':
                     save_ok = False
-                    print('File not saved!')
+                    print('File/path not saved!')
                     execute_loop = False
                 elif input_var == 'q':
                     save_ok = False
                     quitted = True
-                    print('File not saved, saving process quitted!')
+                    print('File/path not saved, saving process quitted!')
                     execute_loop = False
                 else:
                     print('Input not valid!')            
@@ -325,34 +359,90 @@ def idx_range(arr, left = None, right = None):
     
     #Ascending array
     if arr[-1] > arr[0]:
-        if left > right:
-            l = right
-            r = left
-        else:
-            l = left
-            r = right
-            
         if (l == None) or (l < min(arr)): 
             l = min(arr)
         if (r == None) or (r > max(arr)):
             r = max(arr)
-            
+
+        if l > r:
+            l = r
+            r = l
+                        
     #Descending array
     else:
-        if left < right:
-            l = right
-            r = left
-        else:
-            l = left
-            r = right
         if (r == None) or (r < min(arr)): 
             r = min(arr)
         if (l == None) or (l > max(arr)):
             l = max(arr)
+
+        if l < r:
+            l = r
+            r = l
     
     ra = range(findind(arr, l), findind(arr, r)+1)    
     
     return ra
+
+def scattered_boxplot(ax, x, notch=None, sym=None, vert=None, whis=None, positions=None, widths=None, patch_artist=None, bootstrap=None, usermedians=None, conf_intervals=None, meanline=None, showmeans=None, showcaps=None, showbox=None,
+                      showfliers="unif",
+                      hide_points_within_whiskers=False,
+                      boxprops=None, labels=None, flierprops=None, medianprops=None, meanprops=None, capprops=None, whiskerprops=None, manage_ticks=True, autorange=False, zorder=None, *, data=None,
+                      alpha=0.2,marker="o", facecolors='none', edgecolors="k"):
+    if showfliers=="classic":
+        classic_fliers=True
+    else:
+        classic_fliers=False
+    ax.boxplot(x, notch=notch, sym=sym, vert=vert, whis=whis, positions=positions, widths=widths, patch_artist=patch_artist, bootstrap=bootstrap, usermedians=usermedians, conf_intervals=conf_intervals, meanline=meanline, showmeans=showmeans, showcaps=showcaps, showbox=showbox,
+               showfliers=classic_fliers,
+               boxprops=boxprops, labels=labels, flierprops=flierprops, medianprops=medianprops, meanprops=meanprops, capprops=capprops, whiskerprops=whiskerprops, manage_ticks=manage_ticks, autorange=autorange, zorder=zorder,data=data)
+    N=len(x)
+    datashape_message = ("List of boxplot statistics and `{0}` "
+                             "values must have same the length")
+    # check position
+    if positions is None:
+        positions = list(range(1, N + 1))
+    elif len(positions) != N:
+        raise ValueError(datashape_message.format("positions"))
+
+    positions = np.array(positions)
+    if len(positions) > 0 and not isinstance(positions[0], Number):
+        raise TypeError("positions should be an iterable of numbers")
+
+    # width
+    if widths is None:
+        widths = [np.clip(0.15 * np.ptp(positions), 0.15, 0.5)] * N
+    elif np.isscalar(widths):
+        widths = [widths] * N
+    elif len(widths) != N:
+        raise ValueError(datashape_message.format("widths"))
+
+    if hide_points_within_whiskers:
+        import matplotlib.cbook as cbook
+        from matplotlib import rcParams
+        if whis is None:
+            whis = rcParams['boxplot.whiskers']
+        if bootstrap is None:
+            bootstrap = rcParams['boxplot.bootstrap']
+        bxpstats = cbook.boxplot_stats(x, whis=whis, bootstrap=bootstrap,
+                                       labels=labels, autorange=autorange)
+    for i in range(N):
+        if hide_points_within_whiskers:
+            xi=bxpstats[i]['fliers']
+        else:
+            xi=x[i]
+        if showfliers=="unif":
+            jitter=np.random.uniform(-widths[i]*0.5,widths[i]*0.5,size=np.size(xi))
+        elif showfliers=="normal":
+            jitter=np.random.normal(loc=0.0, scale=widths[i]*0.1,size=np.size(xi))
+        elif showfliers==False or showfliers=="classic":
+            return
+        else:
+            raise NotImplementedError("showfliers='"+str(showfliers)+"' is not implemented. You can choose from 'unif', 'normal', 'classic' and False")
+
+        plt.scatter(positions[i]+jitter,xi,alpha=alpha,marker=marker, facecolors=facecolors, edgecolors=edgecolors)
+
+setattr(plt.Axes, "scattered_boxplot", scattered_boxplot)
+
 
 if __name__ == "__main__":
     
@@ -395,3 +485,21 @@ def copy_to_clipboard(text):
 
     import pyperclip
     pyperclip.copy(text)
+    
+def win_long_fp(fp):
+    # If the os is windows: Transforms a filepath fp that is too long for windows into a windows readable filepath
+    # in all other cases it just returns fp
+    windows_long_file_prefix = '\\\\?\\'
+    if ((platform.system() == 'Windows') and (len(fp) > 255) and (not fp.startswith(windows_long_file_prefix))):
+        return windows_long_file_prefix + fp
+    else:
+        return fp
+
+def max_len(list_of_strings):
+    #finds the max length of the strings in a list
+    #This can be used e.g. in f-strings: print(f'{conditions[idx].ljust(max_len(conditions))}: text') T
+    n = 0
+    for string in list_of_strings:
+        if len(string) > n:
+            n = len(string)
+    return n

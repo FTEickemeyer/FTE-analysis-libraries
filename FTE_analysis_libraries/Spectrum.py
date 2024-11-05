@@ -107,15 +107,17 @@ class EQE_spectrum(spectrum):
         super().__init__(x, y, quants, units, name, plotstyle, check_data = check_data)
         
     @staticmethod
-    def EQE100(Eg, start=300, stop=4001, step=0.5):
+    def EQE100(Eg, start=300, stop=4001, step=0.5, name = ''):
         """
         Returns an EQE spectrum in % as a function of wavelength in nm from start to stop with a step size of 1 nm.
         Eg is the bandgap in eV.
         """
         Eg_nm = f1240/Eg
         x_arr = np.arange(start=start, stop=stop, step=step)
-        y_arr = [0 if x>Eg_nm else 100 for x in x_arr]
-        return EQE_spectrum(x = x_arr, y = y_arr, quants = dict(x='Wavelength', y='EQE'), units = dict(x='nm', y='%'))
+        y_arr = np.array([0 if x>Eg_nm else 100 for x in x_arr])
+        if name == '':
+            name = f'100 % EQE until cut off wavelength {Eg_nm: .0f} nm'
+        return EQE_spectrum(x = x_arr, y = y_arr, quants = dict(x='Wavelength', y='EQE'), units = dict(x='nm', y='%'), name = name)
 
     @staticmethod    
     def MMF_Eg(Eg, ref_EQE, sim_PF, ref_PF = 'AM15GT', left = 300, right = None, delta = 0.5):
@@ -124,11 +126,11 @@ class EQE_spectrum(spectrum):
         It is assumed a EQE spectrum which is 100% above Eg and 0 below.
         """
         Eg_nm = f1240/Eg
-        x_arr = np.arange(start = left, stop=int(Eg_nm), step=0.5)
+        x_arr = np.arange(start = left, stop = int(Eg_nm), step = delta)
         y_arr = np.ones(len(x_arr))
         sp = EQE_spectrum(x = x_arr, y = y_arr, quants = dict(x='Wavelength', y='EQE'), units = dict(x='nm', y=''))
         #return sp.MMF_test(ref_EQE, sim_PF, ref_PF, left = 300, right = Eg_nm, delta = 1)
-        return sp.MMF(ref_EQE, sim_PF, ref_PF, left = left, right = right, delta = delta)
+        return sp.MMF(ref_EQE, sim_PF, ref_PF = ref_PF, left = left, right = right, delta = delta)
 
     def MMF(self, ref_EQE, sim_PF, ref_PF = 'AM15GT', left = None, right = None, delta = None):
         """
@@ -207,7 +209,7 @@ class EQE_spectrum(spectrum):
         if sp != 'AM15GT':
             sp = sp.copy() # Otherwise the original lamp spectrum is changed with the function equidist
             if 'W' in sp.uy:
-                print('Attention(EQE_spectrum.calc_Jsc()): sp expects a photon flux spectrum not an irradiance spectrum!')
+                print('Attention(EQE_spectrum.calc_Jsc()): sp expects a spectral photon flux not an irradiance spectrum!')
 
         if self.ux == 'nm':
             if delta==None:
@@ -313,7 +315,8 @@ class abs_spectrum(spectrum):
         m = 1000/UE
         idx = self.x_idx_of(E_takeover)
         b = self.y[idx]
-        UE_fit = spectrum(self.x, np.exp(m * (self.x - E_takeover)) * b, quants = {"x": self.qx, "y": "Urbach energy fit"}, units = {"x": self.ux, "y": ""})
+        # UE_fit = spectrum(self.x, np.exp(m * (self.x - E_takeover)) * b, quants = {"x": self.qx, "y": "Urbach energy fit"}, units = {"x": self.ux, "y": ""})
+        UE_fit = spectrum(self.x, np.exp(m * (self.x - self.x[idx])) * b, quants = {"x": self.qx, "y": "Urbach energy fit"}, units = {"x": self.ux, "y": ""})
         self.y[0:idx] = UE_fit.y[0:idx] 
         
     
@@ -354,9 +357,6 @@ class abs_spectrum(spectrum):
 
         if return_fig:
             return graph
-
-
-
 
 
     def emission_pf(self, E_start, E_stop, T = T_RT):
@@ -674,10 +674,12 @@ class diff_spectrum(spectrum):
 
     
     @staticmethod
-    def load_ASTMG173(y_unit = 'Spectral photon flux', warning = True):
+    def load_ASTMG173(y_unit = 'Spectral photon flux', warning = True, spectrum = 'AM1.5GT'):
 
         """
-        Loads the AM1.5GT spectrum.
+        spectrum == 'AM1.5GT': Loads the AM1.5GT spectrum.
+        spectrum == 'Etr': Loads the extraterrestrial spectrum.
+        spectrum == 'direct': Loads the direct+circumsolar spectrum.
         y_unit: Either 'Spectral photon flux' ('PF') or 'Spectral irradiance ('Spectral flux', 'SF')
         warning: If True it prints a warning that the Wavelengths are not evenly spaced and that rather the function AM15_nm or AM15_eV should be used.
         """
@@ -687,7 +689,13 @@ class diff_spectrum(spectrum):
         
         dat = pd.read_excel(join(system_dir, ASTMG173), header = 1)
         dat_nm = np.array(dat, dtype = np.float64)[:,0] # wavelength data in nm
-        dat_SF = np.array(dat, dtype = np.float64)[:,2] # spectral irradiance in W/(m2 nm)
+        if spectrum == 'AM1.5GT':
+            dat_SF = np.array(dat, dtype = np.float64)[:,2] # spectral irradiance in W/(m2 nm)
+        elif spectrum == 'Etr':
+            dat_SF = np.array(dat, dtype = np.float64)[:,1] # spectral irradiance in W/(m2 nm)
+        elif spectrum == 'direct':
+            dat_SF = np.array(dat, dtype = np.float64)[:,3] # spectral irradiance in W/(m2 nm)        
+
         dat_PF = dat_SF * dat_nm * 1e-09 / (h * c) # photon flux (PF) in photons / (s m2 nm)
         
         x = dat_nm 
@@ -722,6 +730,7 @@ class diff_spectrum(spectrum):
         
         AM15 = diff_spectrum.load_ASTMG173(y_unit = y_unit, warning = False)
         AM15.equidist(left = left, right = right, delta = delta)
+        AM15.name += ' (AM1.5GT)'
         #AM15_nm.plot(left = 300, right = 1000)    
         return AM15
         
@@ -736,6 +745,54 @@ class diff_spectrum(spectrum):
         AM15eV.equidist(left = left, right = right, delta = delta)
         #AM15_eV.plot()
         return AM15eV
+    
+    @staticmethod
+    def AM15direct_nm(left = 280, right = 4000, delta = 1, y_unit = 'Spectral photon flux'):
+        """
+        Returns the AM1.5 direct and circumsolar photon flux spectrum as a function of wavlelength in nm.
+        """
+        
+        AM15direct = diff_spectrum.load_ASTMG173(y_unit = y_unit, warning = False, spectrum = 'direct')
+        AM15direct.equidist(left = left, right = right, delta = delta)
+        AM15direct.name += ' (AM1.5 direct+circumsolar)'
+        #AM15_nm.plot(left = 300, right = 1000)    
+        return AM15direct
+        
+    @staticmethod
+    def AM15direct_eV(left = 0.310, right = 4.428, delta = 0.001, y_unit = 'Spectral photon flux'):
+        """
+        Returns the AM1.5 GT photon flux spectrum as a function of photon energy in eV.
+        """
+        
+        AM15directnm = diff_spectrum.AM15direct_nm(y_unit = y_unit)
+        AM15directeV = AM15directnm.nm_to_eV()
+        AM15directeV.equidist(left = left, right = right, delta = delta)
+        #AM15_eV.plot()
+        return AM15directeV
+    
+    @staticmethod
+    def Etr_nm(left = 280, right = 4000, delta = 1, y_unit = 'Spectral photon flux'):
+        """
+        Returns the extraterrestrial photon flux spectrum as a function of wavlelength in nm.
+        """
+        
+        Etr = diff_spectrum.load_ASTMG173(y_unit = y_unit, warning = False, spectrum = 'Etr')
+        Etr.equidist(left = left, right = right, delta = delta)
+        Etr.name += ' (Extraterrestrial)'
+        #AM15_nm.plot(left = 300, right = 1000)    
+        return Etr
+        
+    @staticmethod
+    def Etr_eV(left = 0.310, right = 4.428, delta = 0.001, y_unit = 'Spectral photon flux'):
+        """
+        Returns the extraterrestrial photon flux spectrum as a function of photon energy in eV.
+        """
+        
+        Etrnm = diff_spectrum.Etr_nm(y_unit = y_unit)
+        EtreV = Etrnm.nm_to_eV()
+        EtreV.equidist(left = left, right = right, delta = delta)
+        #AM15_eV.plot()
+        return EtreV
     
     @staticmethod
     def load_OSRAM930(y_unit = 'Spectral photon flux'):
@@ -883,14 +940,14 @@ class diff_spectrum(spectrum):
                 new = self.product(cf, qy = 'Spectral illuminance', uy = 'lm/[m2 nm]')
                 return np.trapz(new.y, dx = new.x[1]-new.x[0]) # lx = lm/m2
             elif self.uy == '1/[s m2 nm]':
-                self_sf = self.pf_to_sf()
+                self_sf = self.photonflux_to_irradiance()
                 new = self_sf.product(cf, qy = 'Spectral illuminance', uy = 'lm/[m2 nm]')
                 return np.trapz(new.y, dx = new.x[1]-new.x[0]) # lx = lm/m2
             elif self.uy == ('lm/[m2 nm]') or (self.uy == 'lx/nm'):
                 return np.trapz(self.y, dx = self.x[1]-self.x[0]) # lx = lm/m2
 
             else:
-                print('Attention (calc_lux): This function works only for spectral irradiances in W/m2 or photon flux in 1/[s m2 nm],')
+                print('Attention (calc_lux): This function works only for spectral irradiances in W/[m2 nm] or photon flux in 1/[s m2 nm],')
                 print('or for spectral illuminance in lm/[m2 nm] or lx/nm!')
         else:
             print('Attention(calc_lux): This function works only if ux = nm!')            
@@ -917,7 +974,7 @@ class diff_spectrum(spectrum):
 
         """
         if ((self.uy == 'W/[m2 nm]') and (self.ux =='nm')) or ((self.uy == 'W/[m2 eV]') and (self.ux =='eV')):
-            return np.trapz(self.y, dx = self.x[1]-self.x[0]) # W/m2
+            return np.trapz(self.y, dx = self.x[1]-self.x[0])*1e-1 # mW/cm2
         else:
 
             print('Attention (calc_irradiance): uy has to be either in W/[m2 nm] or W/[m2 eV] and ux in nm or eV, respectively!')
@@ -939,6 +996,46 @@ class diff_spectrum(spectrum):
         units = {"x": "eV", "y": ""}
         name = 'BB spectrum'
         return diff_spectrum(x_eV, BB, quants = quants, units = units, name = name)    
+    
+    def integrated_current(self, EQE=None):
+        # Calculates an integrated current plot as a function of wavelength
+        # Works only with photon flux spectrum
+        # EQE in % and as a function fo wavelength
+        # if EQE==1 then EQE is assumed 100% throughout the spectrum
+    
+        sp = self.copy()
+        if EQE is None:
+            e = EQE_spectrum.EQE100(Eg=0.1)
+        else:
+            e = EQE.copy()
+        left = max(sp.x[0], e.x[0])
+        right = min(sp.x[-1], e.x[-1]) 
+        sp.equidist(left=left, right=right, delta=1)
+        e.equidist(left=left, right=right, delta=1)
+        sp_times_e = sp*e/100
+        int_curr_y = q*np.array([np.trapz(sp_times_e.y[0:idx], dx=1)*1e3/1e4 for idx in range(len(sp_times_e.x))]) # mA/cm2]
+        return diff_spectrum(x=sp_times_e.x, y=int_curr_y, quants=dict(x='Wavelength', y='Integrated current density'), units=dict(x='nm', y='mA/cm2'))
+
+
+    def integrated_irradiance(self):
+        # Calculates an integrated irradiance plot as a function of wavelength
+        # Works only with spectral irradiance
+    
+        int_irr_y = np.array([np.trapz(self.y[0:idx], dx=self.x[1]-self.x[0])*1e3/1e4 for idx in range(len(self.x))]) # mW/cm2]
+        return diff_spectrum(x=self.x, y=int_irr_y, quants=dict(x='Wavelength', y='Integrated irradiance'), units=dict(x='nm', y='mW/cm2'))
+    
+
+    def calculate_irradiance_illuminance(self, left=400, right=720, show=True):
+
+        sp_new = self.copy().cut_data_outside(left=left, right=right)
+        sp_irr = sp_new.photonflux_to_irradiance()
+        irr = sp_irr.calc_irradiance()
+        ill = sp_new.calc_illuminance()
+        if show:
+            print(f'__{sp_new.name}')
+            print(f'The irradiance is {irr:.3e} mW/cm2')
+            print(f'The illuminance is {ill:.0f} lx')
+        return irr, ill
     
 class PEL_spectrum(diff_spectrum):   
     """
@@ -1323,7 +1420,7 @@ class spectra(mxy_data):
         return same_range
     
     
-    def equidist(self, left, right, delta):
+    def equidist(self, left, right, delta, kind='cubic'):
         """
         Change x values so that they are equidistant with a delta of delta for all spectra in the same way. 
         x ranges from start to stop. 
@@ -1333,7 +1430,7 @@ class spectra(mxy_data):
             print('Warning: Not all spectra have the same x-range!')
             
         for i, spec in enumerate(self.sa):
-            spec.equidist(left = left, right = right, delta = delta)
+            spec.equidist(left = left, right = right, delta = delta, kind=kind)
             
             self.n_y = len(self.sa)
             self.n_x = len(self.sa[0].x)
@@ -1612,8 +1709,9 @@ class PEL_spectra(diff_spectra):
         return result.x[0]
 
         
-    def inb_oob_adjust(self, factor = 1):
+    def _inb_oob_adjust(self, factor = 1):
         """
+        Probably a very old version, the current one is in module PLQY.py
         Multiplies the freespace spectrum with constant factor.
         The aim is to have the low energy tail of fs and ip measurement equal.
         The first spectrum of self.sa should be the ip one and the secon one the fs one.
@@ -1696,9 +1794,11 @@ def calc_laser_power(laser_nm, bg_eV = None, pf = None, A = None, Nsun = None, o
             if laser_nm == 405:
                 A = pi/4 * 533.5e-6 * 715.0e-6 #m2 for 403 nm laser
             elif laser_nm == 420:
-                A = pi/4 * 418e-6 * 495e-6 #m2 for 422 nm laser
+                #A = pi/4 * 418e-6 * 495e-6 #m2 for 422 nm laser, old lab CH G1 522
+                A = pi/4 * 1598.87e-6*1876.48e-6 #m2 for 422 nm laser, new lab CH B1 365, measured October 2023                
             elif laser_nm == 660:
-                A = pi/4 * 693.0e-6 * 891.0e-6  #m2 for 657 nm laser
+                #A = pi/4 * 693.0e-6 * 891.0e-6  #m2 for 657 nm laser, old lab CH G1 522
+                A = pi/4 * 1909.56e-6 * 2329.96e-6  #m2 for 657 nm laser, new lab CH B1 365, measured October 2023       
             d = math.sqrt(4*A/pi)*1e6
             if details:
                 print(f'The size of the eliptical laser spot equals a circular diameter of {d:.0f} um')

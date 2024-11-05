@@ -6,11 +6,13 @@ Created on Thu Mar 19 15:01:16 2020
 """
 
 # Import standard libraries and modules
-from os import listdir, getcwd
+import os
 from os.path import join
 import math
 import platform
 import pkg_resources
+import warnings
+import io
 
 import numpy as np
 import pandas as pd
@@ -20,13 +22,14 @@ from scipy.signal import butter,filtfilt, savgol_filter
 from scipy.interpolate import interp1d
 
 from .General import findind, findind_exact, int_arr, save_ok, q, k, T_RT, linfit, idx_range
+from . import General as gen
 
 
 system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
 
 class xy_data:
     
-    def __init__(self, x, y, quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, name = '', plotstyle = dict(linestyle = '-', color = 'black', linewidth = 3), check_data = True):
+    def __init__(self, x, y, quants = {"x": "x", "y": "y"}, units = {"x": None, "y": None}, name = '', plotstyle = dict(linestyle = '-', color = 'black', linewidth = 3), check_data = True):
         """
         x is a numpy array e.g. the wavelengths or photon energies
         y is a numpy array e.g. cts, cps, photon flux, spectral flux
@@ -37,10 +40,18 @@ class xy_data:
         """
         self.x = x
         self.y = y
-        self.qx = quants["x"]
-        self.qy = quants["y"]
-        self.ux = units["x"]
-        self.uy = units["y"]
+        if type(quants) == list:
+            self.qx = quants[0]
+            self.qy = quants[1]
+        else:
+            self.qx = quants["x"]
+            self.qy = quants["y"]
+        if type(units) == list:
+            self.ux = units[0]
+            self.uy = units[1]
+        else:
+            self.ux = units["x"]
+            self.uy = units["y"]
         self.name = name
         self.plotstyle = plotstyle
         if check_data:
@@ -105,7 +116,47 @@ class xy_data:
             s.y = s.y / other
         return s
             
+    @classmethod
+    def from_df(cls, df, y_col= 0, take_quants_and_units_from_df= True, **kwargs):
+        #The index is taken as
+        #y_col can be either an integer to denote the y_colth column or a column name
+    
+        x = df.index.values
+    
+        if isinstance(y_col, int):
+            y_col = df.columns[y_col]
+            y = df[y_col].values
+        elif y_col in df.columns:
+            y = df[y_col]
+        else:
+            y = x*0
+            print('Attention (df_to_xy): y_col is not a valid column!')
+    
+        if take_quants_and_units_from_df:
+            qx_ux = df.index.name.split(' (')
+            qx = qx_ux[0]
+            if len(qx_ux) == 2:
+                ux = qx_ux[1].split(')')[0]
+            else:
+                ux = None
+            qy_uy = y_col.split(' (')
+            qy = qy_uy[0]
+            if len(qy_uy) == 2:
+                uy = qy_uy[1].split(')')[0]
+            else:
+                uy = None
+                 
+        return cls(x, y, quants= [qx, qy], units= [ux, uy], **kwargs)
                 
+    def to_df(self):
+        col_name = self.qy
+        if self.uy is not None and self.uy != '':
+            col_name += f' ({self.uy})'
+        index_name = self.qx
+        if self.ux is not None and self.ux != '':
+            index_name += f' ({self.ux})'
+        return pd.DataFrame({index_name: self.x, col_name: self.y}).set_index(index_name)
+    
     def data_check(self):
         #Checks if the x-values are in ascending order and if there are nan values.
         #Returns True if data is ok and False if not.
@@ -238,11 +289,15 @@ class xy_data:
     
     def units(self):
         return dict(x=self.ux, y=self.uy)
+    
+    def qy_uy(self, qy, uy):
+        self.qy = qy
+        self.uy = uy
         
-    def plot(self, title = 'self.name', xscale = 'linear', yscale = 'linear', 
+    def plot(self, title = 'self.name', ax= None, xscale = 'linear', yscale = 'linear', 
              left = None, right = None, bottom = None, divisor = None, top = None,
              plot_table = False, cell_text = None, row_labels = None, 
-             hline = None, vline = None, figsize=(9,6), return_fig = False, show_plot = True):
+             hline = None, hline_colors = None, vline = None, vline_colors = None, figsize=(9,6), return_fig = False, show_plot = True, create_image_stream= False):
         """
         Plots the x and y data.
         examples for plotstyle:
@@ -254,49 +309,59 @@ class xy_data:
                     if show_plot == False and retrun_fig == True: It is important to close the figure with matplotlib.pyplot.plt.close(Figure), otherwise it will be shown.
         """
         
-        plt.rcParams.update({'font.size': 12})
-        fig = plt.figure(figsize=figsize)
-        if plot_table:
-            ax = fig.add_subplot(111)
+        if ax is not None:
+            show_plot = False
 
-        plt.xscale(xscale)
-        plt.yscale(yscale)
+        if ax is None:
+            plt.rcParams.update({'font.size': 12})
+            #plt.rc('text', usetex=True) Latex needs to be installed first
+            fig, ax = plt.subplots(figsize=figsize)
+            #if plot_table:
+            #    ax = fig.add_subplot(111)
+
+        ax.set_xscale(xscale)
+        ax.set_yscale(yscale)
 
         if left != None:
-            plt.xlim(left = left)
+            ax.set_xlim(left = left)
         if right != None:
-            plt.xlim(right = right)
+            ax.set_xlim(right = right)
             
         if bottom != None:
             if top == None:
                 bottom_, top = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
                 #top = max(self.y) + 0.1 * abs(max(self.y))
-            plt.ylim(bottom = bottom, top = top)
+            ax.set_ylim(bottom = bottom, top = top)
             
         if top != None:
             if bottom == None:
                 bottom, top_ = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
                 #bottom = min(self.y) - 0.1 * abs(min(self.y))
-            plt.ylim(bottom = bottom, top = top)
+            ax.set_ylim(bottom = bottom, top = top)
             
         if (bottom == None) and (top == None):
             bottom, top = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
-            plt.ylim(bottom = bottom, top = top)   
+            ax.set_ylim(bottom = bottom, top = top)   
 
-        plt.plot(self.x, self.y, **self.plotstyle)
+        ax.plot(self.x, self.y, **self.plotstyle)
 
-        plt.xlabel(f'{self.qx} ({self.ux})')
-        if self.uy == '':
-            plt.ylabel(f'{self.qy}')
+        if self.ux is not None and self.ux != '':
+            ax.set_xlabel(f'{self.qx} ({self.ux})')
         else:
-            plt.ylabel(f'{self.qy} ({self.uy})')
+            ax.set_xlabel(f'{self.qx}')
+            
+        if self.uy is not None and self.uy != '':
+            ax.set_ylabel(f'{self.qy} ({self.uy})')
+        else:
+            ax.set_ylabel(f'{self.qy}')
+            
         if title == 'self.name':
-            plt.title(self.name)
+            ax.set_title(self.name)
         else:
-            plt.title(title)
+            ax.set_title(title)
 
         if plot_table:
-            the_table = plt.table(cellText = cell_text, rowLabels = row_labels, loc='bottom',
+            the_table = ax.table(cellText = cell_text, rowLabels = row_labels, loc='bottom',
                                   bbox = [0.4, 0.2, 0.1, 0.7])  #bbox = [x0, y0, width, height])
             the_table.auto_set_font_size(False)
             the_table.set_fontsize(12)
@@ -305,17 +370,37 @@ class xy_data:
         if hline != None:
             if type(hline) == list:
                 for idx, n in enumerate(hline):
-                    plt.axhline(y = n, color='black', linestyle='-')    
+                    if hline_colors is not None:
+                        color = hline_colors[idx]
+                    ax.axhline(y = n, color=color, linestyle='-')    
             else:
-                plt.axhline(y = hline, color='black', linestyle='-')
+                if hline_colors is not None:
+                    color = hline_colors
+                else:
+                    color = 'b'
+                ax.axhline(y = hline, color=color, linestyle='-')
 
         if vline != None:
             if type(vline) == list:
                 for idx, n in enumerate(vline):
-                    plt.axvline(x = n, color='r', linestyle='-')    
+                    if vline_colors is not None:
+                        color = vline_colors[idx]
+                    else:
+                        color = 'r'
+                    ax.axvline(x = n, color=color, linestyle='-')    
             else:
-                plt.axvline(x = vline, color='r', linestyle='-')
-
+                if vline_colors is not None:
+                    color = vline_colors
+                else:
+                    color = 'r'
+                ax.axvline(x = vline, color=color, linestyle='-')
+            
+        if create_image_stream:
+            image_stream = io.BytesIO()
+            plt.savefig(image_stream)
+            if show_plot:
+                plt.show()
+            return image_stream
 
         #plt.legend()
         if show_plot:
@@ -382,7 +467,7 @@ class xy_data:
         plt.show()
 
         
-    def plot_linfit(self, von = None, bis = None, residue = False):
+    def plot_linfit(self, von = None, bis = None, residue = False, return_data = False):
         
         if von == None:
             von = min(self.x)
@@ -405,6 +490,8 @@ class xy_data:
             both = mxy_data([self, fit])
             both.label(['self.name', f'linear fit: m = {m:.2e}, b = {b:.2e}'])
             both.plot()
+        if return_data:
+            return both
             
         
     def load_old(directory, FN = '', delimiter = ',', header = 'infer', quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False):
@@ -415,7 +502,7 @@ class xy_data:
         """
         
         if FN == '':
-            FN = listdir(directory)[0]
+            FN = os.listdir(directory)[0]
         dat = pd.read_csv(join(directory, FN), delimiter = delimiter, header = header)
         
         x = np.array(dat, dtype = np.float64)[:,0]
@@ -438,20 +525,31 @@ class xy_data:
         return sp 
     
     @classmethod
-    def load(cls, directory, FN = '', delimiter = ',', header = 'infer', 
-             quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False,  check_data = True):
+    def load(cls, filepath_or_directory, FN = '', delimiter = ',', columns=(0, 1), header = 'infer', 
+             quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False,  check_data = True, name=None):
 
         """
         Loads a single xy data. If a filename is given it will be used, if not the first file in the directory will be used.
+        colunns: tuple which indicates which column is x and which is y.
         """
         
-        if FN == '':
-            FN = listdir(directory)[0]
+        if (FN == '') and os.path.isdir(filepath_or_directory):
+            FN = os.listdir(filepath_or_directory)[0]
+            file = join(filepath_or_directory, FN)
+        elif (filepath_or_directory == '') and os.path.isfile(FN):
+            file = FN
+        elif os.path.isfile(filepath_or_directory):
+            file = filepath_or_directory
+        elif os.path.isfile(join(filepath_or_directory, FN)):
+            file = join(filepath_or_directory, FN)
+        else:
+            warnings.warn("Attention: Not a valid file or directory!")
+            return
+
             
-        
+        #print(file)
         windows_long_file_prefix = '\\\\?\\'
         
-        file = join(directory, FN)
         if (
             ( platform.system() == 'Windows' ) and
             ( len( file ) > 255 ) and
@@ -464,8 +562,8 @@ class xy_data:
         #The conversion to np.float64 should be done after the conversion into an should be done
         #after the np.array() function. Then it is possible to also read in data where some columns
         #contain text.
-        x = np.array(dat)[:,0].astype(np.float64)
-        y = np.array(dat)[:,1].astype(np.float64)
+        x = np.array(dat)[:,columns[0]].astype(np.float64)
+        y = np.array(dat)[:,columns[1]].astype(np.float64)
         
         qx = quants["x"]
         qy = quants["y"]
@@ -483,8 +581,11 @@ class xy_data:
             qy = col1.split(' (')[0]
             if ' (' in col1:
                 uy = col1.split(' (')[1].split(')')[0]
+                
+        if name is None:
+            name = FN
         
-        return cls(x, y, quants = dict(x = qx, y = qy), units = dict(x = ux, y = uy), name = FN,  check_data = check_data)
+        return cls(x, y, quants = dict(x = qx, y = qy), units = dict(x = ux, y = uy), name = name,  check_data = check_data)
     
     def save(self, save_dir, FN, check_existing = True):
         
@@ -515,7 +616,7 @@ class xy_data:
         
         return fit 
     
-    def lowpass_filter(self, test = True, left = None, right = None, T = 5.0, fs = 30.0, cutoff = 0.7, order = 2, filter_only_from_left_to_right = False):
+    def lowpass_filter(self, test = False, yscale = 'log', left = None, right = None, T = 5.0, fs = 30.0, cutoff = 0.7, order = 2, filter_only_from_left_to_right = False):
     
         # Filter requirements.
         #T = 5.0         # Sample Period
@@ -552,9 +653,9 @@ class xy_data:
                 m_min = mxy.min_within(left = left, right = right)
                 if m_min < 0:
                     m_min = m_max/100
-                mxy.plot(yscale = 'log', left = left, right = right, bottom = m_min*0.9, top = m_max*1.1, title = 'Check if filter is ok')
+                mxy.plot(yscale = yscale, left = left, right = right, bottom = m_min*0.9, top = m_max*1.1, title = 'Check if filter is ok')
             else:
-                mxy.plot(yscale = 'log', title = 'Check if filter is ok')
+                mxy.plot(yscale = yscale, title = 'Check if filter is ok')
         elif test == False:
             self.y = y
             
@@ -569,6 +670,7 @@ class xy_data:
         return sgf 
     
     def residual(self, other, left = None, right = None, relative = False):
+        #Attention: selv and other have to have the same x_values!
         
         d = self.copy()
         
@@ -611,27 +713,30 @@ class xy_data:
 
         res = data.residual(fit, left = left, right = right)
         #return np.sum(np.array([res.y[i]**2/fit.y[i] for i in range(len(data.y))]))/len(data.y)
-        return np.sum(res.y**2/ fit.y[ra])/len(data.y[ra])
+        return np.sum(res.y**2/ np.abs(fit.y[ra]))/len(data.y[ra])
             
     def diff(self, left = None, right = None):
         
+        self_asc = self.copy()
+        self_asc.strictly_ascending()
+        
         if left == None:
-            left = min(self.x)
+            left = min(self_asc.x)
         if right == None:
-            right = max(self.x)
+            right = max(self_asc.x)
 
-        le = findind(self.x, left)
-        ri = findind(self.x, right)
+        le = findind(self_asc.x, left)
+        ri = findind(self_asc.x, right)
 
         ra = range(le, ri+1)
-        x = self.x[ra]
+        x = self_asc.x[ra]
         
-        dydx = np.gradient(self.y[ra], x)
+        dydx = np.gradient(self_asc.y[ra], x)
         name = f'First derivative of: {self.name}'
-        quants = dict(x = self.qx, y = f'd({self.qy})/d({self.qx})')
-        units = dict(x = self.ux, y = f'{self.uy}/{self.ux}')
+        quants = dict(x = self_asc.qx, y = f'd({self.qy})/d({self.qx})')
+        units = dict(x = self_asc.ux, y = f'{self.uy}/{self.ux}')
                 
-        return type(self)(x, dydx, quants = quants, units = units, name = name)
+        return type(self_asc)(x, dydx, quants = quants, units = units, name = name)
     
            
     def max_within(self, left = None, right = None):
@@ -750,14 +855,36 @@ class xy_data:
         self.x = self.x[::-1]
         self.y = self.y[::-1]
         
+    def swap_axes(self):
+        self_copy = self.copy()
+        new_x = self.y
+        new_y = self.x
+        new_qx = self.qy
+        new_qy = self.qx
+        new_ux = self.uy
+        new_uy = self.ux
+        
+        self_copy.x = new_x
+        self_copy.y = new_y
+        self_copy.qx = new_qx
+        self_copy.qy = new_qy
+        self_copy.ux = new_ux
+        self_copy.uy = new_uy
+
+        return self_copy
+        
     def remove_nan(self):
         # Removes all numpy.nan values in self.x and self.y (only gives sensible result if there is a nan in both x[i] and y[i])
         x_raw = self.x
         y_raw = self.y
-        self.x = x_raw[np.logical_not(np.isnan(x_raw))]
-        self.y = y_raw[np.logical_not(np.isnan(y_raw))]
-        if len(self.x) != len(self.y):
-            print('Attention: xy_data.remove_nan() gave an x-array and a y-array with different sizes. The reason could be that, e.g. x[i] = nan but x[i] = number')
+        
+        x_list = np.logical_not(np.isnan(x_raw))
+        y_list = np.logical_not(np.isnan(y_raw))
+        logic_list = [x_list[idx] and y_list[idx] for idx in range(len(x_list))]
+        self.x = x_raw[logic_list]
+        self.y = y_raw[logic_list]
+        #if len(self.x) != len(self.y):
+        #    print('Attention: xy_data.remove_nan() gave an x-array and a y-array with different sizes. The reason could be that, e.g. x[i] = nan but y[i] = number')
 
         
     def keep_interval(self, intval):
@@ -853,7 +980,13 @@ class xy_data:
         Shifts the x-values by x
         """
         self.x = self.x + x
-        self.y = self.y
+        
+    def shift_y(self, y):
+        """
+        Shifts the y-values by y
+        """
+        self.y = self.y + y
+
         
     def idx_range(self, left = None, right = None):
         # Returns the x-index range which goes from x = left to x = right
@@ -931,6 +1064,28 @@ class xy_data:
         
         return sp    
     
+    def monotoneous_ascending(self):
+        # Orders the data, so that x is monotoneous ascending
+        s = self.x.argsort()
+        self.x = self.x[s]
+        self.y = self.y[s]
+
+
+    def strictly_ascending(self):
+    # Transforms the data self, so that self.x is strictly ascending
+    # Important is that the data is monotoneous ascending. To accomplish this use
+    # the method monotoneous_ascending.
+        idx = 0
+        while True:
+            if idx == len(self.x)-1:
+                break
+            else:
+                if self.x[idx+1] > self.x[idx]:
+                    idx += 1
+                else:
+                    self.x = np.delete(self.x, idx+1)
+                    self.y = np.delete(self.y, idx+1)
+    
     
 class mxy_data:
     
@@ -948,6 +1103,9 @@ class mxy_data:
         for i, sp in enumerate(self.sa):
             new_sa.append(sp * other)
         return type(self)(new_sa)
+    
+    def __iter__(self):
+        return iter(self.sa)
         
     def qx_ux(self, qx, ux):
         for i, sp in enumerate(self.sa):
@@ -970,7 +1128,11 @@ class mxy_data:
         ms.n_x = self.n_x
         return ms
         
-    def add(self, data):
+    def add(self, data): #depreciated, use append
+        self.sa.append(data)
+        self.label_defined = False
+        
+    def append(self, data):
         self.sa.append(data)
         self.label_defined = False
         
@@ -1093,11 +1255,11 @@ class mxy_data:
                 print(sp.name)
         
     
-    def plot(self, title = '', xscale = 'linear', yscale = 'linear', left = None, right = None, 
-             bottom = None, divisor = None, top = None, plotstyle = 'auto', showindex = False, in_name = [],
+    def plot(self, title = '', ax= None, xscale = 'linear', yscale = 'linear', left = None, right = None, 
+             bottom = None, divisor = None, top = None, plotstyle = 'auto', showindex = False, in_name = [], not_in_name = None,
              plot_table = False, cell_text = None, row_labels = None, col_labels = None,
-             bbox = [0.3, 0.25, 0.1, 0.5], figsize=(9,6), hline = None, vline = None, nolabel = False, 
-             return_fig = False, show_plot = True, **kwargs):
+             bbox = [0.3, 0.25, 0.1, 0.5], figsize=(9,6), hline = None, hline_colors = None, vline = None, vline_colors = None, nolabel = False, 
+             return_fig = False, generate_image_stream=False, show_plot = True, ylabel=None, xlabel=None, create_image_stream= False, **kwargs):
 
         """
         Plots multiple xy-data of type xy_data. The axis title are taken from the first spectrum.
@@ -1113,6 +1275,9 @@ class mxy_data:
         kwargs = dict(fontsize = 24, legend = False, save_plot = True, plot_save_dir = save_dir, plot_FN = 'IV5 - transp. limit.png')
         """
         
+        if ax is not None:
+            show_plot = False
+
         self_old = self.copy()
         if in_name != []:
 
@@ -1137,51 +1302,73 @@ class mxy_data:
                     idx_list.append(idx)
     
             self = self.remain(idx_list)
+            
+        if not(not_in_name is None):
+            
+            def not_in_name_in_spec(not_in_name, spec):
+                
+                result = False
+    
+                for i, name in enumerate(not_in_name):
+                    
+                    if name in spec.name:
+                        result = True
+                        break
+    
+                return result
+            
+            idx_list = []
+            for idx, sp in enumerate(self.sa):                
+                if not(not_in_name_in_spec(not_in_name, sp)):
+                    idx_list.append(idx)
+    
+            self = self.remain(idx_list)
 
-        plt.rcParams.update({'font.size': 12})
+        if ax is None:
+            plt.rcParams.update({'font.size': 12})
+            #plt.rc('text', usetex=True) Latex needs to be installed first
+            fig, ax = plt.subplots(figsize=figsize)
+            #if plot_table:
+            #    ax = fig.add_subplot(111)
 
         if kwargs is not None:
             for key, value in kwargs.items():
                 if key == 'fontsize':
                     plt.rcParams.update({'font.size': value})
         
-        fig = plt.figure(figsize=figsize)
-        if plot_table:
-            ax = fig.add_subplot(111)
+        #if plot_table:
+        #    ax = fig.add_subplot(111)
         
-        plt.xscale(xscale)
-        plt.yscale(yscale)
+        ax.set_xscale(xscale)
+        ax.set_yscale(yscale)
         
-        if left != None:
-            plt.xlim(left = left)
-        else:
-            plt.xlim(left = self.sa[0].x[0])
-        #     left_idx = findind(self.sa[0].x, left)
-        # else:
-        #     left_idx = 0
-        if right != None:
-            plt.xlim(right = right)
-        else:
-            plt.xlim(right = self.sa[0].x[-1])
-        #     right_idx = findind(self.x, right)
-        # else:
-        #     right_idx = len(self.x)
-        # r = range(left_idx, right_idx)
+        if left is None:
+            left = self.sa[0].x[0]
+            for sp in self.sa:
+                if sp.x[0] < left:
+                    left = sp.x[0]
+        if right is None:
+            right = self.sa[0].x[-1]
+            for sp in self.sa:
+                if sp.x[-1] > right:
+                    right = sp.x[-1]
+        ax.set_xlim(left, right)
+        
         if bottom != None:
             if top == None:
                 bottom_, top = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
                 #top = max(self.sa[0].y) + 0.1 * abs(max(self.sa[0].y))
-            plt.ylim(bottom = bottom, top = top)
+            ax.set_ylim(bottom = bottom, top = top)
             
         if top != None:
             if bottom == None:
                 bottom, top_ = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
                 #bottom = min(self.sa[0].y) - 0.1 * abs(min(self.sa[0].y))
-            plt.ylim(bottom = bottom, top = top)
+            ax.set_ylim(bottom = bottom, top = top)
             
         if (bottom == None) and (top == None):
             bottom, top = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
-            plt.ylim(bottom = bottom, top = top)        
+            ax.set_ylim(bottom = bottom, top = top)        
             
             
         for i, spec in enumerate(self.sa):
@@ -1200,34 +1387,45 @@ class mxy_data:
             if self.label_defined and not(nolabel):
                 if plotstyle == 'auto':
                     if showindex == True:
-                        plt.plot(x[r], y[r], label = f'{i}: {self.lab[i]}')
+                        ax.plot(x[r], y[r], label = f'{i}: {self.lab[i]}')
                     else:
-                        plt.plot(x[r], y[r], label = self.lab[i])
+                        ax.plot(x[r], y[r], label = self.lab[i])
                 else:
                     if showindex == True:
-                        plt.plot(x[r], y[r], **spec.plotstyle, label = f'{i}: {self.lab[i]}')
+                        ax.plot(x[r], y[r], **spec.plotstyle, label = f'{i}: {self.lab[i]}')
                     else:
-                        plt.plot(x[r], y[r], **spec.plotstyle, label = self.lab[i])
-                plt.legend()
+                        ax.plot(x[r], y[r], **spec.plotstyle, label = self.lab[i])
+                ax.legend()
             else:
                 if plotstyle == 'auto':
-                    plt.plot(x[r], y[r])
+                    ax.plot(x[r], y[r])
                 else:
-                    plt.plot(x[r], y[r], **spec.plotstyle)
+                    ax.plot(x[r], y[r], **spec.plotstyle)
     
         sp = self.sa[0]
-        plt.xlabel(f'{sp.qx} ({sp.ux})')
         
-        if sp.uy == '':
-            plt.ylabel(f'{sp.qy}')
+        if xlabel is None:
+            if sp.ux is not None and sp.ux != '':
+                ax.set_xlabel(f'{sp.qx} ({sp.ux})')
+            else:
+                ax.set_xlabel(f'{sp.qx}')
         else:
-            plt.ylabel(f'{sp.qy} ({sp.uy})')
+            ax.set_xlabel(xlabel)
+            
+        if ylabel is None:
 
+            if sp.uy is not None and sp.uy != '':
+                ax.set_ylabel(f'{sp.qy} ({sp.uy})')
+            else:
+                ax.set_ylabel(f'{sp.qy}')
+        else:
+            ax.set_ylabel(ylabel)
+        
         if title != '':
-            plt.title(title)
+            ax.set_title(title)
             
         if plot_table:
-            the_table = plt.table(cellText = cell_text, rowLabels = row_labels, colLabels = col_labels, loc='bottom',
+            the_table = ax.table(cellText = cell_text, rowLabels = row_labels, colLabels = col_labels, loc='bottom',
                                   bbox = bbox)  #bbox = [x0, y0, width, height])
             the_table.auto_set_font_size(False)
             the_table.set_fontsize(10)
@@ -1244,21 +1442,47 @@ class mxy_data:
         if hline != None:
             if type(hline) == list:
                 for idx, n in enumerate(hline):
-                    plt.axhline(y = n, color='black', linestyle='-')    
+                    if hline_colors is not None:
+                        color = hline_colors[idx]
+                    ax.axhline(y = n, color=color, linestyle='-')    
             else:
-                plt.axhline(y = hline, color='black', linestyle='-')
+                if hline_colors is not None:
+                    color = hline_colors
+                else:
+                    color = 'b'
+                ax.axhline(y = hline, color=color, linestyle='-')
 
         if vline != None:
             if type(vline) == list:
                 for idx, n in enumerate(vline):
-                    plt.axvline(x = n, color='r', linestyle='-')    
+                    if vline_colors is not None:
+                        color = vline_colors[idx]
+                    else:
+                        color = 'r'
+                    ax.axvline(x = n, color=color, linestyle='-')    
             else:
-                plt.axvline(x = vline, color='r', linestyle='-')
+                if vline_colors is not None:
+                    color = vline_colors
+                else:
+                    color = 'r'
+                ax.axvline(x = vline, color=color, linestyle='-')
         
+        if create_image_stream:
+            image_stream = io.BytesIO()
+            plt.savefig(image_stream)
+            if show_plot:
+                plt.show()
+            return image_stream
+
         if show_plot:
             plt.show()
         
         self = self_old
+        
+        if generate_image_stream:
+            image_stream = io.BytesIO()
+            plt.savefig(image_stream)
+            return image_stream
         
         if return_fig:
             return fig
@@ -1271,11 +1495,33 @@ class mxy_data:
             FN = title + ' - ' + label[i] + '.csv'
             xy_dat.save(save_dir, FN)
             
-    def save_individual(self, save_dir = None, FNs = None, check_existing = True):
+    def save_in_one_file(self, fp):
+        #check if all files have the same wavelengths
+        all_have_same_x = True
+        x_arr = self.sa[0].x
+        df = self.sa[0].to_df()
+        for sp in self:
+            if not np.all(sp.x == x_arr):
+                all_have_same_x = False
+                break
+        if all_have_same_x:
+            if not self.label_defined:
+                self.label([sp.name for sp in self])
+            for sp, label in zip(self, self.lab):
+                col_name = label+', '+sp.qy
+                if sp.uy is not None and sp.uy != '':
+                    col_name += f' ({sp.uy})'
+                df[col_name] = sp.y
+            df.drop(df.columns[0], axis=1, inplace=True)
+            df.to_csv(fp)
+        else:
+            print('Not saved: Not all xy_data have the same x!')
+            
+    def save_individual(self, save_dir = None, FNs = None, check_existing = True, check_FN_extension = True):
         
         quitted = False
         if save_dir == None:
-            save_dir = getcwd()
+            save_dir = os.getcwd()
         for i, sp in enumerate(self.sa):
                     
             x_col_name = sp.qx
@@ -1292,7 +1538,11 @@ class mxy_data:
                 
             TFN = join(save_dir, FN)
             df = pd.DataFrame({x_col_name : sp.x, y_col_name : sp.y})
-            FN = FN.split('.'+FN.split('.')[-1])[0] + '.csv'
+            #FN = FN.split('.'+FN.split('.')[-1])[0] + '.csv'
+            if check_FN_extension:
+                FN = os.path.splitext(FN)[0] + '.csv'
+            else:
+                FN = FN + '.csv'
 
             if check_existing:
             
@@ -1310,7 +1560,7 @@ class mxy_data:
         """
         Loads all xy data in individual files in directory.
         """
-        FNs = listdir(directory)
+        FNs = os.listdir(directory)
         sa = []
         
         for i, FN in enumerate(FNs):
@@ -1439,6 +1689,12 @@ class mxy_data:
         for i, sp in enumerate(self.sa):
             sp.normalize(x_lim = x_lim, norm_val = norm_val)
             
+    def equidist(self, left = None, right = None, delta = 0.1, kind = 'cubic'):
+
+        for i, sp in enumerate(self.sa):
+            sp.equidist(left = left, right = right, delta = delta, kind = kind)
+        
+            
     def all_values_greater_min(self, min = None):
         """
         Looks for values < min and sets them to min.
@@ -1486,7 +1742,75 @@ class mxy_data:
             sp_new = sp.rm_cosray(m = m, threshold = threshold)
             new.replace(idx, sp_new)
         return new
+    
+    
+    def idfac_fit(self, left = None, right = None, plot = True, plotrange = [None, None], return_all = False):
+    
+        all_data = []
+        all_data_label = []
+        save_names = []
+        for i, sp in enumerate(self.sa):
+    
+            sp.plotstyle = dict(linestyle = 'None', marker = 'o', color = gen.colors[i], markersize = 20)
+            all_data.append(sp)
+            label = sp.name.split('.csv')[0]
+            all_data_label.append(label)
+            save_names.append(label)
+    
+            all_data.append(all_data[-1].idfac_fit(left = left, right = right))
+            #fit[i].plotstyle = dict(linestyle = '-', color = colors[i], linewidth = 5)
+            all_data[-1].plotstyle = dict(linestyle = '-', color = gen.colors[i], linewidth = 5)
+            all_data_label.append(f'm = ln(10) $\cdot$ kT/q $\cdot$ {all_data[-1].nid:.2f}')
+            save_names.append(label+'_fit')
+    
+        da = mxy_data(all_data)
+        #da.label([FNs[0], FNs[1], f'm = ln(10) $\cdot$ kT/q $\cdot$ {fit[0].nid:.2f}', f'm = ln(10) $\cdot$ kT/q $\cdot$ {fit[1].nid:.2f}'])
+    
+        da.label(all_data_label)
+        if plot:
+            da.plot(xscale = 'log', plotstyle = 'individual', figsize = (10,7))
+        if return_all:
+            return da
+        
+    def shift_x(self, x):
+        """
+        Shifts the x-values by x
+        """
+        for sp in self.sa:
+            sp.shift_x(x)
             
+    def shift_y(self, y):
+        """
+        Shifts the y-values by y
+        """
+        for sp in self.sa:
+            sp.shift_y(y)
+            
+    def average(self):
+        # Averages over all spectra and returns the averaged spectrum
+        av = self.sa[0].copy()
+        av.y *= 0
+        for sp in self.sa:
+            av += sp
+        av /= len(self.sa)
+        return av
+    
+    def diff(self, left = None, right = None):
+        new = self.copy()
+        sa = []
+        for sp in new.sa:
+            sa.append(sp.diff(left=left, right=right))
+        new.sa = sa
+        return new
+    
+    def remove_nan(self):
+        for sp in self.sa:
+            sp.remove_nan()
+            
+    def strictly_ascending(self):
+        for sp in self.sa:
+            sp.strictly_ascending()
+
                 
 class xyz_data:
     
@@ -1495,7 +1819,7 @@ class xyz_data:
         x is a numpy array e.g. the wavelengths or photon energies
         y is a numpy array e.g. cts, cps, photon flux, spectral flux
         z is a numpy array e.g. cts, cps, photon flux, spectral flux
-        quants is a dict with the type of the data, e.g. {"x": "Wavelength", "y": "Intensity", "z": ""}
+        quants is a dict with the type of the data, e.g. {"x": "Wavelength", "y": "np.trantensity", "z": ""}
         units is a dict with the units of the data, e.g. {"x": "nm", "y": "cps", "z": ""}
         name is the name of the data, e.g. the file name
         """
@@ -1520,7 +1844,7 @@ class xyz_data:
         """
         
         if FN == '':
-            FN = listdir(directory)[0]
+            FN = os.listdir(directory)[0]
         dat = pd.read_csv(join(directory, FN), delimiter = delimiter, header = header)
         
         x = np.array(dat)[:,0].astype(np.float64)

@@ -222,7 +222,7 @@ def plot_animation(pset1, pset2, interval = 1, ylim=(1e-2,1.2), normalize_to_end
     fig = plt.figure()
     ax = plt.axes(xlim=(0, pset1.thickness-1), ylim=ylim)
 
-    ax.set_yscale('Log')
+    ax.set_yscale('log')
     #ax.set_yscale('linear')
 
     ax.set_title('Charge carrier concentration', color = 'black')
@@ -278,13 +278,16 @@ def plot_animation(pset1, pset2, interval = 1, ylim=(1e-2,1.2), normalize_to_end
         else:
             lines[0].set_data(pset1.x*1e7, u1/pset1.n0[0]*5)
             lines[1].set_data(pset2.x*1e7, u2/pset2.n0[0]*5)
-            
+
         return lines[0], lines[1], time_label #return everything that must be updated
 
+    print#(int(finaltime/pset1.dt/nr_times))
     anim = animation.FuncAnimation(fig, animate, frames=int(finaltime/pset1.dt/nr_times), interval=interval, init_func=init, blit=True, repeat=False)
+
     plt.legend()
     plt.show()
     
+    return anim
 
 # Plot animation of quasi-Fermi level splitting
 
@@ -1308,7 +1311,7 @@ class TRPL_data(xy_data):
         av = np.average(self.y[r])
         dat = self.copy()
         dat.y = dat.y - av
-        if norm_val != None:
+        if not (norm_val is None):
             dat.normalize(norm_val = norm_val)
         
         if plot_details:
@@ -1316,6 +1319,9 @@ class TRPL_data(xy_data):
             self.plot(yscale = 'linear', left = self.x[start]*0, right = self.x[stop]*1.2, bottom = 0, top = m*2, vline = [self.x[start], self.x[stop]], title = 'noise')
             #Show original and bg subtracted data
             dat_all = mTRPL_data([self, dat])
+            if not (norm_val is None):
+                dat_all = dat_all.copy()
+                dat_all.normalize()
             dat_all.label(['original', 'corrected'])
             dat_all.plot(yscale = 'log', title = self.name, divisor = 1e5)
         
@@ -1345,11 +1351,11 @@ class TRPL_data(xy_data):
                 left = 0
             if right == None:
                 right = max(dat.x)
-            dat.plotstyle = dict(linestyle = '-', linewidth = 5, markersize = 5)
-            dat_max = dat.max_within(left = left, right = right)
-            dat_min = dat.min_within(left = left, right = right, absolute = True)
+            dat.plotstyle = dict(linestyle='-', linewidth=5, markersize=5)
+            #dat_max = dat.max_within(left = left, right = right)
+            #dat_min = dat.min_within(left = left, right = right, absolute = True)
             #dat_test.plot(yscale = 'log', bottom = dat_min*0.9, top = dat_max*1.1, left = left, right = right)
-            dat.plot(yscale = 'log', bottom = dat_min*0.9, top = dat_max*1.1, left = left, right = right)
+            dat.plot(yscale = 'log', left=left, right=right)
         
         return dat
 
@@ -1419,7 +1425,7 @@ class mTRPL_data(mxy_data):
             dafit_sa.append(dfit)
             if showparam:
                 dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
-                delta = d.residual(dfit)
+                delta = d.residual(dfit, relative=True)
                 print(f'chi**2 = {xy_data.chisquare(d, dfit, right = stop):.2e}')
                 delta.plot(right = stop, hline = 0, title = 'Residual plot')
                 md = mTRPL_data([d, dfit])
@@ -1438,7 +1444,7 @@ class mTRPL_data(mxy_data):
             dafit_sa.append(dfit)
             if showparam:
                 dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
-                delta = d.residual(dfit)
+                delta = d.residual(dfit, relative=True)
                 print(f'chi**2 = {xy_data.chisquare(d, dfit, right = stop):.2e}')
                 delta.plot(right = stop, hline = 0, title = 'Residual plot')
                 md = mTRPL_data([d, dfit])
@@ -1457,7 +1463,7 @@ class mTRPL_data(mxy_data):
             dafit_sa.append(dfit)
             if showparam:
                 dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
-                delta = d.residual(dfit)
+                delta = d.residual(dfit, relative=True)
                 print(f'chi**2 = {xy_data.chisquare(d, dfit, right = stop):.2e}')
                 delta.plot(right = stop, hline = 0, title = 'Residual plot')
                 md = mTRPL_data([d, dfit])
@@ -1477,7 +1483,7 @@ class mTRPL_data(mxy_data):
             dafit_sa.append(dfit)
             if showparam:
                 dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
-                delta = d.residual(dfit)
+                delta = d.residual(dfit, relative=True)
                 print(f'chi**2 = {xy_data.chisquare(d, dfit, right = stop):.2e}')
                 delta.plot(right = stop, hline = 0, title = 'Residual plot')
                 md = mTRPL_data([d, dfit])
@@ -1493,9 +1499,9 @@ class mTRPL_data(mxy_data):
             diff_tau = sp.dlifetime(x = x, m = m, wavelength = wavelength, film_thickness = film_thickness, fluence = fluence, ni = ni)
             diff_tau_sa.append(diff_tau)
         return mTRPL_data(diff_tau_sa)
-        
-if __name__ == "__main__":
 
+"""        
+if __name__ == "__main__":
     #Perovskites: alpha = 1e5 # 1/cm
     alpha_per = 8e5
     bg = f1240/800 #eV
@@ -1581,4 +1587,55 @@ if __name__ == "__main__":
     pset1 = TRPL_param(thickness = thickness, finaltime = finaltime, N_points = 50, alpha = alpha, P_exc = P_exc, pulse_len = pulse_len, mu = mu_0, k1 = k1_0, k2 = k2_0, k3 = k3_0, SL = SL_1)
     # Standard values for k2 and k3: k2 = 1e-10, k3 = 8.8e-29
     pset2 = TRPL_param(thickness = thickness, finaltime = finaltime, N_points = 50, alpha = alpha, P_exc = P_exc, pulse_len = pulse_len, mu = mu_0, k1 = k1_0, k2 = k2_0 * 1e-0, k3 = k3_0 * 1e-1, SL = SL_1)
-    
+
+
+ if __name__ == "__main__":
+
+    what_animate = 'carrier_conc' 
+    #what_animate = 'QFLS'
+
+    #standard parameter    
+    mu = 0.25
+    k1 = 0 #1/s # typical 1e6
+    SR = 1e4 #cm/s
+    SL = 10
+    thickness = 300 #nm typical 640
+    finaltime = 300e-9 #s
+    alpha = 3e5
+    P_exc = 1.0
+    pulse_len = None
+
+    # Starting parameters
+
+    # Excitation laser fluence
+    F_exd = 4.6e-9 # J/cm2
+    F_exc1 = 46e-9 # J/cm2
+    F_exc2 = 46e-9 # J/cm2
+    #Excitation wavelength and photon energy
+    l_exc = 510 # nm
+    E_l = gen.f1240 * gen.q / l_exc # J
+    # TRPL laser pulse length FWHM
+    pulse_len = 100e-12 # s
+    # Excitation photon density
+    P_exc1 = F_exc1 / E_l # photons / cm2
+    P_exc2 = F_exc2 / E_l # photons / cm2
+
+    mu_0 = mu #5 #cm2/Vs
+    k1_0 = k1 #1/s
+    k2_0 = k1 #cm3/s
+    k3_0 = 8.8e-29 #cm3/s
+    SR_0 = SR #cm/s
+    SL_2 = 0 #SL_d2 #1400 #cm/s
+    SL_1 = 0 #SL_d1 # 400
+    thickness = thickness 
+    finaltime = finaltime
+    # Carry out calculation
+
+    pset1 = tpl.TRPL_param(thickness = thickness, finaltime = finaltime, N_points = 50, alpha = alpha, P_exc = P_exc1, pulse_len = pulse_len, mu = mu_0, k1 = k1_0, k2 = k2_0, k3 = k3_0, SL = SL_1, SR = SR)
+    # Standard values for k2 and k3: k2 = 1e-10, k3 = 8.8e-29
+    pset2 = tpl.TRPL_param(thickness = thickness, finaltime = finaltime, N_points = 50, alpha = alpha, P_exc = P_exc2, pulse_len = pulse_len, mu = mu_0, k1 = k1_0, k2 = k2_0, k3 = k3_0, SL = SL_2, SR = SR)
+
+    what_animate = 'carrier_conc'
+    if animate and what_animate == 'carrier_conc':
+        tpl.plot_animation(pset1, pset2, interval = 1, ylim = (1e-4, 1e0), normalize_to_end = False) # if normalize_to_end is True the effect of a finite pulse length can't be observed 
+"""

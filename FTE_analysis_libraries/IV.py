@@ -12,7 +12,8 @@ from scipy.interpolate import interp1d
 import sys
 import numpy as np
 import pandas as pd
-from os.path import join
+from os.path import join, dirname
+import pathlib
 import math
 import matplotlib.pyplot as plt
 from importlib import reload
@@ -140,7 +141,7 @@ class perf_dat:
             return f'Light intensity $= {self.light_int:.2f} \; mW/cm^2$'
         
     @staticmethod
-    def SQ_limit(bg, illumspec_eV = None, light_int = 100, show = False):
+    def SQ_limit(bg, illumspec_PF_eV = None, light_int = 100, show = False):
         """
         Calculates the performance data of the Shockley-Queisser limit.
 
@@ -148,8 +149,8 @@ class perf_dat:
         ----------
         bg : FLOAT
             Bandgap in eV.
-        illumspec_eV: diff_spectrum
-            Illumination spectrum other than AM1.5GT        
+        illumspec_PF_eV: diff_spectrum
+            Illumination spectrum ((spectral photon flux as a function of photon energy in eV)) other than AM1.5GT        
             If None then AM1.5GT spectrum is taken
         light_int: FLOAT
             If AM1.5GT spectrum as illumination spectrum used, then with light_int the light intensity in mW/cm2 can be chosen.
@@ -167,7 +168,7 @@ class perf_dat:
         pd = perf_dat.SQ_limit(bg, show = True)
 
         """
-        fp = IV_data.SQ_limit(bg, illumspec_eV = illumspec_eV, light_int = light_int)
+        fp = IV_data.SQ_limit(bg, illumspec_PF_eV = illumspec_PF_eV, light_int = light_int)
         x_arr = np.linspace(0, fp.Voc*1.01,  int(round((fp.Voc*1.01)/0.001)+1))
         IV = IV_data.from_fp(x_arr, fp, name = '', light_int = light_int, T = T_RT, perfparam = True)
         IV.det_perfparam(show = show)
@@ -460,18 +461,21 @@ class IV_data(xy_data):
         return IV
 
     @staticmethod
-    def load(data_dir, sample, data_format, cell_area = 1, light_int = 100, delimiter = ',', header = 'infer', quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, 
-         take_quants_and_units_from_file = False, J_1sun = None, reverse_scan = True, raw_data = False, print_lines = False):
+    def load(filepath_or_directory, FN = '', data_format = 'csv', cell_area = 1, light_int = 100, delimiter = ',', header = 'infer', quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, 
+         take_quants_and_units_from_file = False, J_1sun = None, reverse_scan = True, raw_data = False, print_lines = False, **kwargs):
 
+        fp = join(filepath_or_directory, FN)
+        FN = pathlib.Path(fp)
+        directory = dirname(fp)
         if data_format == 'Igor':
-            IV = IV_data.load_Igor_IV(data_dir, sample, print_lines = print_lines)
+            IV = IV_data.load_Igor_IV(directory, FN = FN, print_lines = print_lines)
         elif data_format == 'csv':
-            xy = xy_data.load(data_dir, sample, delimiter = delimiter, header = header, quants = quants, units = units, 
-                                   take_quants_and_units_from_file = take_quants_and_units_from_file)
-            IV = IV_data(xy.x, xy.y, cell_area = cell_area, light_int = light_int, sweep_dir = None, name = sample, Voc = None, Jsc = None, quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, )
+            xy = xy_data.load(filepath_or_directory, FN = FN, delimiter = delimiter, header = header, quants = quants, units = units, 
+                                   take_quants_and_units_from_file = take_quants_and_units_from_file, **kwargs)
+            IV = IV_data(xy.x, xy.y, cell_area = cell_area, light_int = light_int, sweep_dir = None, name = FN.stem, Voc = None, Jsc = None, quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, **kwargs)
             #IV.y = -IV.y
         elif data_format == 'Biologic-CV':
-            IV = IV_data.load_Biologic_CV(data_dir, sample, cell_area = cell_area, light_int = light_int, J_1sun = J_1sun, reverse_scan = reverse_scan, raw_data = raw_data)
+            IV = IV_data.load_Biologic_CV(directory, FN = FN, cell_area = cell_area, light_int = light_int, J_1sun = J_1sun, reverse_scan = reverse_scan, raw_data = raw_data)
     
         return IV
     
@@ -900,7 +904,8 @@ class IV_data(xy_data):
     def IVrad(Vocrad, Jsc, light_int = 100, x_max = None):
         if (x_max == None) or (x_max < Vocrad):
             x_max = Vocrad
-        new_x = np.arange(0, x_max, step = 0.001, dtype = np.float64)
+        step = 0.001
+        new_x = np.arange(0, x_max+2*step, step= step, dtype= np.float64)
         Jrad = np.array([IV_data.I_of_V(new_x[i], Jsc, Voc = Vocrad, nid = 1, Rs = 0, Rsh = 1e15, T = T_RT) for i in range(len(new_x))])
         IVrad = IV_data(new_x, Jrad, light_int = light_int, name = f'Radiative limit: $V_{{oc,rad}} = {Vocrad:.3f} \ V, \ J_{{sc,rad}} = {Jsc:.2f} \ mA/cm^2, \ n_{{id}} = 1,\ R_s = 0,\ R_{{sh}} = \infty$')
         IVrad.det_perfparam()
@@ -1209,53 +1214,47 @@ class IV_data(xy_data):
         return I.real
     
     @staticmethod
-    def SQ_limit_Voc(bg, illumspec_eV = None, light_int = None, from_file = True):
+    def SQ_limit_Voc(bg, illumspec_PF_eV = None, light_int = None, from_file = True):
         
         if from_file:
             FN = 'Vocsq.csv'
             d = xy_data.load(system_dir, FN, take_quants_and_units_from_file = True)
             Vocsq = d.y_of(bg, interpolate = True)
         else:
-            if illumspec_eV == None:
-                # Load Astmg173 spectrum
-                AM15_nm = diff_spectrum.load_ASTMG173()
-                AM15_nm.equidist()
-                #AM15_nm.plot(left = 300, right = 1000)    
-                AM15_eV = AM15_nm.nm_to_eV()
-                AM15_eV.equidist(left = 0.414, right = 4.27, delta = 0.001)
-                #AM15_eV.plot()
+            if illumspec_PF_eV == None:
+                AM15_eV = diff_spectrum.AM15_eV()
                 if light_int != None:
                     AM15_eV.y = AM15_eV.y * light_int/100
-                illumspec_eV = AM15_eV
+                illumspec_PF_eV = AM15_eV
                 
-            left = min(illumspec_eV.x)
-            right = max(illumspec_eV.x)
+            left = min(illumspec_PF_eV.x)
+            right = max(illumspec_PF_eV.x)
             eV_arr = np.arange(left, right, 0.001)
             #Absorptance spectrum
             ab = abs_spectrum(eV_arr, np.array([0 if eV < bg else 1 for eV in eV_arr]))
-            ab.calc_Jradlim(illumspec_eV, start_eV = bg, handover_eV = bg+0.1)
+            ab.calc_Jradlim(illumspec_PF_eV, start_eV = bg, handover_eV = bg+0.1)
             ab.calc_Vocrad(E_start = bg-0.3, E_stop = bg+0.3, T = T_RT, show_table = False)
             Vocsq = ab.Vocrad
         
         return Vocsq
     
     @staticmethod
-    def SQ_limit_Jsc(bg, illumspec_eV = None, light_int = None):
+    def SQ_limit_Jsc(bg, illumspec_PF_eV = None, light_int = None):
                 
-        if illumspec_eV == None:
+        if illumspec_PF_eV == None:
             AM15 = diff_spectrum.AM15_eV()
             if light_int != None:
                 AM15.y = AM15.y * light_int/100
-            illumspec_eV = AM15
+            illumspec_PF_eV = AM15
 
         # Calculation of above bandgap photon flux                    
-        abpf = illumspec_eV.photonflux(start = bg, stop = illumspec_eV.x[-1])  
+        abpf = illumspec_PF_eV.photonflux(start = bg, stop = illumspec_PF_eV.x[-1])  
         # Calculation of Shockley-Queisser photocurrent
         return abpf * q * 1e3/1e4
         
         
     @staticmethod
-    def SQ_limit(bg, illumspec_eV = None, light_int = None):
+    def SQ_limit(bg, illumspec_PF_eV = None, light_int = None):
         """
         Returns the SQ-limit five parameters. 
     
@@ -1263,8 +1262,8 @@ class IV_data(xy_data):
         ----------
         bg : FLOAT
             Bandgap in eV.
-        illumspec_eV: diff_spectrum
-            Illumination spectrum other than AM1.5GT        
+        illumspec_PF_eV: diff_spectrum
+            Illumination spectrum (spectral photon flux as a function of photon energy in eV) other than AM1.5GT        
             If None then AM1.5GT spectrum is taken
         light_int: FLOAT
             If AM1.5GT spectrum as illumination spectrum used, then with light_int the light intensity in mW/cm2 can be chosen.
@@ -1276,19 +1275,20 @@ class IV_data(xy_data):
     
         """
             
-        if illumspec_eV == None:
+        if illumspec_PF_eV == None:
             AM15_eV = diff_spectrum.AM15_eV(left = 0.310, right = 4.428, delta = 0.001, y_unit = 'Spectral photon flux')
             if light_int != None:
                 AM15_eV.y = AM15_eV.y * light_int/100
-            illumspec_eV = AM15_eV
-            
-        Vsq = IV_data.SQ_limit_Voc(bg, illumspec_eV)
-        Jsq = IV_data.SQ_limit_Jsc(bg, illumspec_eV)
+            illumspec_PF_eV = AM15_eV
+        
+        Vsq = IV_data.SQ_limit_Voc(bg, illumspec_PF_eV, light_int = light_int, from_file = False)
+        Jsq = IV_data.SQ_limit_Jsc(bg, illumspec_PF_eV, light_int = light_int)
         
         return fivep(cell_area = 1, Voc = Vsq, Jsc = Jsq, nid = 1, Rs = 0, Rsh = np.inf)
     
         
     def calc_resistance_curve(self, left = None, right = None):
+        #Calculates a resistance from the derivative of the J-V curve
         if left == None:
             left = min(self.x)
         if right == None:
@@ -1303,7 +1303,7 @@ class IV_data(xy_data):
         R = IV_data(dIV.x, resist_arr, quants = dict(x = 'Voltage', y = 'Resistance'), units = dict(x = 'V', y = 'Ohm cm2'))        
         return R
     
-    def resistance_plot(self, V_rel, left = None, right = None, bottom = None, top = None, vline = None, yscale = 'linear', title = None):
+    def resistance_plot(self, V_rel, left = None, right = None, bottom = None, top = None, vline = None, hline=None, yscale = 'linear', title = None, noshow=False):
     
         if left == None:
             left = V_rel - 0.3
@@ -1317,9 +1317,11 @@ class IV_data(xy_data):
             #top = 10*self.Rs*1000
         if vline == None:
             vline = V_rel
-        R.plot(yscale = yscale, left = left, right = right, bottom = bottom, top = top, vline = vline, title = title)
+            
         R_rel = R.y_of(V_rel)
-        print(f'The resistance at {V_rel:.3f} V is: {R_rel:.2f} Ohm cm2')
+        if not noshow:
+            R.plot(yscale = yscale, left = left, right = right, bottom = bottom, top = top, vline = vline, hline=hline, title = title)
+            print(f'The resistance at {V_rel:.3f} V is: {R_rel:.2f} Ohm cm2')
         
         return R_rel
         
