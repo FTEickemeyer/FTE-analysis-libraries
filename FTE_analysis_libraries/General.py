@@ -132,6 +132,10 @@ def df_interpolate(df, new_index_arr):
         with new index.
 
     """
+    lower_limit = min(df.index.values)
+    upper_limit = max(df.index.values)
+    new_index_arr = new_index_arr[new_index_arr >= lower_limit]
+    new_index_arr = new_index_arr[new_index_arr <= upper_limit]
     r = pd.Index(new_index_arr)
     t = df.index
     return df.reindex(t.union(r)).interpolate('index').loc[r]
