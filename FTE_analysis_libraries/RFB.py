@@ -14,9 +14,14 @@ import matplotlib.pyplot as plt
 from scipy.optimize import fsolve, curve_fit
 import scipy.constants as const
 
-from . import General as gen
-from . import XYdata as xyd
-from . import Electrochemistry as ech
+if __name__ != "__main__":
+    from . import General as gen
+    from . import XYdata as xyd
+    from . import Electrochemistry as ech
+else:
+    from FTE_analysis_libraries import General as gen
+    from FTE_analysis_libraries import XYdata as xyd
+    from FTE_analysis_libraries import Electrochemistry as ech
 
 R = const.physical_constants['molar gas constant'][0]
 F = const.physical_constants['Faraday constant'][0]
@@ -55,7 +60,7 @@ def conc_V_SO4(weight_pc_V = 6.0, weight_pc_SO4 = 28, density = 1.35, show_detai
 def pH_c_H_plus(c_H_plus):
     return -np.log10(c_H_plus)
 
-def calc_conc_functions(c_V, c_SO4):
+def calc_conc_functions_without_Ka1(c_V, c_SO4):
 
     """
     This function calculates the H+ and HSO4- concentration as a function fo the average vanadium oxidation state from 2 to 5.
@@ -121,7 +126,6 @@ def calc_conc_functions(c_V, c_SO4):
     
     h_initial_guess = 2.0
     c_H_plus = lambda conc: fsolve(func, h_initial_guess, args=(c_pos_V(conc)))[0]
-    pH_c_H_plus = lambda c_H_plus: -np.log10(c_H_plus)
     
     c_HSO4_minus = lambda c_H_plus: c_H_plus*c_SO4/(c_H_plus + Ka2)
     c_SO4_2minus = lambda c_HSO4_minus: c_SO4 - c_HSO4_minus 
@@ -133,41 +137,144 @@ def calc_conc_functions(c_V, c_SO4):
     c_5 = lambda x: c_V*(x-4) if (4 <= x) and (x <= 5) else 0
     conc_x = lambda x: {'c_2': c_2(x), 'c_3': c_3(x), 'c_4': c_4(x), 'c_5': c_5(x)}
 
-    return conc_x, c_H_plus, pH_c_H_plus, c_HSO4_minus, c_SO4_2minus
+    return conc_x, c_H_plus, c_HSO4_minus, c_SO4_2minus
+
+
+def calc_conc_functions(c_V, c_SO4):
+
+    """
+    This function calculates the H+ and HSO4- concentration as a function fo the average vanadium oxidation state from 2 to 5.
+
+    We have the following five equations:  
+
+    $\begin{equation}
+    \ce{ H2O <=> HO- + H+ , \, K_w = \frac{[OH-] \ [H+]}{[H2O]} = [OH-] \ [H+] =  10^{-14} , \, [H2O] = 1 } \tag{1}
+    \end{equation}$
+    
+    $\begin{equation}
+    \ce{ H2SO4 <=> HSO4- + H+ , \, K_{a1} = \frac{[HSO4-] \ [H+]}{[H2SO4]} = 10^{2.8} } \tag{2}
+    \end{equation}$
+    
+    $\begin{equation}
+    \ce{ HSO4- <=> SO4^{2-} + H+ , \, K_{a2} = \frac{[SO4^{2-}] \ [H+]}{[HSO4-]} = 10^{-1.99} } \tag{3}
+    \end{equation}$
+    
+    $\begin{equation}
+    \ce{ [H2SO4] + [HSO4-] + [SO4^{2-}] = [SO4] } \tag{4}
+    \end{equation}$
+    
+    Charge balance:
+    
+    $\begin{equation}
+    \ce{ c_{pos_V} + [H+] = [HSO4-] + 2 * [SO4^{2-}] + [OH-] } \tag{5}
+    \end{equation}$
+    
+    $\begin{equation}
+    \ce{ c_{pos_V} \equiv 2 \cdot [V^{2+}] + 3 \cdot [V^{3+}] + 2 \cdot [VO^{2+}] + 1 \cdot [VO_2^{+}]  \tag{6}}
+    \end{equation}$
+    
+    Knowns: $\ce{K_a_1, K_a_2, K_w, c_{pos_V}, [SO4] }$  
+    Unknowns: $\ce{ [H2SO4], [HSO4-], [SO4^{2-}], [H+], [OH-]}$  
+    So, 5 equations and 5 unknowns!
+    
+    Once we have the proton concentration we can calculate the sulfate and bisulfate concentrations using equations (2) and (3):  
+    
+    $\begin{equation}
+    \ce{ [HSO4-] = \frac{[H+] [SO4]}{[H+] + K_{a2}} } \tag{7}
+    \end{equation}$
+    
+    $\begin{equation}
+    \ce{ [SO4^{2-}] = [SO4] - [HSO4-] } \tag{8}
+    \end{equation}$
+    
+    Vanadium: Concentrations  
+    -$\ce{V^{2+}}$: c_2  
+    -$\ce{V^{3+}}$: c_3  
+    -$\ce{(V^{IV}O)^{2+}}$: c_4    
+    -$\ce{(V^{V}O_2)^{+}}$: c_5  
+    
+    """
+    
+    #Calculate concentration of positive charges from Vanadium
+    c_pos_V_conc = lambda conc: 2*conc['c_2'] + 3*conc['c_3'] + 2*conc['c_4'] + 1*conc['c_5']
+    
+    Ka1 = 10**(2.8) #https://en.wikipedia.org/wiki/Sulfuric_acid
+    Ka2 = 10**(-1.99) #https://en.wikipedia.org/wiki/Sulfuric_acid
+    Kw = 10**(-14)
+    
+    #These are the knowns:
+    a0 = Ka1
+    a1 = Ka2
+    a2 = Kw
+    a3 = c_SO4
+    
+    #These are the unknowns:
+    #x[0] = [H2SO4]
+    #x[1] = [HSO4-]
+    #x[2] = [SO4^2-]
+    #x[3] = [H+]
+    #x[4] = [OH-]
+    
+    
+    func = lambda x, c_pos_V: [a2-x[3]*x[4], 
+                      a0*x[0]-x[1]*x[3], 
+                      a1*x[1]-x[2]*x[3], 
+                      x[0]+x[1]+x[2]-a3,
+                      c_pos_V+x[3]-x[1]-2*x[2]-x[4] ]
+    
+    #It is important to take a good initial guess, e.g. this doesn't work: x_initial_guess = [0.01, 3.0, 1.0, 0.2, 0.001]
+    x_initial_guess = [0.01, 3.0, 1.0, 1.0, 0.001]
+    
+    Xconc_Vconc_fn = lambda conc: fsolve(func, x_initial_guess, args=(c_pos_V_conc(conc)))
+    
+    #x is the average oxidation state (from 2 to 5)
+    c_2 = lambda x: c_V*(3-x) if (2 <= x) and (x < 3) else 0
+    c_3 = lambda x: c_V*(x-2) if (2 <= x) and (x < 3) else (c_V*(4-x) if (3 <= x) and (x < 4) else 0)
+    c_4 = lambda x: c_V*(x-3) if (3 <= x) and (x < 4) else (c_V*(5-x) if (4 <= x) and (x < 5) else 0)
+    c_5 = lambda x: c_V*(x-4) if (4 <= x) and (x <= 5) else 0
+    Vconc_x_fn = lambda x: {'c_2': c_2(x), 'c_3': c_3(x), 'c_4': c_4(x), 'c_5': c_5(x)}
+
+    return Vconc_x_fn, Xconc_Vconc_fn
 
 
 def calc_df_conc(c_V, c_SO4, show=False):
     
-    #This function calculates the H+ and HSO4- concentration as a function fo the average vanadium oxidation state from 2 to 5.
+    #This function calculates the H+ and HSO4- concentration as a function of the average vanadium oxidation state from 2 to 5.
 
-    conc_x, c_H_plus, pH_c_H_plus, c_HSO4_minus, c_SO4_2minus = calc_conc_functions(c_V, c_SO4)
+    Vconc_x_fn, Xconc_Vconc_fn = calc_conc_functions(c_V, c_SO4)
     #x is the average oxidation state (from 2 to 5)
     x_arr = np.arange(200, 501)/100
     c_H_plus_list = []
+    c_H2SO4_list = []
     c_HSO4_minus_list = []
     c_SO4_2minus_list = []
     for x in x_arr:
         #x is the average oxidation state (from 2 to 5)
-        conc = conc_x(x)
-        c_H_p = c_H_plus(conc)
-        c_HSO4_m = c_HSO4_minus(c_H_p)
-        c_SO4_2m = c_SO4_2minus(c_HSO4_m)
-        c_H_plus_list.append(c_H_p)
-        c_HSO4_minus_list.append(c_HSO4_m)
-        c_SO4_2minus_list.append(c_SO4_2m)
+        Vconc = Vconc_x_fn(x)
+        Xconc_Vconc = Xconc_Vconc_fn(Vconc)
+        c_H_plus = Xconc_Vconc[3]
+        c_H2SO4 = Xconc_Vconc[0]
+        c_HSO4_minus = Xconc_Vconc[1]
+        c_SO4_2minus = Xconc_Vconc[2]
+        #if x>2.8 and x<3.2:
+        #    print(f'{x}: {conc["c_2"]:.2f} {conc["c_3"]:.2f} {conc["c_4"]:.2f} {conc["c_5"]:.2f} - c_H: {c_H_plus}')
+        c_H_plus_list.append(c_H_plus)
+        c_H2SO4_list.append(c_H2SO4)
+        c_HSO4_minus_list.append(c_HSO4_minus)
+        c_SO4_2minus_list.append(c_SO4_2minus)
 
-    df_conc = pd.DataFrame({'Avg. ox. state': x_arr, 'H+': c_H_plus_list, 'HSO4-': c_HSO4_minus_list, 'SO4[2-]': c_SO4_2minus_list}).set_index('Avg. ox. state')
+    df_conc = pd.DataFrame({'Avg. ox. state': x_arr, 'H+': c_H_plus_list, 'H2SO4': c_H2SO4_list, 'HSO4-': c_HSO4_minus_list, 'SO4[2-]': c_SO4_2minus_list}).set_index('Avg. ox. state')
 
     if show:
         fig, axes = plt.subplots(1, 2, figsize=(12, 6))
         
         ax = axes[0]
         df_conc.plot(ax=ax)
-        ax.set_ylim(0, c_SO4)
+        ax.set_ylim(0, 1.1*c_SO4)
         ax.set_xlim(2.0, 5.0)
         ax.set_xlabel('Average oxidation state')
         ax.set_ylabel('Concentration (mol/L)')
-        ax.legend(['$H^+$', '$HSO_4^-$', '$SO_4^{2-}$'])
+        ax.legend(['$H^+$', '$H_2SO_4$', '$HSO_4^-$', '$SO_4^{2-}$'])
         
         ax = axes[1]
         ax.plot(df_conc.index, pH_c_H_plus(df_conc['H+']))
@@ -721,7 +828,7 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
     
     #print(cH43(0.1))
     
-    # Nernst equation
+    # Nernst equations
     # Ror: Ratio concentration oxidized / concentration reduced species
     R32 = lambda E, E0, T: np.exp( (E-E0)/ (R*T/F) )
     #E_Ror = lambda Ror, E0, T: E0 + R*T/F * np.log( Ror )
@@ -942,14 +1049,17 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
     return c_V, (E0_V2X3, E0_V3X4, E0_V4X5), (df_fit_pos, df_fit_neg), (conc_V3_pos, conc_V4_pos, conc_V5_pos), (conc_V4_neg, conc_V3_neg, conc_V2_neg)
 
 
-def calculate_fit(c_V_start, c_SO4_start, Ppos, Pneg, Ppos_charge, df_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration=True, T=gen.T_RT, show_details=False):
+def calculate_fit(c_V_start, c_SO4_start, Ppos, Pneg, Ppos_charge, df_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration=True, T=gen.T_RT, show_details=False, do_recalculation=True):
     c_V, E0s, df_fits, conc_pos, conc_neg = fit_potentials(c_V_start, c_SO4_start, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=T, show_details=show_details)
     if show_details:
         print(f'First calculation finished (c_V = {c_V:.2f} M).')
-    c_SO4 = c_V/c_V_start * c_SO4_start
-    c_V, E0s, df_fits, conc_pos, conc_neg = fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=T, show_details=show_details)
-    if show_details:
-        print(f'Second calculation finished (c_V = {c_V:.2f} M).')
+        if not do_recalculation:
+            print('No second calculation done. Set kwarg "do_recalculation" to True if you want to recalculate automatically!')
+    if do_recalculation:
+        c_SO4 = c_V/c_V_start * c_SO4_start
+        c_V, E0s, df_fits, conc_pos, conc_neg = fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=T, show_details=show_details)
+        if show_details:
+            print(f'Second calculation finished (c_V = {c_V:.2f} M).')
     return {'c_V': c_V, 'E0s': E0s, 'df_fits': df_fits, 'conc_pos': conc_pos, 'conc_neg': conc_neg}
     
 
@@ -1148,22 +1258,22 @@ def load_absorbance_data(fp_cuv_pos, fp_cuv_neg, xlim = (250, 1050)):
     return df_cuv_pos, df_cuv_neg
 
 
-def plot_UVVIS_data(df_cuv_pos, df_cuv_neg, ylabel='Absorbance', time_array= None, no_curves=20, xlim_cuv_pos=(380, 400), xlim_cuv_neg=(280, 1100), ylim_cuv_pos=(0, 2), ylim_cuv_neg=(-0.5, 2)):
-
-    if time_array is None:
-        time_array = np.array([int(round(df_cuv_pos.columns[-1]*i/no_curves)) for i in range(no_curves)])
+def plot_UVVIS_data(df_cuv_pos, df_cuv_neg, ylabel='Absorbance', time_array_pos= None, time_array_neg= None, no_curves=20, xlim_cuv_pos=(380, 400), xlim_cuv_neg=(280, 1100), ylim_cuv_pos=(0, 2), ylim_cuv_neg=(-0.5, 2)):
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 6))
     ax1 = ax[0]
     ax2 = ax[1]
-    
-    #cmap = mpl.colormaps['Reds']
-    cmap = mpl.colormaps['viridis']
-    norm = mpl.colors.Normalize(vmin= 0, vmax= len(time_array))
-    ncmap = lambda num: cmap(norm(num))
-    
-    def plot_df(df, ax, xlim, ylim):
+        
+    def plot_df(df, ax, xlim, ylim, time_array):
+        
+        if time_array is None:
+            time_array = np.array([int(round(df.columns[-1]*i/no_curves)) for i in range(no_curves)])
         nm = df.index.values
+        #cmap = mpl.colormaps['Reds']
+        cmap = mpl.colormaps['viridis']
+        norm = mpl.colors.Normalize(vmin= 0, vmax= len(time_array))
+        ncmap = lambda num: cmap(norm(num))
+
         for i, time in enumerate(time_array):
             #df[col].plot()
             idx = np.argmin(np.abs(df.columns-time))
@@ -1175,8 +1285,8 @@ def plot_UVVIS_data(df_cuv_pos, df_cuv_neg, ylabel='Absorbance', time_array= Non
         ax.set_ylabel(ylabel)
         ax.legend()
     
-    plot_df(df_cuv_pos, ax1, xlim_cuv_pos, ylim_cuv_pos)
-    plot_df(df_cuv_neg, ax2, xlim_cuv_neg, ylim_cuv_neg)
+    plot_df(df_cuv_pos, ax1, xlim_cuv_pos, ylim_cuv_pos, time_array_pos)
+    plot_df(df_cuv_neg, ax2, xlim_cuv_neg, ylim_cuv_neg, time_array_neg)
     ax1.set_title('Positive electrode')
     ax2.set_title('Negative electrode')
     plt.show()
@@ -1327,7 +1437,7 @@ def UVVIS_plot_fitted_multiple(time_list, target_spectrum_list, df_fit_list, ar_
     plt.show()
     
 
-def UVVIS_fit_spectrum(target_spectrum, spec_Vr, spec_Vo):
+def UVVIS_fit_spectrum_old(target_spectrum, spec_Vr, spec_Vo):
 
     def fit_model(wavelengths, ar, ao):
         #offset1 = 0
@@ -1358,10 +1468,42 @@ def UVVIS_fit_spectrum(target_spectrum, spec_Vr, spec_Vo):
     # Return the fit results and coefficients
     return df_fit, ar, ao
 
+def UVVIS_fit_spectrum(target_spectrum, spec_Vr, spec_Vo):
 
-def UVVIS_calculate_fit_for_all(df, time_switch_fitspectra, fit_spectra, conc, time_from, time_to, xlim_fit):
-    cr_list = []
-    co_list = []
+    def fit_model(wavelengths, ar, ao, offset_r, offset_o):
+        #offset1 = 0
+        #offset2 = 0
+        return (ar * (spec_Vr.values + offset_r) + ao * (spec_Vo.values + offset_o))
+        #return (ar * spec_Vr.values + ao * spec_Vo.values)
+
+    # Extract wavelength and absorbance data from target spectrum
+    wavelengths = target_spectrum.index
+    absorbance = target_spectrum.values
+
+    # Initial guess for coefficients and offsets [c1, c2, offset1, offset2]
+    initial_guess = [0.5, 0.5, 0, 0]
+    bounds = ([0, 0, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf])
+
+    # Perform curve fitting
+    popt, _ = curve_fit(fit_model, wavelengths, absorbance, p0=initial_guess, bounds=bounds)
+
+    # Extract fitted coefficients and offsets
+    ar = popt[0]
+    ao = popt[1]
+    offset_r = popt[2]
+    offset_o = popt[3]
+
+    # Compute the fitted spectrum
+    fitted_spectrum = fit_model(wavelengths, ar, ao, offset_r, offset_o)
+    df_fit = pd.Series(fitted_spectrum, index=target_spectrum.index)
+
+    # Return the fit results and coefficients
+    return df_fit, ar, ao
+
+
+def UVVIS_calculate_fit_for_all(df, time_switch_fitspectra, fit_spectra, time_from, time_to, xlim_fit):
+    ar_list = []
+    ao_list = []
     target_list = []
     fit_list = []
     fit_spectrum_Vr_list = []
@@ -1386,10 +1528,8 @@ def UVVIS_calculate_fit_for_all(df, time_switch_fitspectra, fit_spectra, conc, t
 
             target_spectrum = df.loc[x_von:x_bis, time]
             df_fit, ar, ao = UVVIS_fit_spectrum(target_spectrum, fit_spectrum_Vr, fit_spectrum_Vo)
-            cr = ar * conc/(ar+ao)
-            co = conc-cr
-            cr_list.append(cr)
-            co_list.append(co)
+            ar_list.append(ar)
+            ao_list.append(ao)
             target_list.append(target_spectrum.values)
             fit_list.append(df_fit.values)
             time_list.append(time)
@@ -1401,9 +1541,9 @@ def UVVIS_calculate_fit_for_all(df, time_switch_fitspectra, fit_spectra, conc, t
     df_fit = pd.DataFrame(np.array(fit_list).transpose(), columns=time_list, index=wavelengths)
     df_fit_spectra_Vr = pd.DataFrame(np.array(fit_spectrum_Vr_list).transpose(), columns=time_list, index=wavelengths)
     df_fit_spectra_Vo = pd.DataFrame(np.array(fit_spectrum_Vo_list).transpose(), columns=time_list, index=wavelengths)
-    cr_array = np.asarray(cr_list)
-    co_array = np.asarray(co_list)
-    data = {'Measurement': df_target, 'Fit': df_fit, 'cr': cr_array, 'co': co_array, 'Time (s)': time_list, 'Spectra_Vr': df_fit_spectra_Vr, 'Spectra_Vo': df_fit_spectra_Vo}
+    ar_array = np.asarray(ar_list)
+    ao_array = np.asarray(ao_list)
+    data = {'Measurement': df_target, 'Fit': df_fit, 'ar': ar_array, 'ao': ao_array, 'Time (s)': time_list, 'Spectra_Vr': df_fit_spectra_Vr, 'Spectra_Vo': df_fit_spectra_Vo}
     return data
 
 
@@ -1413,7 +1553,7 @@ def UVVIS_reduce_number_of_spectra(df_cuv_pos, df_cuv_neg, one_out_of):
     return df_cuv_pos_reduced, df_cuv_neg_reduced
 
 
-def UVVIS_fit(df_cuv_pos, df_cuv_neg, ref_spec_V2, ref_spec_V3, ref_spec_V4, ref_spec_V5, conc,
+def UVVIS_fit(df_cuv_pos, df_cuv_neg, ref_spec_V2, ref_spec_V3, ref_spec_V4, ref_spec_V5,
               one_out_of=1, time_cuv_pos_limits=(0,-1), time_cuv_neg_limits=(0,-1), xlim_fit=(380, 1000),
               tV4_pos=None, tV3_neg=None):
 
@@ -1432,7 +1572,7 @@ def UVVIS_fit(df_cuv_pos, df_cuv_neg, ref_spec_V2, ref_spec_V3, ref_spec_V4, ref
     else:
         time_switch_fitspectra = 0 
     fit_spectra = [ref_spec_V3, ref_spec_V4, ref_spec_V4, ref_spec_V5]
-    data_cuv_pos = UVVIS_calculate_fit_for_all(df, time_switch_fitspectra, fit_spectra, conc, time_from, time_to, xlim_fit)
+    data_cuv_pos = UVVIS_calculate_fit_for_all(df, time_switch_fitspectra, fit_spectra, time_from, time_to, xlim_fit)
     
     df = df_cuv_neg_reduced
     time_from = time_cuv_neg_limits[0]
@@ -1443,21 +1583,21 @@ def UVVIS_fit(df_cuv_pos, df_cuv_neg, ref_spec_V2, ref_spec_V3, ref_spec_V4, ref
     else:
         time_switch_fitspectra = 0
     fit_spectra = [ref_spec_V3, ref_spec_V4, ref_spec_V2, ref_spec_V3]
-    data_cuv_neg = UVVIS_calculate_fit_for_all(df, time_switch_fitspectra, fit_spectra, conc, time_from, time_to, xlim_fit)
+    data_cuv_neg = UVVIS_calculate_fit_for_all(df, time_switch_fitspectra, fit_spectra, time_from, time_to, xlim_fit)
 
     return data_cuv_pos, data_cuv_neg
 
 def UVVIS_reduce_data(data_cuv, one_out_of):
-    (df_target, df_fit, cr_array, co_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
+    (df_target, df_fit, ar_array, ao_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
 
     df_target = df_target.iloc[:, ::one_out_of]
     df_fit = df_fit.iloc[:, ::one_out_of]
-    cr_array = cr_array[::one_out_of]
-    co_array = co_array[::one_out_of]
+    ar_array = ar_array[::one_out_of]
+    ao_array = ao_array[::one_out_of]
     time_list = time_list[::one_out_of]
     df_fit_spectra_Vr = df_fit_spectra_Vr.iloc[:, ::one_out_of]
     df_fit_spectra_Vo = df_fit_spectra_Vo.iloc[:, ::one_out_of]
-    return {'Measurement': df_target, 'Fit': df_fit, 'cr': cr_array, 'co': co_array, 'Time (s)': time_list, 'Spectra_Vr': df_fit_spectra_Vr, 'Spectra_Vo': df_fit_spectra_Vo}
+    return {'Measurement': df_target, 'Fit': df_fit, 'ar': ar_array, 'ao': ao_array, 'Time (s)': time_list, 'Spectra_Vr': df_fit_spectra_Vr, 'Spectra_Vo': df_fit_spectra_Vo}
 
     
 
@@ -1476,7 +1616,7 @@ def animate_UVVIS(data_cuv_pos, data_cuv_neg, conc,
     plt.ioff()
 
     def initialize_fig_spectra(ax, data_cuv, ylim, title):
-        (df_target, df_fit, cr_array, co_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
+        (df_target, df_fit, ar_array, ao_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
         # Create figure and axis    
         line1, = ax.plot([], [], label='Vr', linewidth=0.5, c='tab:cyan')
         line2, = ax.plot([], [], label='Vo', linewidth=0.5, c='tab:pink')
@@ -1493,7 +1633,7 @@ def animate_UVVIS(data_cuv_pos, data_cuv_neg, conc,
         return line1, line2, line3, line4, time_label
 
     def initialize_fig_conc(ax, data_cuv, ylim, title):
-        (df_target, df_fit, cr_array, co_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
+        (df_target, df_fit, ar_array, ao_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
         # Create figure and axis    
         line1, = ax.plot([], [], label='cr', linewidth=1.0, c='tab:green')
         line2, = ax.plot([], [], label='co', linewidth=1.0, c='tab:red')
@@ -1541,7 +1681,7 @@ def animate_UVVIS(data_cuv_pos, data_cuv_neg, conc,
     # Animation function
     def animate(i):
         def set_data_spectra(line1, line2, line3, line4, time_label, data_cuv):
-            (df_target, df_fit, cr_array, co_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
+            (df_target, df_fit, ar_array, ao_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
             wavelengths = df_target.index.values
             idx = i
             if idx >= len(time_list)-1:
@@ -1555,15 +1695,15 @@ def animate_UVVIS(data_cuv_pos, data_cuv_neg, conc,
             #return line1, line2, line3, line4
 
         def set_data_conc(line1, line2, SOC_label, data_cuv):
-            (df_target, df_fit, cr_array, co_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
+            (df_target, df_fit, ar_array, ao_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
             idx = i
             if idx >= len(time_list)-1:
                 idx = len(time_list)-1
             time = time_list[idx]
-            line1.set_data(time_list[:idx], cr_array[:idx])
-            line2.set_data(time_list[:idx], co_array[:idx])
+            line1.set_data(time_list[:idx], ar_array[:idx])
+            line2.set_data(time_list[:idx], ao_array[:idx])
             #SOC = cr_array[idx]
-            SOC_label.set_text(f'{time}s; cr = {cr_array[idx]:.2f} M, co = {co_array[idx]:.2f} M')
+            SOC_label.set_text(f'{time}s; cr = {ar_array[idx]:.2f} M, co = {ao_array[idx]:.2f} M')
             #return line1, line2
             
         set_data_spectra(line00_1, line00_2, line00_3, line00_4,time_label00, data_cuv_neg)
@@ -1583,5 +1723,13 @@ def animate_UVVIS(data_cuv_pos, data_cuv_neg, conc,
         anim.save(save_FN, writer=writervideo) 
     return anim
 
+#%%
+if __name__ == "__main__":
 
+    # Vanadium electrolyte
+    c_V, c_SO4 = conc_V_SO4(weight_pc_V = 6.0, weight_pc_SO4 = 28, density = 1.35, show_details=True)
+    
+    # Proton and bisulfate concentration as function of state of charge?
+    #conc_x, c_H_plus, pH_c_H_plus, c_H2SO4, c_HSO4_minus, c_SO4_2minus = rfb.calc_conc_functions(c_V, c_SO4)
+    df_conc = calc_df_conc(c_V, c_SO4, show=True)
 
