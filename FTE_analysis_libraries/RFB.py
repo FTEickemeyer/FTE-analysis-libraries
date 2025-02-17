@@ -25,7 +25,7 @@ else:
 
 R = const.physical_constants['molar gas constant'][0]
 F = const.physical_constants['Faraday constant'][0]
-a = const.Avogadro
+Avogadro_const = const.Avogadro
 q = const.elementary_charge
 
 s_per_h = 3600 # seconds per hour
@@ -35,7 +35,7 @@ MW_oxalicacid = 90.034 #g/mol for anhydrous oxalic acid, 126.065 g/mol for dihyd
 
 #%% Electrolyte
 
-def conc_V_SO4(weight_pc_V = 6.0, weight_pc_SO4 = 28, density = 1.35, show_details=False):
+def conc_V_SO4(weight_pc_V = 6.0, weight_pc_SO4 = 28, density = 1.35, show=False):
 
     """
     **Information from AMG**
@@ -51,11 +51,25 @@ def conc_V_SO4(weight_pc_V = 6.0, weight_pc_SO4 = 28, density = 1.35, show_detai
     concentration = lambda weight_pc, MW: density*1000 * weight_pc/100 / MW 
     c_V = concentration(weight_pc_V, MW_V)
     c_SO4 = concentration(weight_pc_SO4, MW_SO4)
-    if show_details:
+    if show:
         print(f'Total vanadium concentration: {c_V:.2f} M')
         print(f'Total SO4 concentration: {c_SO4:.2f} M')
 
     return c_V, c_SO4
+
+
+def det_c_V_from_conc_and_electrolyte_details(conc, weight_pc_V_start=6.11, weight_pc_SO4=28, density= 1.35, show=False):
+    def func(weight_pc_V):
+        c_V, c_SO4 = conc_V_SO4(weight_pc_V=weight_pc_V, weight_pc_SO4=weight_pc_SO4, density=density, show=False)
+        return c_V - conc 
+    p0 = [weight_pc_V_start]
+    p = fsolve(func, p0)
+    weight_pc_V = p[0]
+    if show:
+        print(f'Vanadium: {weight_pc_V:.3f} wt%')
+    c_V, c_SO4 = conc_V_SO4(weight_pc_V=weight_pc_V, weight_pc_SO4=weight_pc_SO4, density=density, show=show)
+    return c_V, c_SO4
+
 
 def pH_c_H_plus(c_H_plus):
     return -np.log10(c_H_plus)
@@ -335,7 +349,7 @@ def fit_proton_concentration(dfH, show=False):
 
 #%% Charging protocol
 
-def upload_charging_protocol(fp):
+def upload_charging_protocol_Neware(fp):
     
     def time_to_seconds(time_str):
         # Split the input string by the colon ':'
@@ -349,12 +363,17 @@ def upload_charging_protocol(fp):
         total_seconds = hours * 3600 + minutes * 60 + seconds    
         return total_seconds    
 
-    df_charging = pd.read_excel(fp, sheet_name=3, engine="openpyxl")
+    try:
+        df_charging = pd.read_excel(fp, sheet_name='Detail_10_1_1', engine="openpyxl")
+    except:
+        df_charging = pd.read_excel(fp, sheet_name='record', engine="openpyxl")
     #Rename important columns to be used with different csv files
     if 'Total Time' in df_charging.columns:
         df_charging = df_charging.rename(columns={'Total Time':'Time (s)'})
+        time_format = 'total time'
     elif 'Relative Time(h:min:s.ms)' in df_charging.columns:
         df_charging = df_charging.rename(columns={'Relative Time(h:min:s.ms)':'Time (s)'})
+        time_format = 'relative time'
     else:
         raise ValueError
     df_charging.set_index('Time (s)', inplace=True)
@@ -370,12 +389,14 @@ def upload_charging_protocol(fp):
     # Delete resting period
     df_charging = df_charging[df_charging['Step']>1]
     
-    #Correct time (time starts with 0 with each new step)
     df_charging_step1 = df_charging[df_charging['Step']==2]
     #add the charge from previous step, delete first value, since time is 0 and capacity is also 0
     df_charging_step2 = df_charging[df_charging['Step']==3].iloc[1:,:]
-    df_charging_step2.index += df_charging_step1.index[-1]
-    df_charging = pd.concat([df_charging_step1, df_charging_step2])
+
+    if time_format == 'relative time':
+        #Correct time (time starts with 0 with each new step)
+        df_charging_step2.index += df_charging_step1.index[-1]
+        df_charging = pd.concat([df_charging_step1, df_charging_step2])
     
     #display(df_charging['Step'].to_string())
     #print(df_charging[['Step', 'Capacity(Ah)']].to_markdown())
@@ -456,7 +477,7 @@ def combine_both_steps(df_charge_step1, df_charge_step2, df_voltage, df_current,
         #axl.set_ylim((1.3, 1.65))
         #axl.set_xlim((0, 17500))
         
-        plt.title('Charging protocol')
+        axl.set_title('Charging protocol')
         
         ax = ax[1]
         ax.plot(df_charge.index, df_charge, color='tab:blue', linewidth=5, label='Charge')
@@ -467,8 +488,7 @@ def combine_both_steps(df_charge_step1, df_charge_step2, df_voltage, df_current,
         #axl.set_ylim((1.3, 1.65))
         #axl.set_xlim((0, 17500))
         
-        plt.title('Charging protocol')
-        
+        ax.set_title('Total charge versus time')
         
         plt.tight_layout()
         plt.show()
@@ -537,13 +557,118 @@ def det_no_equidist_times(df_charge, time_to_reach_SOC0, time_to_reach_SOC1, cha
     return times_until_SOC0, times_until_SOC1
 
 
+def det_df_conc_from_charging(c_V, Vol, av_ox_state_initial, df_charge, show=False):
+
+    df_charge_avox = df_charge.copy().to_frame()
+    #n_redox is the number of redox reactions per vanadium species
+    df_charge_avox['n_redox'] = df_charge_avox['Charge (Ah)']*3600 / (F * c_V * Vol)
+    df_charge_avox['av_ox_state_pos'] = av_ox_state_initial + df_charge_avox['n_redox']
+    df_charge_avox['av_ox_state_neg'] = av_ox_state_initial - df_charge_avox['n_redox']
+    #display(df_charge_avox)
+    
+    df_conc = df_charge.copy().to_frame()
+    df_conc = df_conc.drop('Charge (Ah)', axis=1)
+    df_conc['charging_V3_pos'] = (4 - df_charge_avox['av_ox_state_pos']) * c_V
+    df_conc['charging_V4_pos'] = df_charge_avox['av_ox_state_pos'].apply(lambda x : x - 3 if (x >= 3 and x <= 4) else (5 - x if (x > 4) else 0)) * c_V
+    df_conc['charging_V5_pos'] = (df_charge_avox['av_ox_state_pos'] - 4) * c_V
+    df_conc['charging_V4_neg'] = (df_charge_avox['av_ox_state_neg'] - 3) * c_V
+    df_conc['charging_V3_neg'] = df_charge_avox['av_ox_state_neg'].apply(lambda x : 4 - x if (x >= 3 and x <= 4) else (x - 2 if (x < 3) else 0)) * c_V
+    df_conc['charging_V2_neg'] = (3 - df_charge_avox['av_ox_state_neg']) * c_V
+    
+    for col in df_conc.columns:
+        #df_conc[col] = df_conc[col].apply(lambda x : x if (x >= 0 and x <= c_V) else 0)
+        df_conc[col] = df_conc[col].apply(lambda x : x)
+    #display(df_conc)
+
+    if show:
+        df_conc.plot()
+        plt.title('Ion concentrations from charging protocol')
+        plt.ylim(0, c_V)
+        plt.ylabel('Concentration (M)')
+        plt.show()
+    return df_conc
+
+
 #%% Potential measurement
+
+def determine_end_time_s(potential_measurement_system, FN, data_dir):
+    #Load measurement
+    if potential_measurement_system == 'biologic':
+        fp = os.path.join(data_dir, FN)
+        exp = ech.import_biologic_mpt_data(fp, ['time/s', '<Ewe/V>'])
+        return exp['time/s'].iloc[-1]    
+    elif potential_measurement_system == 'NI':
+        fp = os.path.join(data_dir, FN)
+        P = pd.read_csv(fp)
+        return P['Time (s)'].iloc[-1]
+
+
+def upload_charging_protocol_BKPrecision(fp, voltage_limit_step1, correct_time=True, potential_measurement_system=None, FN_negolyte_potential=None, data_dir=None):
+    #BKPrecision uses "Sample" which is not exactly the time in s. To correct we take the time of the potential measurement.
+    if correct_time:
+        time_end_s = determine_end_time_s(potential_measurement_system, FN_negolyte_potential, data_dir)
+    df_raw = pd.read_csv(fp)
+    last_sample = df_raw['Samples - Voltage'].iloc[-1]
+    df_raw['Time (s)'] = df_raw['Samples - Voltage']*time_end_s/last_sample
+    df_raw = df_raw[['Time (s)', 'Voltage - Voltage', 'Current - Current']].set_index('Time (s)')
+    df_raw = df_raw.rename(columns={'Voltage - Voltage': 'Voltage(V)', 'Current - Current': 'Current(A)'})
+    df = df_raw.iloc[::30,:]
+    df_charging_voltage = df['Voltage(V)']
+    df_charging_current = df['Current(A)']
+    #df_charging_voltage = df[['Samples - Voltage', 'Voltage - Voltage']].rename(columns={'Samples - Voltage':'Time (s)', 'Voltage - Voltage': 'Voltage(V)'}).set_index('Time (s)').squeeze()
+    #df_charging_current = df[['Samples - Current', 'Current - Current']].rename(columns={'Samples - Current':'Time (s)', 'Current - Current': 'Current(A)'}).set_index('Time (s)').squeeze()
+    #Calculate Charge from current   
+    #df_diffAh = df_charging_current.rolling(2).apply(lambda g: integrate.trapezoid(g.values, x=g.index.values))
+    df_diffAh = df_charging_current.rolling(2).apply(lambda g: (g.values[-1]+g.values[0])/2*(g.index.values[-1]-g.index.values[0]))
+    df_charge = df_diffAh.cumsum()/3600
+    df_charge.iloc[0] = 0.0
+    df_charge.rename('Charge (Ah)', inplace=True)
+    idx = np.where(df_raw['Voltage(V)'].values == voltage_limit_step1)[0][0]
+    first_charging_step_end_s = df_raw.index.values[idx]
+    return df_charge, df_charging_voltage, df_charging_current, first_charging_step_end_s
+
+
+def plot_charging_protocol(df_charge, df_voltage, df_current, first_charging_step_end_s):
+
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+        
+    axl = ax[0]
+    curve1,  = axl.plot(df_voltage.index, df_voltage, color='tab:blue', linewidth=5, label='Voltage')
+    axr = axl.twinx()
+    curve2,  = axr.plot(df_current.index, df_current, color='tab:orange', linewidth=5, label='Current')
+    axl.axvline(first_charging_step_end_s, color='black')
+    #axl.set_xlim(250, 1100)
+    axl.set_ylim(1.0, 1.7)
+    axr.set_ylim(0.0, 2.5)
+    # Combine legends from both axes
+    curves = [curve1, curve2]
+    labels = [curve.get_label() for curve in curves]
+    axl.legend(curves, labels, loc='center right')
+    axl.set_xlabel('Time (s)')
+    axl.set_ylabel('Voltage (V)')
+    axr.set_ylabel('Current (A)')
+    #axl.set_ylim((1.3, 1.65))
+    #axl.set_xlim((0, 17500))
+    axl.set_title('Charging protocol')
+    
+    ax = ax[1]
+    ax.plot(df_charge.index, df_charge, color='tab:blue', linewidth=5, label='Charge')
+    ax.axvline(first_charging_step_end_s, color='black')
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('Charge (Ah)')
+    #axl.set_ylim((1.3, 1.65))
+    #axl.set_xlim((0, 17500))
+    ax.set_title('Total charge versus time')
+    plt.tight_layout()
+    plt.show()
+
 
 def upload_potential_measurement(potential_measurement_system,
                                  FN_negolyte_potential,
                                  FN_posolyte_potential,
                                  data_dir,
-                                 refCellCalibration,
+                                 refCellCalibration_neg,
+                                 refCellCalibration_pos,
                                  no_times=1000,
                                  show=False):
     #Load measurement
@@ -568,8 +693,8 @@ def upload_potential_measurement(potential_measurement_system,
         exp_neg = gen.df_interpolate(exp_neg, new_times_s)
         
         # Calibrate
-        Ppos_raw = exp_pos + refCellCalibration
-        Pneg_raw = exp_neg + refCellCalibration
+        Ppos_raw = exp_pos + refCellCalibration_pos
+        Pneg_raw = exp_neg + refCellCalibration_neg
         if show:
             # Plot
             fig, ax = plt.subplots()
@@ -591,9 +716,8 @@ def upload_potential_measurement(potential_measurement_system,
         Praw = gen.df_interpolate(Praw, new_times_s)
         #print(Praw.describe())
         # Calibrate
-        Praw += refCellCalibration
-        Ppos_raw = Praw['V2 (V)']
-        Pneg_raw = Praw['V1 (V)']
+        Ppos_raw = Praw['V2 (V)'] + refCellCalibration_pos
+        Pneg_raw = Praw['V1 (V)'] + refCellCalibration_neg
         if show:
             # Plot
             fig, ax = plt.subplots()
@@ -752,6 +876,54 @@ def det_times_and_charge_SOC0_from_potential(df_charge, Ppos, Pneg, xlim=None, s
     return tV4_pos, tV3_neg, charge_tV4_pos, charge_tV3_neg
 
 
+def det_initial_av_ox_state_from_potential(df_charge, tV4_pos, tV3_neg, charge_tV4_pos, charge_tV3_neg, Vol_neg, Vol_pos, c_V, show=False):
+
+    #Caluclate number of redox reactions per vanadium ion carried out until tV4_pos and tV3_neg
+    n_redox_neg = 1/q*charge_tV3_neg*3600 / (c_V * Vol_neg * Avogadro_const)
+    n_redox_pos = 1/q*charge_tV4_pos*3600 / (c_V * Vol_pos * Avogadro_const)
+    if show:
+        print(f'The number of redox reactions per vanadium ion in the negolyte carried out until oxidation state 3.0 is reached: {n_redox_neg:.3f}')
+        print(f'The number of redox reactions per vanadium ion in the posolyte carried out until oxidation state 4.0 is reached: {n_redox_pos:.3f}')
+        
+        
+    #Caluclate number of redox reactions per vanadium ion carried out during t_diff
+    #1. step: Calculate charge difference in Ah
+    charge_difference = charge_tV3_neg - charge_tV4_pos
+    #2. step: calculate n_redox for negative and positive electrolyte
+    n_redox_neg = 1/q*charge_difference*3600 / (c_V * Vol_neg * Avogadro_const)
+    n_redox_pos = 1/q*charge_difference*3600 / (c_V * Vol_pos * Avogadro_const)
+    if show:
+        print(f'The number of redox reactions per vanadium ion in the negolyte carried out during time difference: {n_redox_neg:.3f}')
+        print(f'The number of redox reactions per vanadium ion in the posolyte carried out during time difference: {n_redox_pos:.3f}')
+    #At tV4_pos the posolyte is at an oxidation state 4.0 and at tV3_neg the negolyte is at an oxidation state 3.0 
+    #At t = 0 the posolyte had oxidation state av_ox_state_pos_t0
+    #av_ox_state_pos_t0 = 
+    
+    #Average initial oxidation state if posolyte and negolyte were the same at t = 0
+    #av_ox_state_t0 = 
+    
+    #If posolyte and negolyte had the same oxidation state at the beginning, then the product of concentration and volume can be calculated
+    #The following relation must hold: 
+    #4 - n_redox_pos = 3 + n_redox_neg, from this it follows
+    #new_c_V = 3600/F*(charge_tV4_pos/Vol_pos + charge_tV3_neg/Vol_neg)
+    #new_c_V = 3600/F*(charge_difference/Vol_pos + charge_difference/Vol_neg)
+    #print(new_c_V)
+
+def det_conc_and_initial_oxidation_state(charge_tV4_pos, charge_tV3_neg, Vol_pos, Vol_neg, show=False):
+    delta_n_pos_tV4pos_times_conc = charge_tV4_pos*3600/(F*Vol_pos)
+    delta_n_neg_tV3neg_times_conc = charge_tV3_neg*3600/(F*Vol_neg)
+    conc = delta_n_pos_tV4pos_times_conc + delta_n_neg_tV3neg_times_conc
+    noxi = 4 - delta_n_pos_tV4pos_times_conc/conc
+    noxi_alternative = 3 + delta_n_neg_tV3neg_times_conc/conc
+    if noxi != noxi_alternative:
+        print('Initial oxidation state not unique. noxi = 4 - delta_n_pos_tV4pos_times_conc/conc = {noxi}, noxi_alternative = 3 + delta_n_neg_tV3neg_times_conc/conc = {noxi_alternative}')
+    if show:
+        print(f'Calculated vanadium concentration: conc = {conc:.3f} M')
+        print(f'Initial oxidation state: {noxi:.3f}')
+        print(f'Change in oxidation state of posolyte until V4 reached: {delta_n_pos_tV4pos_times_conc/conc:.3f}')
+        print(f'Change in oxidation state of negolyte until V3 reached: {-delta_n_neg_tV3neg_times_conc/conc:.3f}')
+    return conc, noxi
+
 def amount_oxalic_acid_necessary_to_rebalance(charge_tV3_neg, charge_tV4_pos, show=False):
     # Amount of oxalic acid necessary to rebalance.
     delta_charge = charge_tV3_neg - charge_tV4_pos
@@ -805,7 +977,7 @@ def P_vs_charge(Ppos, Pneg, df_charge, show=False):
 #%% Simulation potentials
 
 
-def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=gen.T_RT, show_details=True):
+def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=gen.T_RT, fit_conc=True, show_details=True):
     #Fit function
 
     # Proton concentration as a function of ratio between V4 and V3 and between V5 and V4
@@ -834,6 +1006,7 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
     #E_Ror = lambda Ror, E0, T: E0 + R*T/F * np.log( Ror )
     def R43(E, E0, T, use_proton_concentration):
         func = lambda R43_, E, E0, T: R43_ - 1/cH43(R43_)**2 * np.exp( (E-E0)/ (R*T/F) )
+        #func = lambda R43_, E, E0, T: R43_ - 1/cH43(R43_)**2 * np.exp( (E-(E0+alpha*concV4)/ (R*T/F) )   #xxxx here an SIT theory parameter can be included
         R43_initial = np.exp( (E-E0)/ (R*T/F) )
         ratio = fsolve(func, R43_initial, args=(E, E0, T), xtol=1e-4)[0]
         #print(f'E = {E:.3f} V, E0 = {E0:.3f}, R43 = {ratio:.2e}, R43_initial = {R43_initial:.2e}')
@@ -908,7 +1081,8 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
         both.plot()
     exp = exp_equidist
     
-    def Qboth_Earr(Earr, c_V, E0_V2X3, E0_V3X4, E0_V4X5):
+    
+    def Qboth_Earr_(Earr, c_V, E0_V2X3, E0_V3X4, E0_V4X5):
         E_pos = Earr[Earr >= E_start]
         E_neg = Earr[Earr < E_start]
     
@@ -918,6 +1092,13 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
         Q_E_pos = Qpos_Earr(E_pos, cVol_pos, E0_V2X3, E0_V3X4, E0_V4X5, T, use_proton_concentration) - Qpos_E(E_start, cVol_pos, E0_V2X3, E0_V3X4, E0_V4X5, T, use_proton_concentration)
         Q_E_neg = Qneg_Earr(E_neg, cVol_neg, E0_V2X3, E0_V3X4, E0_V4X5, T, use_proton_concentration) - Qneg_E(E_start, cVol_neg, E0_V2X3, E0_V3X4, E0_V4X5, T, use_proton_concentration)
         return np.concatenate((Q_E_neg, Q_E_pos))
+    
+    if fit_conc:
+        def Qboth_Earr(Earr, c_V, E0_V2X3, E0_V3X4, E0_V4X5):
+            return Qboth_Earr_(Earr, c_V, E0_V2X3, E0_V3X4, E0_V4X5)
+    else:
+        def Qboth_Earr(Earr, E0_V2X3, E0_V3X4, E0_V4X5):
+            return Qboth_Earr_(Earr, c_V, E0_V2X3, E0_V3X4, E0_V4X5)
         
     def plot_fit_vs_potential(p0, popt):
         #fit0 = xyd.xy_data(exp.x, Qboth_Earr(exp.x, *p0)) 
@@ -957,22 +1138,35 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
     #E_arr = np.linspace(start, stop, num=n_points)
     #dE = (E_arr[-1]- E_arr[0])/(n_points-1)
     
-    p0 = [c_V, E0_V2X3, E0_V3X4, E0_V4X5]
-    bounds = (
+    if fit_conc:
+        p0 = [c_V, E0_V2X3, E0_V3X4, E0_V4X5]
+        bounds = (
               [c_V*0.8, E0_V2X3-0.2, E0_V3X4-0.2, E0_V4X5-0.2],
               [c_V*1.2, E0_V2X3+0.2, E0_V3X4+0.2, E0_V4X5+0.2]
               )
-    
+    else:
+        p0 = [E0_V2X3, E0_V3X4, E0_V4X5]
+        bounds = (
+                  [E0_V2X3-0.2, E0_V3X4-0.2, E0_V4X5-0.2],
+                  [E0_V2X3+0.2, E0_V3X4+0.2, E0_V4X5+0.2]
+                  )
+        
     p = curve_fit(Qboth_Earr, exp.x, exp.y, p0=p0, bounds=bounds)
     popt = p[0]
     if show_details:
         print(popt)
-    c_V = popt[0]
-    E0_V2X3 = popt[1]
-    E0_V3X4 = popt[2]
-    E0_V4X5 = popt[3]
+    if fit_conc:
+        c_V = popt[0]
+        E0_V2X3 = popt[1]
+        E0_V3X4 = popt[2]
+        E0_V4X5 = popt[3]
+    else:
+        E0_V2X3 = popt[0]
+        E0_V3X4 = popt[1]
+        E0_V4X5 = popt[2]
     if show_details:
-        print(f'c_V = {c_V:.2f} M')
+        if fit_conc:
+            print(f'c_V = {c_V:.2f} M')
         print(f'E0_V2X3 = {E0_V2X3:.3f} V vs. SHE')
         print(f'E0_V3X4 = {E0_V3X4:.3f} V vs. SHE')
         print(f'E0_V4X5 = {E0_V4X5:.3f} V vs. SHE')
@@ -998,17 +1192,11 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
     Qpos_E_arr = Qpos_Earr(E_arr_pos, Vol*c_V, E0_V2X3, E0_V3X4, E0_V4X5, T, use_proton_concentration) - Qpos_E(E_start, Vol*c_V, E0_V2X3, E0_V3X4, E0_V4X5, T, use_proton_concentration)
     df_fit_pos = pd.DataFrame({'Potential (V vs. SHE)': E_arr_pos,'Charge (Ah)': Qpos_E_arr}).set_index('Charge (Ah)')
     df_fit_pos = interpolate_df_fit(df_fit_pos)
-    #df_fit_pos = gen.df_interpolate(df_fit_pos, df_charge.values) #xxx here df_charge should be extrapolated
-    #df_fit_pos['Time (s)'] = df_charge.index
-    #df_fit_pos.set_index('Time (s)', inplace=True)
     
     E_arr_neg = np.linspace(E_start, Pneg.values[-1], 1000)
     Qneg_E_arr = Qneg_Earr(E_arr_neg, Vol*c_V, E0_V2X3, E0_V3X4, E0_V4X5, T, use_proton_concentration) - Qneg_E(E_start, Vol*c_V, E0_V2X3, E0_V3X4, E0_V4X5, T, use_proton_concentration)
     df_fit_neg = pd.DataFrame({'Potential (V vs. SHE)': E_arr_neg,'Charge (Ah)': Qneg_E_arr}).set_index('Charge (Ah)')
     df_fit_neg = interpolate_df_fit(df_fit_neg)
-    #df_fit_neg = gen.df_interpolate(df_fit_neg, df_charge.values)
-    #df_fit_neg['Time (s)'] = df_charge.index
-    #df_fit_neg.set_index('Time (s)', inplace=True)
 
     # Plot potential vs. time and concentrations
     conc_V2_pos_list = []
@@ -1049,27 +1237,28 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
     return c_V, (E0_V2X3, E0_V3X4, E0_V4X5), (df_fit_pos, df_fit_neg), (conc_V3_pos, conc_V4_pos, conc_V5_pos), (conc_V4_neg, conc_V3_neg, conc_V2_neg)
 
 
-def calculate_fit(c_V_start, c_SO4_start, Ppos, Pneg, Ppos_charge, df_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration=True, T=gen.T_RT, show_details=False, do_recalculation=True):
-    c_V, E0s, df_fits, conc_pos, conc_neg = fit_potentials(c_V_start, c_SO4_start, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=T, show_details=show_details)
+def calculate_fit(c_V_start, c_SO4_start, Ppos, Pneg, Ppos_charge, df_charge, Pneg_charge, E_start_exp, Vol, fit_conc= True, use_proton_concentration=True, T=gen.T_RT, show_details=False, do_recalculation=True):
+    c_V, E0s, df_fits, conc_pos, conc_neg = fit_potentials(c_V_start, c_SO4_start, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=T, fit_conc=fit_conc, show_details=show_details)
     if show_details:
         print(f'First calculation finished (c_V = {c_V:.2f} M).')
         if not do_recalculation:
             print('No second calculation done. Set kwarg "do_recalculation" to True if you want to recalculate automatically!')
     if do_recalculation:
         c_SO4 = c_V/c_V_start * c_SO4_start
-        c_V, E0s, df_fits, conc_pos, conc_neg = fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=T, show_details=show_details)
+        c_V, E0s, df_fits, conc_pos, conc_neg = fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=T, fit_conc=fit_conc, show_details=show_details)
         if show_details:
             print(f'Second calculation finished (c_V = {c_V:.2f} M).')
     return {'c_V': c_V, 'E0s': E0s, 'df_fits': df_fits, 'conc_pos': conc_pos, 'conc_neg': conc_neg}
     
 
-def plot_complete_dataset(fit_data, Ppos, Pneg, time_to_reach_SOC0, time_to_reach_SOC1, first_charging_step_end_s):
+def plot_complete_dataset(fit_data, Ppos, Pneg, time_to_reach_SOC0, time_to_reach_SOC1, first_charging_step_end_s, xlim=None, plot_fit=True, plot_redox_potentials=True, plot_time_to_reach_SOC0=True):
     c_V = fit_data['c_V']
     (E0_V2X3, E0_V3X4, E0_V4X5) = fit_data['E0s']
     (df_fit_pos, df_fit_neg) = fit_data['df_fits']
     (conc_V3_pos, conc_V4_pos, conc_V5_pos) = fit_data['conc_pos']
     (conc_V4_neg, conc_V3_neg, conc_V2_neg) = fit_data['conc_neg']
-    xlim = (min(Ppos.index), max(Ppos.index))
+    if xlim is None:
+        xlim = (min(Ppos.index), max(Ppos.index))
     #xlim = (0, 8000)
     #xlim = (2210, 2870)
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
@@ -1077,11 +1266,14 @@ def plot_complete_dataset(fit_data, Ppos, Pneg, time_to_reach_SOC0, time_to_reac
     ax = axes[0]
     ax.plot(Ppos.index, Ppos.values, linewidth=5, color='tab:blue', label='Posolyte')
     ax.plot(Pneg.index, Pneg.values, linewidth=5, color='tab:orange', label='Negolyte')
-    ax.plot(df_fit_pos.index, df_fit_pos.values, color='black', label='fit')
-    ax.plot(df_fit_neg.index, df_fit_neg.values, color='black', label='')
+    if plot_fit:
+        ax.plot(df_fit_pos.index, df_fit_pos.values, color='black', label='fit')
+        ax.plot(df_fit_neg.index, df_fit_neg.values, color='black', label='')
     
-    ax.vlines(time_to_reach_SOC0,min(min(Ppos), min(Pneg)), max(max(Ppos), max(Pneg)), color='black', linestyle='--', linewidth=0.5, label='Time to reach SOC0')
-    ax.hlines([E0_V2X3, E0_V3X4, E0_V4X5], min(Ppos.index), max(Ppos.index), linewidth=0.5, linestyle='--')
+    if plot_time_to_reach_SOC0:
+        ax.vlines(time_to_reach_SOC0,min(min(Ppos), min(Pneg)), max(max(Ppos), max(Pneg)), color='black', linestyle='--', linewidth=0.5, label='Time to reach SOC0')
+    if plot_redox_potentials:
+        ax.hlines([E0_V2X3, E0_V3X4, E0_V4X5], min(Ppos.index), max(Ppos.index), linewidth=0.5, linestyle='--')
     ax.set_xlim(xlim)
     ax.set_xlabel('Time (s)')
     #ax.set_ylabel('Potential (V vs. Hg/HgSO4)')
@@ -1123,11 +1315,14 @@ def plot_complete_dataset(fit_data, Ppos, Pneg, time_to_reach_SOC0, time_to_reac
     x_idx = np.argmin(np.abs(SOC_pos.y-90))
     t_SOC90 = SOC_pos.x[x_idx]
     print(f'Posolyte: SOC 90% reached after {t_SOC90:.0f} s')
-    print(f'Negolyte: SOC at this time is {SOC_neg.y[x_idx]:.0f} %')
+    if x_idx <= len(SOC_neg.y)-1:
+        print(f'Negolyte: SOC at this time is {SOC_neg.y[x_idx]:.0f} %')
+        ax.hlines(SOC_neg.y[x_idx], 0, t_SOC90, linestyle='--', linewidth=0.5)
+    else:
+        print('This time not available with negolyte calculation!')
     ax.vlines(t_SOC90, 0, 90, color='black', linestyle='--', linewidth=0.5, label=f'Posolyte SOC 90%: {t_SOC90:.0f} s')
     ax.vlines(first_charging_step_end_s, 0, 100, color='black', linestyle='-', linewidth=0.5, label=f'Posolyte SOC 90%: {t_SOC90:.0f} s')
     ax.hlines(90, 0, t_SOC90, linestyle='--', linewidth=0.5)
-    ax.hlines(SOC_neg.y[x_idx], 0, t_SOC90, linestyle='--', linewidth=0.5)
     
     ax.set_xlim(xlim)
     ax.set_ylim(0, 100)
@@ -1206,7 +1401,7 @@ def fitted_m_oxalic_acid(fit_data, Vol, show=False):
 
 #%% UV-VIS
 
-def load_ref_spec(ref_spec_dir):
+def load_ref_spec(ref_spec_dir, xlim=None):
     
     def df_to_series(df):
         return df[df.columns[0]]
@@ -1215,11 +1410,11 @@ def load_ref_spec(ref_spec_dir):
     ref_spec_V3 = df_to_series(pd.read_csv(os.path.join(ref_spec_dir, 'spec_V3.csv'), index_col=0))
     ref_spec_V4 = df_to_series(pd.read_csv(os.path.join(ref_spec_dir, 'spec_V4.csv'), index_col=0))
     ref_spec_V5 = df_to_series(pd.read_csv(os.path.join(ref_spec_dir, 'spec_V5.csv'), index_col=0))
+    all_ref_spec = [ref_spec_V2, ref_spec_V3, ref_spec_V4, ref_spec_V5]
+    return tuple(map(lambda ser: ser.loc[xlim[0]:xlim[1]], all_ref_spec))
 
-    return [ref_spec_V2, ref_spec_V3, ref_spec_V4, ref_spec_V5]
 
-
-def plot_ref_spectra(ref_spec_V2, ref_spec_V3, ref_spec_V4, ref_spec_V5, xlim= (250, 1050), ylim= None):
+def plot_ref_spectra(ref_spec_V2, ref_spec_V3, ref_spec_V4, ref_spec_V5, xlim= None, ylim= None):
     
     fig, ax = plt.subplots()
     
@@ -1231,9 +1426,11 @@ def plot_ref_spectra(ref_spec_V2, ref_spec_V3, ref_spec_V4, ref_spec_V5, xlim= (
     plot_df(ax, ref_spec_V4, color='blue', label='V(IV)')
     plot_df(ax, ref_spec_V5, color='orange', label='V(V)')
         
-    ax.hlines(0, *xlim, colors='black')
+    ax.axhline(0, color='black')
     if ylim is not None:
         ax.set_ylim(ylim)
+    if xlim is not None:
+        ax.set_xlim(xlim)
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Molar extinction coefficient (1/[M cm])')
     ax.legend()
@@ -1242,7 +1439,7 @@ def plot_ref_spectra(ref_spec_V2, ref_spec_V3, ref_spec_V4, ref_spec_V5, xlim= (
     plt.show()
 
 
-def load_absorbance_data(fp_cuv_pos, fp_cuv_neg, xlim = (250, 1050)):
+def load_absorbance_data(fp_cuv_pos, fp_cuv_neg, xlim=None):
     
     def read_and_int_col(fp, xlim):
         df = pd.read_csv(fp)
@@ -1250,13 +1447,58 @@ def load_absorbance_data(fp_cuv_pos, fp_cuv_neg, xlim = (250, 1050)):
         if 'times1000' in fp:
             df /= 1000
         df.columns = np.int16(np.float64(df.columns.values))
-        return df.loc[xlim[0]:xlim[1]]
+        if xlim is not None:
+            return df.loc[xlim[0]:xlim[1]]
+        else:
+            return df
         
     df_cuv_pos = read_and_int_col(fp_cuv_pos, xlim)
     df_cuv_neg = read_and_int_col(fp_cuv_neg, xlim)
 
     return df_cuv_pos, df_cuv_neg
 
+def load_UVVIS_raw_data(data_dir, xlim=None):
+    
+    def read_file(data_dir, FN, xlim):
+        if FN in os.listdir(data_dir):
+            pass
+        else:
+            FN = FN.split('.csv')[0]+'_before.csv'
+
+        fp = os.path.join(data_dir, FN)
+        df = pd.read_csv(fp)
+        if df.columns.values[0] == 'nm':
+            df.rename(columns={'nm': 'Wavelength (nm)'}, inplace=True)
+        df.set_index('Wavelength (nm)', inplace=True)
+        if xlim is not None:
+            return df.loc[xlim[0]:xlim[1]]
+        else:
+            return df
+    
+    df_dark = read_file(data_dir, 'dark.csv', xlim)
+    df_I0_c1 = read_file(data_dir, 'I0_c1.csv', xlim)
+    df_I0_c2 = read_file(data_dir, 'I0_c2.csv', xlim)
+    df_IT_c1 = read_file(data_dir, 'IT_c1.csv', xlim)
+    df_IT_c2 = read_file(data_dir, 'IT_c2.csv', xlim)
+    
+    def calc_absorbance(df_IT, df_I0, df_dark, xlim):
+        df_IT.columns = np.int16(np.float64(df_IT.columns.values))
+        dark = df_dark['cts'].values
+        I0 = np.copy(df_I0['cts'].values-dark)
+        I0 = np.where(I0<=0, 1e-10, I0)
+        df_T = df_IT.sub(dark, axis='index').div(I0, axis='index')
+        #Make sure that T never becomes <= 0 because it appears in the log10 statement
+        df_T[df_T<1e-4] = 1e-4
+        if xlim is not None:
+            return -np.log10(df_T).loc[xlim[0]:xlim[1], :]
+        else:
+            return -np.log10(df_T)
+
+    df_cuv_pos = calc_absorbance(df_IT_c1, df_I0_c1, df_dark, xlim)
+    df_cuv_neg = calc_absorbance(df_IT_c2, df_I0_c2, df_dark, xlim)
+
+    return df_cuv_pos, df_cuv_neg, df_dark, df_I0_c1, df_IT_c1
+    
 
 def plot_UVVIS_data(df_cuv_pos, df_cuv_neg, ylabel='Absorbance', time_array_pos= None, time_array_neg= None, no_curves=20, xlim_cuv_pos=(380, 400), xlim_cuv_neg=(280, 1100), ylim_cuv_pos=(0, 2), ylim_cuv_neg=(-0.5, 2)):
 
@@ -1290,6 +1532,22 @@ def plot_UVVIS_data(df_cuv_pos, df_cuv_neg, ylabel='Absorbance', time_array_pos=
     ax1.set_title('Positive electrode')
     ax2.set_title('Negative electrode')
     plt.show()
+    
+    
+def plot_UVVIS_data_SOC(df_cuv_pos_raw, df_cuv_neg_raw, tV4_pos, tV3_neg, 
+                        ylabel='Absorbance', no_curves=10, 
+                        xlim_cuv_pos=(380, 1000), xlim_cuv_neg=(300, 1100), ylim_cuv_pos=(0, 0.5), ylim_cuv_neg=(-0.5, 2)):
+
+    #Plot absorbance curves until SOC0 is reached
+    time_array_neg = np.array([int(round(tV3_neg*i/no_curves)) for i in range(no_curves+1)])
+    time_array_pos = np.array([int(round(tV4_pos*i/no_curves)) for i in range(no_curves+1)])
+    plot_UVVIS_data(df_cuv_pos_raw, df_cuv_neg_raw, ylabel=ylabel, time_array_pos=time_array_pos, time_array_neg=time_array_neg,
+                        xlim_cuv_pos=xlim_cuv_pos, xlim_cuv_neg=xlim_cuv_neg, ylim_cuv_pos=ylim_cuv_pos, ylim_cuv_neg=ylim_cuv_neg)
+    #Plot absorbance curves from SOC 0% until SOC 100%
+    time_array_neg = np.array([int(tV3_neg) + int(round((df_cuv_neg_raw.columns[-1]-tV3_neg)*i/no_curves)) for i in range(no_curves+1)])
+    time_array_pos = np.array([int(tV4_pos) + int(round((df_cuv_pos_raw.columns[-1]-tV4_pos)*i/no_curves)) for i in range(no_curves+1)])
+    plot_UVVIS_data(df_cuv_pos_raw, df_cuv_neg_raw, ylabel=ylabel, time_array_pos=time_array_pos, time_array_neg=time_array_neg,
+                        xlim_cuv_pos=xlim_cuv_pos, xlim_cuv_neg=xlim_cuv_neg, ylim_cuv_pos=ylim_cuv_pos, ylim_cuv_neg=ylim_cuv_neg)
 
 
 def UVVIS_get_offset_and_scaling_factor_cuv_pos(first_spectra=None, show=False):
@@ -1350,13 +1608,16 @@ def UVVIS_get_offset_and_scaling_factor_cuv_pos(first_spectra=None, show=False):
     return offset_cuv_pos, scaling_factor_cuv_pos
 
 
-def UVVIS_to_molar_extinction_coefficient(df_cuv_pos_raw, df_cuv_neg_raw, conc, pathlength_cuv_neg, scaling_factor_cuv_pos, offset_cuv_pos):
+def UVVIS_to_molar_extinction_coefficient(df_cuv_pos_raw, df_cuv_neg_raw, conc, pathlength_cuv_neg, scaling_factor_cuv_pos, offset_cuv_pos, show_details=False):
 
     df_cuv_pos = df_cuv_pos_raw.copy()
     df_cuv_neg = df_cuv_neg_raw.copy()
-    df_cuv_neg /= (conc*pathlength_cuv_neg)
+    df_cuv_neg /= conc*pathlength_cuv_neg
     pathlength_cuv_pos = pathlength_cuv_neg/scaling_factor_cuv_pos #cm (Cuvette 1 thickness)
     #pathlength_V4V5_cuv_pos = pathlength_cuv_pos
+    if show_details:
+        print(f'Pathlength positive cuvette: {pathlength_cuv_pos:.5f} cm')
+        print(f'Pathlength negative cuvette: {pathlength_cuv_neg:.5f} cm')
     df_cuv_pos += offset_cuv_pos
     df_cuv_pos /= conc*pathlength_cuv_pos
 
@@ -1470,19 +1731,20 @@ def UVVIS_fit_spectrum_old(target_spectrum, spec_Vr, spec_Vo):
 
 def UVVIS_fit_spectrum(target_spectrum, spec_Vr, spec_Vo):
 
-    def fit_model(wavelengths, ar, ao, offset_r, offset_o):
-        #offset1 = 0
-        #offset2 = 0
-        return (ar * (spec_Vr.values + offset_r) + ao * (spec_Vo.values + offset_o))
-        #return (ar * spec_Vr.values + ao * spec_Vo.values)
+    #def fit_model(wavelengths, ar, ao, offset_r, offset_o):
+    def fit_model(wavelengths, ar, ao):
+        #return (ar * (spec_Vr.values + offset_r) + ao * (spec_Vo.values + offset_o))
+        return (ar * spec_Vr.values + ao * spec_Vo.values)
 
     # Extract wavelength and absorbance data from target spectrum
     wavelengths = target_spectrum.index
     absorbance = target_spectrum.values
 
     # Initial guess for coefficients and offsets [c1, c2, offset1, offset2]
-    initial_guess = [0.5, 0.5, 0, 0]
+    #initial_guess = [0.5, 0.5, 0, 0]
     bounds = ([0, 0, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf])
+    initial_guess = [0.5, 0.5]
+    bounds = ([0, 0], [3, 3])
 
     # Perform curve fitting
     popt, _ = curve_fit(fit_model, wavelengths, absorbance, p0=initial_guess, bounds=bounds)
@@ -1490,18 +1752,19 @@ def UVVIS_fit_spectrum(target_spectrum, spec_Vr, spec_Vo):
     # Extract fitted coefficients and offsets
     ar = popt[0]
     ao = popt[1]
-    offset_r = popt[2]
-    offset_o = popt[3]
+    #offset_r = popt[2]
+    #offset_o = popt[3]
 
     # Compute the fitted spectrum
-    fitted_spectrum = fit_model(wavelengths, ar, ao, offset_r, offset_o)
+    #fitted_spectrum = fit_model(wavelengths, ar, ao, offset_r, offset_o)
+    fitted_spectrum = fit_model(wavelengths, ar, ao)
     df_fit = pd.Series(fitted_spectrum, index=target_spectrum.index)
 
     # Return the fit results and coefficients
     return df_fit, ar, ao
 
 
-def UVVIS_calculate_fit_for_all(df, time_switch_fitspectra, fit_spectra, time_from, time_to, xlim_fit):
+def UVVIS_calculate_fit_for_all(df, conc, time_switch_fitspectra, fit_spectra, time_from, time_to, xlim_fit):
     ar_list = []
     ao_list = []
     target_list = []
@@ -1543,7 +1806,11 @@ def UVVIS_calculate_fit_for_all(df, time_switch_fitspectra, fit_spectra, time_fr
     df_fit_spectra_Vo = pd.DataFrame(np.array(fit_spectrum_Vo_list).transpose(), columns=time_list, index=wavelengths)
     ar_array = np.asarray(ar_list)
     ao_array = np.asarray(ao_list)
-    data = {'Measurement': df_target, 'Fit': df_fit, 'ar': ar_array, 'ao': ao_array, 'Time (s)': time_list, 'Spectra_Vr': df_fit_spectra_Vr, 'Spectra_Vo': df_fit_spectra_Vo}
+    #Calculate concentrations (normalized to conc)
+    cr_array = ar_array * conc/(ao_array+ar_array)
+    co_array = conc - cr_array
+    
+    data = {'Measurement': df_target, 'Fit': df_fit, 'ar': ar_array, 'ao': ao_array, 'cr': cr_array, 'co': co_array, 'Time (s)': time_list, 'Spectra_Vr': df_fit_spectra_Vr, 'Spectra_Vo': df_fit_spectra_Vo}
     return data
 
 
@@ -1553,7 +1820,7 @@ def UVVIS_reduce_number_of_spectra(df_cuv_pos, df_cuv_neg, one_out_of):
     return df_cuv_pos_reduced, df_cuv_neg_reduced
 
 
-def UVVIS_fit(df_cuv_pos, df_cuv_neg, ref_spec_V2, ref_spec_V3, ref_spec_V4, ref_spec_V5,
+def UVVIS_fit(conc, df_cuv_pos, df_cuv_neg, ref_spec_V2, ref_spec_V3, ref_spec_V4, ref_spec_V5,
               one_out_of=1, time_cuv_pos_limits=(0,-1), time_cuv_neg_limits=(0,-1), xlim_fit=(380, 1000),
               tV4_pos=None, tV3_neg=None):
 
@@ -1572,7 +1839,7 @@ def UVVIS_fit(df_cuv_pos, df_cuv_neg, ref_spec_V2, ref_spec_V3, ref_spec_V4, ref
     else:
         time_switch_fitspectra = 0 
     fit_spectra = [ref_spec_V3, ref_spec_V4, ref_spec_V4, ref_spec_V5]
-    data_cuv_pos = UVVIS_calculate_fit_for_all(df, time_switch_fitspectra, fit_spectra, time_from, time_to, xlim_fit)
+    data_cuv_pos = UVVIS_calculate_fit_for_all(df, conc, time_switch_fitspectra, fit_spectra, time_from, time_to, xlim_fit)
     
     df = df_cuv_neg_reduced
     time_from = time_cuv_neg_limits[0]
@@ -1583,28 +1850,31 @@ def UVVIS_fit(df_cuv_pos, df_cuv_neg, ref_spec_V2, ref_spec_V3, ref_spec_V4, ref
     else:
         time_switch_fitspectra = 0
     fit_spectra = [ref_spec_V3, ref_spec_V4, ref_spec_V2, ref_spec_V3]
-    data_cuv_neg = UVVIS_calculate_fit_for_all(df, time_switch_fitspectra, fit_spectra, time_from, time_to, xlim_fit)
+    data_cuv_neg = UVVIS_calculate_fit_for_all(df, conc, time_switch_fitspectra, fit_spectra, time_from, time_to, xlim_fit)
 
     return data_cuv_pos, data_cuv_neg
 
 def UVVIS_reduce_data(data_cuv, one_out_of):
-    (df_target, df_fit, ar_array, ao_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
+    (df_target, df_fit, ar_array, ao_array, cr_array, co_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
 
     df_target = df_target.iloc[:, ::one_out_of]
     df_fit = df_fit.iloc[:, ::one_out_of]
     ar_array = ar_array[::one_out_of]
     ao_array = ao_array[::one_out_of]
+    cr_array = cr_array[::one_out_of]
+    co_array = co_array[::one_out_of]
     time_list = time_list[::one_out_of]
     df_fit_spectra_Vr = df_fit_spectra_Vr.iloc[:, ::one_out_of]
     df_fit_spectra_Vo = df_fit_spectra_Vo.iloc[:, ::one_out_of]
-    return {'Measurement': df_target, 'Fit': df_fit, 'ar': ar_array, 'ao': ao_array, 'Time (s)': time_list, 'Spectra_Vr': df_fit_spectra_Vr, 'Spectra_Vo': df_fit_spectra_Vo}
+    return {'Measurement': df_target, 'Fit': df_fit, 'ar': ar_array, 'ao': ao_array, 'cr': cr_array, 'co': co_array, 'Time (s)': time_list, 'Spectra_Vr': df_fit_spectra_Vr, 'Spectra_Vo': df_fit_spectra_Vo}
 
     
-
 def animate_UVVIS(data_cuv_pos, data_cuv_neg, conc, 
                   ylim_spec_cuv_pos=(0, 80), ylim_spec_cuv_neg=(0, 80),  
-                  ylim_conc_cuv_pos=None, ylim_conc_cuv_neg=None, figsize=(12, 8), save_FN=None):
+                  ylim_conc_cuv_pos=None, ylim_conc_cuv_neg=None, 
+                  normalize_conc=False, figsize=(12, 8), save_FN=None, **FFMpegWriter_kwargs):
 
+    
     if ylim_conc_cuv_pos is None:
         ylim_conc_cuv_pos=(0, conc*1.1)
     if ylim_conc_cuv_neg is None:
@@ -1616,7 +1886,7 @@ def animate_UVVIS(data_cuv_pos, data_cuv_neg, conc,
     plt.ioff()
 
     def initialize_fig_spectra(ax, data_cuv, ylim, title):
-        (df_target, df_fit, ar_array, ao_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
+        (df_target, df_fit, ar_array, ao_array, cr_array, co_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
         # Create figure and axis    
         line1, = ax.plot([], [], label='Vr', linewidth=0.5, c='tab:cyan')
         line2, = ax.plot([], [], label='Vo', linewidth=0.5, c='tab:pink')
@@ -1633,7 +1903,7 @@ def animate_UVVIS(data_cuv_pos, data_cuv_neg, conc,
         return line1, line2, line3, line4, time_label
 
     def initialize_fig_conc(ax, data_cuv, ylim, title):
-        (df_target, df_fit, ar_array, ao_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
+        (df_target, df_fit, ar_array, ao_array, cr_array, co_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
         # Create figure and axis    
         line1, = ax.plot([], [], label='cr', linewidth=1.0, c='tab:green')
         line2, = ax.plot([], [], label='co', linewidth=1.0, c='tab:red')
@@ -1681,7 +1951,7 @@ def animate_UVVIS(data_cuv_pos, data_cuv_neg, conc,
     # Animation function
     def animate(i):
         def set_data_spectra(line1, line2, line3, line4, time_label, data_cuv):
-            (df_target, df_fit, ar_array, ao_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
+            (df_target, df_fit, ar_array, ao_array, cr_array, co_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
             wavelengths = df_target.index.values
             idx = i
             if idx >= len(time_list)-1:
@@ -1695,15 +1965,22 @@ def animate_UVVIS(data_cuv_pos, data_cuv_neg, conc,
             #return line1, line2, line3, line4
 
         def set_data_conc(line1, line2, SOC_label, data_cuv):
-            (df_target, df_fit, ar_array, ao_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
+            (df_target, df_fit, ar_array, ao_array, cr_array, co_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
             idx = i
             if idx >= len(time_list)-1:
                 idx = len(time_list)-1
             time = time_list[idx]
-            line1.set_data(time_list[:idx], ar_array[:idx])
-            line2.set_data(time_list[:idx], ao_array[:idx])
+            if normalize_conc:
+                line1.set_data(time_list[:idx], cr_array[:idx])
+                line2.set_data(time_list[:idx], co_array[:idx])
+            else:
+                line1.set_data(time_list[:idx], ar_array[:idx]*conc)
+                line2.set_data(time_list[:idx], ao_array[:idx]*conc)
             #SOC = cr_array[idx]
-            SOC_label.set_text(f'{time}s; cr = {ar_array[idx]:.2f} M, co = {ao_array[idx]:.2f} M')
+            if normalize_conc:
+                SOC_label.set_text(f'{time}s; cr = {cr_array[idx]:.2f} M, co = {co_array[idx]:.2f} M')
+            else:
+                SOC_label.set_text(f'{time}s; cr = {ar_array[idx]*conc:.2f} M, co = {ao_array[idx]*conc:.2f} M, conc. = {(ar_array[idx]+ao_array[idx])*conc:.2f} M')
             #return line1, line2
             
         set_data_spectra(line00_1, line00_2, line00_3, line00_4,time_label00, data_cuv_neg)
@@ -1719,9 +1996,10 @@ def animate_UVVIS(data_cuv_pos, data_cuv_neg, conc,
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=frames, interval=100)
     # saving to m4 using ffmpeg writer 
     if save_FN is not None:
-        writervideo = animation.FFMpegWriter(fps=60) 
+        writervideo = animation.FFMpegWriter(**FFMpegWriter_kwargs) 
         anim.save(save_FN, writer=writervideo) 
     return anim
+
 
 #%%
 if __name__ == "__main__":
