@@ -138,7 +138,10 @@ def df_interpolate(df, new_index_arr):
     new_index_arr = new_index_arr[new_index_arr <= upper_limit]
     r = pd.Index(new_index_arr)
     t = df.index
-    return df.reindex(t.union(r)).interpolate('index').loc[r]
+    df_new = df.reindex(t.union(r)).interpolate('index').loc[r]
+    df_new.index.name = df.index.name
+    df_new.index = df_new.index.astype(type(new_index_arr[0]))
+    return df_new
 
 def findind(arr, value, show_warnings = False):
     """

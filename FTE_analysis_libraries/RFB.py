@@ -13,6 +13,7 @@ from matplotlib import animation
 import matplotlib.pyplot as plt
 from scipy.optimize import fsolve, curve_fit
 import scipy.constants as const
+from scipy.signal import find_peaks
 
 if __name__ != "__main__":
     from . import General as gen
@@ -516,6 +517,7 @@ def det_time_and_charge_SOC0_and_SOC1_from_charging_protocol(df_charge, conc, Vo
     el_per_species = 0.5 # number of electrons per species
     charge_SOC0_calc = charge(el_per_species)
     if show:
+        print('Calculations from charging protocol only:')
         print(f'Charge necessary to oxidize V3.5 to V4: {charge_SOC0_calc:.3f} Ah')
     
     # Calculate the time that this charge is reached
@@ -533,11 +535,16 @@ def det_time_and_charge_SOC0_and_SOC1_from_charging_protocol(df_charge, conc, Vo
         print(f'Charge necessary to charge from SOC 0% to 100%: {charge_SOC1_calc:.3f} Ah')
     
     # Calculate the time that this charge is reached
-    idx_SOC1 = -1
-    time_to_reach_SOC1 = df_charge.index[idx_SOC1] - df_charge.index[idx_SOC0]
-    charge_SOC1 = df_charge.iloc[idx_SOC1] - df_charge.iloc[idx_SOC0]
+    idx_SOC1 = np.argmin(np.abs(df_charge-(charge_SOC1_calc+charge_SOC0_calc)))
+    time_to_reach_SOC1 = df_charge.index[idx_SOC1]
+    charge_SOC1 = df_charge.iloc[idx_SOC1]
     if show:
-        print(f'Charge ({charge_SOC1:.3f} Ah) reached after {time_to_reach_SOC1} s')
+        if charge_SOC1 > charge_SOC1_calc:
+            print('This charge is not reached in the charging protocol!')
+            print(f'Maximum charge ({charge_SOC1:.3f} Ah) reached after {time_to_reach_SOC1} s')
+        else:
+            print(f'Charge ({charge_SOC1:.3f} Ah) reached after {time_to_reach_SOC1} s')
+
     return time_to_reach_SOC0, time_to_reach_SOC1, charge_SOC0, charge_SOC1
     
 
@@ -587,21 +594,6 @@ def det_df_conc_from_charging(c_V, Vol, av_ox_state_initial, df_charge, show=Fal
         plt.ylabel('Concentration (M)')
         plt.show()
     return df_conc
-
-
-#%% Potential measurement
-
-def determine_end_time_s(potential_measurement_system, FN, data_dir):
-    #Load measurement
-    if potential_measurement_system == 'biologic':
-        fp = os.path.join(data_dir, FN)
-        exp = ech.import_biologic_mpt_data(fp, ['time/s', '<Ewe/V>'])
-        return exp['time/s'].iloc[-1]    
-    elif potential_measurement_system == 'NI':
-        fp = os.path.join(data_dir, FN)
-        P = pd.read_csv(fp)
-        return P['Time (s)'].iloc[-1]
-
 
 def upload_charging_protocol_BKPrecision(fp, voltage_limit_step1, correct_time=True, potential_measurement_system=None, FN_negolyte_potential=None, data_dir=None):
     #BKPrecision uses "Sample" which is not exactly the time in s. To correct we take the time of the potential measurement.
@@ -662,6 +654,135 @@ def plot_charging_protocol(df_charge, df_voltage, df_current, first_charging_ste
     plt.tight_layout()
     plt.show()
 
+#%% Potential difference measurement
+
+def upload_potential_difference_measurement(potential_measurement_system, 
+                                                          FN_potential_difference, 
+                                                          data_dir, 
+                                                          no_times = 500, 
+                                                          show=False):
+    #Load measurement
+    #no_times: Reduce the size to n_times time steps
+    
+    if potential_measurement_system == 'biologic':
+        FN = FN_potential_difference
+        fp = os.path.join(data_dir, FN)
+        #extension = os.path.splitext(FN_neg)[1]
+        
+        raw_data = ech.import_biologic_mpt_data(fp, ['time/s', '<Ewe/V>'])
+        raw_data.columns = ['Time (s)', 'Potential (V)']
+        raw_data.set_index('Time (s)', inplace=True)
+        # Convert index to datetime
+        raw_data.index = pd.to_datetime(raw_data.index, format="%m/%d/%Y %H:%M:%S.%f")
+        # Convert to seconds since the first timestamp (starting from 0)
+        raw_data.index = (raw_data.index - raw_data.index[0]).total_seconds().astype(float)
+        new_times_s = np.linspace(raw_data.index[0], raw_data.index[-1], no_times)
+        raw_data = gen.df_interpolate(raw_data, new_times_s).squeeze()
+        if raw_data.values[-1] < 0:
+            raw_data *= -1
+        raw_data = raw_data.clip(lower=0)
+        if show:
+            # Plot
+            fig, ax = plt.subplots()
+            raw_data.plot(ax=ax)
+            last_pot_diff = raw_data.values[-1]
+            ax.axhline(last_pot_diff, color='black')
+            print(f'Last potential difference: {last_pot_diff:.3f} V')
+            ax.set_xlabel('Time (s)')
+            ax.set_ylabel('Voltage (V)')
+            plt.legend(['Potential difference Posolyte-Negolyte'])
+            plt.show()
+    
+    elif potential_measurement_system == 'NI':
+        FN = FN_potential_difference
+        fp_V = os.path.join(data_dir, FN_V)
+        raw_data = pd.read_csv(fp_V)
+        raw_data.set_index('Time (s)', inplace=True)
+        raw_data = raw_data[['V1 (V)']]
+        #Reduce the size to n_times time steps
+        new_times_s = np.linspace(0, raw_data.index[-1], no_times)
+        raw_data = gen.df_interpolate(raw_data, new_times_s)
+        #print(raw_data.describe())
+        if raw_data.values[-1] < 0:
+            raw_data *= -1
+        raw_data = raw_data.clip(lower=0)
+        if show:
+            # Plot
+            fig, ax = plt.subplots()
+            raw_data.plot(ax=ax)
+            ax.set_xlabel('Time (s)')
+            ax.set_ylabel('Voltage (V)')
+            plt.legend(['Potential difference Posolyte-Negolyte'])
+            plt.show()
+
+    return raw_data.squeeze()
+
+def det_times_and_charge_SOC0_from_potential_difference(df_charge, Pdiff, avox_greater_3p5=True, xlim=None, show=False):
+
+    if xlim is None:
+        xlim = (0, Pdiff.index[-1])
+    # Take derivative and calculate the difference in time between the maxima
+    dPdiff = Pdiff.diff()
+
+    #Determine the times of the two peaks
+    df = Pdiff.loc[xlim[0]:xlim[1]].diff().iloc[1:]
+    peak_max = df.max()
+    time = df.index  # If time is the index, otherwise use df['Time']
+    voltage = df.values
+    # Find peaks
+    peaks, _ = find_peaks(voltage, height=peak_max/3)  # Adjust height threshold as needed    
+    # Get corresponding times of peaks
+    peak_times = time[peaks]
+    if avox_greater_3p5:
+        tV3_neg = max(peak_times)
+        tV4_pos = min(peak_times)
+    else:
+        tV3_neg = min(peak_times)
+        tV4_pos = max(peak_times)
+    if show:
+        print(f'Time when all V3 is oxidized to V4 in positive electrolyte: tV4_pos = {tV4_pos:.0f} s')
+        print(f'Time when all V4 is reduced to V3 in negative electrolyte: tV3_neg = {tV3_neg:.0f} s')
+    
+    t_diff = tV3_neg-tV4_pos
+    charge_tV4_pos = df_charge.iloc[np.argmin(np.abs(df_charge.index-tV4_pos))]
+    charge_tV3_neg = df_charge.iloc[np.argmin(np.abs(df_charge.index-tV3_neg))]
+    delta_charge = charge_tV3_neg - charge_tV4_pos
+
+    if show:
+        print('Take derivative and calculate the difference in time between the maxima.')
+
+        fig, ax = plt.subplots()
+        ax.plot(dPdiff.index, dPdiff.values, label='Derivative')
+        ax.set_xlim(xlim)
+        #ax.set_ylim(0, 2.5)
+        ax.axvline(tV3_neg)
+        ax.axvline(tV4_pos)
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel('dV/dt (V/s)')
+        plt.legend()
+        plt.show()
+
+        print(f'Time difference: {t_diff:.0f} s')        
+        print('This time difference the negative electrolyte has to be charged.')
+        print(f'Charge posolyte until all V3 is oxidized to V4: {charge_tV4_pos:.3f} Ah')
+        print(f'Charge negolyte until all V4 is reduced to V3: {charge_tV3_neg:.3f} Ah')
+        print(f'Delta charge: {delta_charge:.3f} Ah')
+    
+    return tV4_pos, tV3_neg, charge_tV4_pos, charge_tV3_neg
+
+
+#%% Potential measurement vs. reference cell
+
+def determine_end_time_s(potential_measurement_system, FN, data_dir):
+    #Load measurement
+    if potential_measurement_system == 'biologic':
+        fp = os.path.join(data_dir, FN)
+        exp = ech.import_biologic_mpt_data(fp, ['time/s', '<Ewe/V>'])
+        return exp['time/s'].iloc[-1]    
+    elif potential_measurement_system == 'NI':
+        fp = os.path.join(data_dir, FN)
+        P = pd.read_csv(fp)
+        return P['Time (s)'].iloc[-1]
 
 def upload_potential_measurement(potential_measurement_system,
                                  FN_negolyte_potential,
@@ -833,12 +954,12 @@ def det_times_and_charge_SOC0_from_potential(df_charge, Ppos, Pneg, xlim=None, s
         print('Take derivative and calculate the difference in time between the maxima.')
 
         fig, ax = plt.subplots()
-        ax.plot(dPpos.index, dPpos.values, label='Delta')
-        ax.plot(dPneg.index, dPneg.values, label='Delta')
+        ax.plot(dPpos.index, dPpos.values, label='Derivative posolyte')
+        ax.plot(dPneg.index, dPneg.values, label='Derivative negolyte')
         ax.set_xlim(xlim)
         #ax.set_ylim(0, 2.5)
         ax.set_xlabel('Time (s)')
-        ax.set_ylabel('Potential (V vs. Hg/HgSO4)')
+        ax.set_ylabel('dP/dt (V/s)')
         plt.legend()
         plt.show()
         
@@ -915,8 +1036,8 @@ def det_conc_and_initial_oxidation_state(charge_tV4_pos, charge_tV3_neg, Vol_pos
     conc = delta_n_pos_tV4pos_times_conc + delta_n_neg_tV3neg_times_conc
     noxi = 4 - delta_n_pos_tV4pos_times_conc/conc
     noxi_alternative = 3 + delta_n_neg_tV3neg_times_conc/conc
-    if noxi != noxi_alternative:
-        print('Initial oxidation state not unique. noxi = 4 - delta_n_pos_tV4pos_times_conc/conc = {noxi}, noxi_alternative = 3 + delta_n_neg_tV3neg_times_conc/conc = {noxi_alternative}')
+    if np.abs(noxi-noxi_alternative) > 0.001:
+        print(f'Initial oxidation state not unique. noxi = 4 - delta_n_pos_tV4pos_times_conc/conc = {noxi}, noxi_alternative = 3 + delta_n_neg_tV3neg_times_conc/conc = {noxi_alternative}')
     if show:
         print(f'Calculated vanadium concentration: conc = {conc:.3f} M')
         print(f'Initial oxidation state: {noxi:.3f}')
@@ -977,7 +1098,7 @@ def P_vs_charge(Ppos, Pneg, df_charge, show=False):
 #%% Simulation potentials
 
 
-def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=gen.T_RT, fit_conc=True, show_details=True):
+def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=gen.T_RT, fit_conc=True, show_details=True, redox_potential_guess_V_vs_SHE=dict(E0_V2X3=-0.25, E0_V3X4=0.394, E0_V4X5=1.00)):
     #Fit function
 
     # Proton concentration as a function of ratio between V4 and V3 and between V5 and V4
@@ -1121,9 +1242,9 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
     #Vol_pos = 0.090 #L
     
     #Initial guesses
-    E0_V2X3 = -0.25 # V vs. SHE
-    E0_V3X4 = 0.394 # V vs. SHE
-    E0_V4X5 = 1.00 # V vs. SHE
+    E0_V2X3 = redox_potential_guess_V_vs_SHE['E0_V2X3']
+    E0_V3X4 = redox_potential_guess_V_vs_SHE['E0_V3X4']
+    E0_V4X5 = redox_potential_guess_V_vs_SHE['E0_V4X5']
     c_V = c_V #mol/L
     if show_details:
         print(f'Initial guess for c_V: {c_V:.2f} M')
@@ -1237,21 +1358,32 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
     return c_V, (E0_V2X3, E0_V3X4, E0_V4X5), (df_fit_pos, df_fit_neg), (conc_V3_pos, conc_V4_pos, conc_V5_pos), (conc_V4_neg, conc_V3_neg, conc_V2_neg)
 
 
-def calculate_fit(c_V_start, c_SO4_start, Ppos, Pneg, Ppos_charge, df_charge, Pneg_charge, E_start_exp, Vol, fit_conc= True, use_proton_concentration=True, T=gen.T_RT, show_details=False, do_recalculation=True):
-    c_V, E0s, df_fits, conc_pos, conc_neg = fit_potentials(c_V_start, c_SO4_start, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=T, fit_conc=fit_conc, show_details=show_details)
+def calculate_fit(c_V_start, c_SO4_start, 
+                  Ppos, Pneg, Ppos_charge, df_charge, Pneg_charge,
+                  E_start_exp, Vol, 
+                  fit_conc= True, 
+                  use_proton_concentration=True, 
+                  T=gen.T_RT, 
+                  show_details=False, 
+                  do_recalculation=True,
+                  redox_potential_guess_V_vs_SHE=dict(E0_V2X3=-0.25, E0_V3X4=0.394, E0_V4X5=1.00)):
+    c_V, E0s, df_fits, conc_pos, conc_neg = fit_potentials(c_V_start, c_SO4_start, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=T, fit_conc=fit_conc, show_details=show_details, redox_potential_guess_V_vs_SHE=redox_potential_guess_V_vs_SHE)
     if show_details:
         print(f'First calculation finished (c_V = {c_V:.2f} M).')
         if not do_recalculation:
             print('No second calculation done. Set kwarg "do_recalculation" to True if you want to recalculate automatically!')
     if do_recalculation:
         c_SO4 = c_V/c_V_start * c_SO4_start
-        c_V, E0s, df_fits, conc_pos, conc_neg = fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=T, fit_conc=fit_conc, show_details=show_details)
+        c_V, E0s, df_fits, conc_pos, conc_neg = fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=T, fit_conc=fit_conc, show_details=show_details, redox_potential_guess_V_vs_SHE=redox_potential_guess_V_vs_SHE)
         if show_details:
             print(f'Second calculation finished (c_V = {c_V:.2f} M).')
     return {'c_V': c_V, 'E0s': E0s, 'df_fits': df_fits, 'conc_pos': conc_pos, 'conc_neg': conc_neg}
     
 
-def plot_complete_dataset(fit_data, Ppos, Pneg, time_to_reach_SOC0, time_to_reach_SOC1, first_charging_step_end_s, xlim=None, plot_fit=True, plot_redox_potentials=True, plot_time_to_reach_SOC0=True):
+def plot_complete_dataset(fit_data, Ppos, Pneg, 
+                          t_V4_pos, t_V3_neg, time_to_reach_SOC0, time_to_reach_SOC1, first_charging_step_end_s, 
+                          xlim=None, ylim=None, 
+                          plot_fit=True, plot_redox_potentials=True, plot_t_V34=True, plot_time_to_reach_SOC0=True):
     c_V = fit_data['c_V']
     (E0_V2X3, E0_V3X4, E0_V4X5) = fit_data['E0s']
     (df_fit_pos, df_fit_neg) = fit_data['df_fits']
@@ -1270,11 +1402,16 @@ def plot_complete_dataset(fit_data, Ppos, Pneg, time_to_reach_SOC0, time_to_reac
         ax.plot(df_fit_pos.index, df_fit_pos.values, color='black', label='fit')
         ax.plot(df_fit_neg.index, df_fit_neg.values, color='black', label='')
     
+    if plot_t_V34:
+        ax.vlines(t_V3_neg,min(min(Ppos), min(Pneg)), max(max(Ppos), max(Pneg)), color='tab:orange', linestyle='--', linewidth=1.0, label='Time for negolyte to reach V3+')
+        ax.vlines(t_V4_pos,min(min(Ppos), min(Pneg)), max(max(Ppos), max(Pneg)), color='tab:blue', linestyle='--', linewidth=1.0, label='Time for posolyte to reach V4+')
     if plot_time_to_reach_SOC0:
         ax.vlines(time_to_reach_SOC0,min(min(Ppos), min(Pneg)), max(max(Ppos), max(Pneg)), color='black', linestyle='--', linewidth=0.5, label='Time to reach SOC0')
     if plot_redox_potentials:
-        ax.hlines([E0_V2X3, E0_V3X4, E0_V4X5], min(Ppos.index), max(Ppos.index), linewidth=0.5, linestyle='--')
+        ax.hlines([E0_V2X3, E0_V3X4, E0_V4X5], min(Ppos.index), max(Ppos.index), color='tab:green', linewidth=1.0, linestyle='--')
     ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
     ax.set_xlabel('Time (s)')
     #ax.set_ylabel('Potential (V vs. Hg/HgSO4)')
     ax.set_ylabel('Potential (V vs. SHE)')
@@ -1401,9 +1538,10 @@ def fitted_m_oxalic_acid(fit_data, Vol, show=False):
 
 #%% UV-VIS
 
-def load_ref_spec(ref_spec_dir, xlim=None):
+def load_ref_spec(ref_spec_dir, nm_array, xlim=None):
     
     def df_to_series(df):
+        df = gen.df_interpolate(df, nm_array)
         return df[df.columns[0]]
     
     ref_spec_V2 = df_to_series(pd.read_csv(os.path.join(ref_spec_dir, 'spec_V2.csv'), index_col=0))
@@ -1457,7 +1595,7 @@ def load_absorbance_data(fp_cuv_pos, fp_cuv_neg, xlim=None):
 
     return df_cuv_pos, df_cuv_neg
 
-def load_UVVIS_raw_data(data_dir, xlim=None):
+def load_UVVIS_raw_data(data_dir, nm_array, xlim=None):
     
     def read_file(data_dir, FN, xlim):
         if FN in os.listdir(data_dir):
@@ -1469,7 +1607,16 @@ def load_UVVIS_raw_data(data_dir, xlim=None):
         df = pd.read_csv(fp)
         if df.columns.values[0] == 'nm':
             df.rename(columns={'nm': 'Wavelength (nm)'}, inplace=True)
-        df.set_index('Wavelength (nm)', inplace=True)
+            df.set_index('Wavelength (nm)', inplace=True)
+        elif df.columns.values[0] == 'Wavelength (nm)':
+            df.set_index('Wavelength (nm)', inplace=True)
+        elif df.columns.values[0] == 'delta_t':
+            df.rename(columns={'delta_t': 'Wavelength (nm)'}, inplace=True)
+            df.set_index('Wavelength (nm)', inplace=True)
+            df = df.transpose()
+            df.index = df.index.astype('float64')
+        if not np.array_equal(df.index.values, nm_array):
+            df = gen.df_interpolate(df, nm_array)
         if xlim is not None:
             return df.loc[xlim[0]:xlim[1]]
         else:
@@ -1764,7 +1911,7 @@ def UVVIS_fit_spectrum(target_spectrum, spec_Vr, spec_Vo):
     return df_fit, ar, ao
 
 
-def UVVIS_calculate_fit_for_all(df, conc, time_switch_fitspectra, fit_spectra, time_from, time_to, xlim_fit):
+def UVVIS_calculate_fit_for_all(df, conc, time_switch_fitspectra, fit_spectra, time_from, time_to, nm_lim_fit):
     ar_list = []
     ao_list = []
     target_list = []
@@ -1773,23 +1920,23 @@ def UVVIS_calculate_fit_for_all(df, conc, time_switch_fitspectra, fit_spectra, t
     fit_spectrum_Vo_list = []
     idx_time_stop = None
     time_list = []
-    x_von = xlim_fit[0]
-    x_bis = xlim_fit[1]
+    nm_from = nm_lim_fit[0]
+    nm_to = nm_lim_fit[1]
     if time_to == -1:
         time_to = df.columns.values[-1]
     for idx, time in enumerate(df.columns):
         if time >= time_from and time <= time_to:
 
             if time < time_switch_fitspectra:
-                fit_spectrum_Vr = fit_spectra[0].loc[x_von:x_bis]
-                fit_spectrum_Vo = fit_spectra[1].loc[x_von:x_bis]
+                fit_spectrum_Vr = fit_spectra[0].loc[nm_from:nm_to]
+                fit_spectrum_Vo = fit_spectra[1].loc[nm_from:nm_to]
             else:
-                fit_spectrum_Vr = fit_spectra[2].loc[x_von:x_bis]
-                fit_spectrum_Vo = fit_spectra[3].loc[x_von:x_bis]
+                fit_spectrum_Vr = fit_spectra[2].loc[nm_from:nm_to]
+                fit_spectrum_Vo = fit_spectra[3].loc[nm_from:nm_to]
             fit_spectrum_Vr_list.append(fit_spectrum_Vr.values)
             fit_spectrum_Vo_list.append(fit_spectrum_Vo.values)
 
-            target_spectrum = df.loc[x_von:x_bis, time]
+            target_spectrum = df.loc[nm_from:nm_to, time]
             df_fit, ar, ao = UVVIS_fit_spectrum(target_spectrum, fit_spectrum_Vr, fit_spectrum_Vo)
             ar_list.append(ar)
             ao_list.append(ao)
@@ -1799,7 +1946,7 @@ def UVVIS_calculate_fit_for_all(df, conc, time_switch_fitspectra, fit_spectra, t
         elif idx_time_stop is None:
             idx_time_stop = idx
     
-    wavelengths = df.loc[x_von:x_bis].index
+    wavelengths = df.loc[nm_from:nm_to].index
     df_target = pd.DataFrame(np.array(target_list).transpose(), columns=time_list, index=wavelengths)
     df_fit = pd.DataFrame(np.array(fit_list).transpose(), columns=time_list, index=wavelengths)
     df_fit_spectra_Vr = pd.DataFrame(np.array(fit_spectrum_Vr_list).transpose(), columns=time_list, index=wavelengths)
@@ -1821,7 +1968,7 @@ def UVVIS_reduce_number_of_spectra(df_cuv_pos, df_cuv_neg, one_out_of):
 
 
 def UVVIS_fit(conc, df_cuv_pos, df_cuv_neg, ref_spec_V2, ref_spec_V3, ref_spec_V4, ref_spec_V5,
-              one_out_of=1, time_cuv_pos_limits=(0,-1), time_cuv_neg_limits=(0,-1), xlim_fit=(380, 1000),
+              one_out_of=1, time_cuv_pos_limits=(0,-1), time_cuv_neg_limits=(0,-1), nm_lim_fit=(380, 1000),
               tV4_pos=None, tV3_neg=None):
 
     if one_out_of > 1:
@@ -1833,24 +1980,22 @@ def UVVIS_fit(conc, df_cuv_pos, df_cuv_neg, ref_spec_V2, ref_spec_V3, ref_spec_V
     df = df_cuv_pos_reduced
     time_from = time_cuv_pos_limits[0]
     time_to = time_cuv_pos_limits[1]
-    xlim_fit = xlim_fit
     if tV4_pos is not None:
         time_switch_fitspectra = tV4_pos
     else:
         time_switch_fitspectra = 0 
     fit_spectra = [ref_spec_V3, ref_spec_V4, ref_spec_V4, ref_spec_V5]
-    data_cuv_pos = UVVIS_calculate_fit_for_all(df, conc, time_switch_fitspectra, fit_spectra, time_from, time_to, xlim_fit)
+    data_cuv_pos = UVVIS_calculate_fit_for_all(df, conc, time_switch_fitspectra, fit_spectra, time_from, time_to, nm_lim_fit)
     
     df = df_cuv_neg_reduced
     time_from = time_cuv_neg_limits[0]
     time_to = time_cuv_neg_limits[1]
-    xlim_fit = xlim_fit
     if tV3_neg is not None:
         time_switch_fitspectra = tV3_neg
     else:
         time_switch_fitspectra = 0
     fit_spectra = [ref_spec_V3, ref_spec_V4, ref_spec_V2, ref_spec_V3]
-    data_cuv_neg = UVVIS_calculate_fit_for_all(df, conc, time_switch_fitspectra, fit_spectra, time_from, time_to, xlim_fit)
+    data_cuv_neg = UVVIS_calculate_fit_for_all(df, conc, time_switch_fitspectra, fit_spectra, time_from, time_to, nm_lim_fit)
 
     return data_cuv_pos, data_cuv_neg
 
