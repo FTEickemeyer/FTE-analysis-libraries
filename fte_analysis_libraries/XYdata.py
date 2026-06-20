@@ -29,7 +29,7 @@ system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data
 
 class xy_data:
     
-    def __init__(self, x, y, quants = {"x": "x", "y": "y"}, units = {"x": None, "y": None}, name = '', plotstyle = dict(linestyle = '-', color = 'black', linewidth = 3), check_data = True):
+    def __init__(self, x, y, quants = {"x": "x", "y": "y"}, units = {"x": None, "y": None}, name = '', plotstyle = None, check_data = True):
         """
         x is a numpy array e.g. the wavelengths or photon energies
         y is a numpy array e.g. cts, cps, photon flux, spectral flux
@@ -53,6 +53,8 @@ class xy_data:
             self.ux = units["x"]
             self.uy = units["y"]
         self.name = name
+        if plotstyle is None:
+            plotstyle = dict(linestyle='-', color='black', linewidth=3)
         self.plotstyle = plotstyle
         if check_data:
             ok = self.data_check()
@@ -380,7 +382,9 @@ class xy_data:
                 for idx, n in enumerate(hline):
                     if hline_colors is not None:
                         color = hline_colors[idx]
-                    ax.axhline(y = n, color=color, linestyle='-')    
+                    else:
+                        color = 'b'
+                    ax.axhline(y = n, color=color, linestyle='-')
             else:
                 if hline_colors is not None:
                     color = hline_colors
@@ -494,12 +498,14 @@ class xy_data:
             m_min = res.min_within(von, bis)
             m_max = res.max_within(von, bis)
             res.plot(left = von, right = bis, bottom = m_min * 1.1, top = m_max * 1.1, title = f'({self.name} - linear fit) / {self.name}')
+            if return_data:
+                return res
         else:
             both = mxy_data([self, fit])
             both.label(['self.name', f'linear fit: m = {m:.2e}, b = {b:.2e}'])
             both.plot()
-        if return_data:
-            return both
+            if return_data:
+                return both
             
         
     def load_old(directory, FN = '', delimiter = ',', header = 'infer', quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False):
@@ -1452,7 +1458,9 @@ class mxy_data:
                 for idx, n in enumerate(hline):
                     if hline_colors is not None:
                         color = hline_colors[idx]
-                    ax.axhline(y = n, color=color, linestyle='-')    
+                    else:
+                        color = 'b'
+                    ax.axhline(y = n, color=color, linestyle='-')
             else:
                 if hline_colors is not None:
                     color = hline_colors
@@ -1822,7 +1830,7 @@ class mxy_data:
                 
 class xyz_data:
     
-    def __init__(self, x, y, z , quants = {"x": "x", "y": "y", "z": "z"}, units = {"x": "", "y": "", "z": ""}, name = '', plotstyle = dict(linestyle = '-', color = 'black', linewidth = 3)):
+    def __init__(self, x, y, z , quants = {"x": "x", "y": "y", "z": "z"}, units = {"x": "", "y": "", "z": ""}, name = '', plotstyle = None):
         """
         x is a numpy array e.g. the wavelengths or photon energies
         y is a numpy array e.g. cts, cps, photon flux, spectral flux
@@ -1841,10 +1849,12 @@ class xyz_data:
         self.uy = units["y"]
         self.uz = units["z"]
         self.name = name
+        if plotstyle is None:
+            plotstyle = dict(linestyle='-', color='black', linewidth=3)
         self.plotstyle = plotstyle
-        
+
     @classmethod
-    def load(cls, directory, FN = '', delimiter = ',', header = 'infer', 
+    def load(cls, directory, FN = '', delimiter = ',', header = 'infer',
               quants = {"x": "x", "y": "y", "z": "z"}, units = {"x": "", "y": "", "z": ""}, take_quants_and_units_from_file = False):
 
         """

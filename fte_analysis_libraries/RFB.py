@@ -359,7 +359,8 @@ def upload_charging_protocol_Neware(fp):
         except:
             try:
                 hours, minutes, seconds = map(int, time_str.split('.')[0].split(':'))
-            except: ValueError
+            except ValueError:
+                pass
         # Convert time to total seconds
         total_seconds = hours * 3600 + minutes * 60 + seconds    
         return total_seconds    
@@ -416,7 +417,8 @@ def split_dfcharging(df_charging, df_charging_step1, df_charging_step2):
     except:
         try:
             df_current = df_charging['Current(A)']
-        except: ValueError
+        except ValueError:
+            pass
     #split df_charge into the two charging steps
     if 'Capacity(mAh)' in df_charging.columns:
         #Charge in Ah£
@@ -698,7 +700,7 @@ def upload_potential_difference_measurement(potential_measurement_system,
             plt.show()
     
     elif potential_measurement_system == 'NI':
-        FN = FN_potential_difference
+        FN_V = FN_potential_difference
         fp_V = os.path.join(data_dir, FN_V)
         raw_data = pd.read_csv(fp_V)
         raw_data.set_index('Time (s)', inplace=True)

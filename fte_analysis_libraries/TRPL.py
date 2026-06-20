@@ -251,12 +251,12 @@ def plot_animation(pset1, pset2, interval = 1, ylim=(1e-2,1.2), normalize_to_end
         #u2, time2 = EulerHeatConstBCSparse(u2, pset2.x, pset2.dt, nr_times, time2, pset2.mu, pset2.k1, pset2.k2, pset2.SL, pset2.SR, n_exc = n_exc)              
 
         #print(f'Elapsed time: {time1*1e12:.0f} ps', end = '\r')
-        if pset1.pulse_len == 'None':
+        if pset1.pulse_len is None:
             u1, time1 = EulerHeatConstBCSparse(u1, pset1.x, pset1.dt, nr_times, time1, pset1.mu, pset1.k1, pset1.k2, pset1.k3, pset1.SL, pset1.SR)
         else:
             u1, time1 = EulerHeatConstBCSparse(u1 + pulse(time1, pset1.pulse_len)*pset1.dt * pset1.n0, pset1.x, pset1.dt, nr_times, time1, pset1.mu, pset1.k1, pset1.k2, pset1.k3, pset1.SL, pset1.SR)
 
-        if pset2.pulse_len == 'None':
+        if pset2.pulse_len is None:
             u2, time2 = EulerHeatConstBCSparse(u2, pset2.x, pset2.dt, nr_times, time2, pset2.mu, pset2.k1, pset2.k2, pset2.k3, pset2.SL, pset2.SR)
         else:
             u2, time2 = EulerHeatConstBCSparse(u2 + pulse(time2, pset2.pulse_len)*pset2.dt * pset2.n0, pset2.x, pset2.dt, nr_times, time2, pset2.mu, pset2.k1, pset2.k2, pset2.k3, pset2.SL, pset2.SR)
@@ -352,12 +352,12 @@ def plot_animation_QFLS(pset1, pset2, interval = 1, ylim=(1e-2,1.2)):
         #u2, time2 = EulerHeatConstBCSparse(u2, pset2.x, pset2.dt, nr_times, time2, pset2.mu, pset2.k1, pset2.k2, pset2.SL, pset2.SR, n_exc = n_exc)              
 
         #print(f'Elapsed time: {time1*1e12:.0f} ps', end = '\r')
-        if pset1.pulse_len == 'None':
+        if pset1.pulse_len is None:
             u1, time1 = EulerHeatConstBCSparse(u1, pset1.x, pset1.dt, nr_times, time1, pset1.mu, pset1.k1, pset1.k2, pset1.k3, pset1.SL, pset1.SR)
         else:
             u1, time1 = EulerHeatConstBCSparse(u1 + pulse(time1, pset1.pulse_len)*pset1.dt * pset1.n0, pset1.x, pset1.dt, nr_times, time1, pset1.mu, pset1.k1, pset1.k2, pset1.k3, pset1.SL, pset1.SR)
 
-        if pset2.pulse_len == 'None':
+        if pset2.pulse_len is None:
             u2, time2 = EulerHeatConstBCSparse(u2, pset2.x, pset2.dt, nr_times, time2, pset2.mu, pset2.k1, pset2.k2, pset2.k3, pset2.SL, pset2.SR)
         else:
             u2, time2 = EulerHeatConstBCSparse(u2 + pulse(time2, pset2.pulse_len)*pset2.dt * pset2.n0, pset2.x, pset2.dt, nr_times, time2, pset2.mu, pset2.k1, pset2.k2, pset2.k3, pset2.SL, pset2.SR)
@@ -476,6 +476,7 @@ class TRPL_data(xy_data):
         dat.plotrange_right = self.plotrange_right     
         return dat
         
+    @staticmethod
     def load(directory, FN = '', name = '', delimiter = ',', header = 'infer', time_unit = 'ns'):
 
         """
@@ -745,8 +746,8 @@ class TRPL_data(xy_data):
         """
         a1 = p0[0]
         a2 = p0[1]
-        tau1 = p0[3]
-        tau2 = p0[4]
+        tau1 = p0[2]
+        tau2 = p0[3]
         d = TRPL_data(ns, a1 * np.e**(-ns/tau1) + a2 * np.e**(-ns/tau2))
         d.popt = p0
         d.start = 0

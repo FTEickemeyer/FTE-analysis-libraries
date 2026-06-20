@@ -373,7 +373,11 @@ class abs_spectrum(spectrum):
         E_stop: Photon energy to stop integration (in eV)
         Jph: Photo current (in mA/cm2)
         T: Temperature in K
+
+        Note: call calc_Jradlim() before this method to set self.Jradlim.
         """
+        if not hasattr(self, 'Jradlim'):
+            raise AttributeError("calc_Jradlim() must be called before calc_Vocrad() to set self.Jradlim.")
         empf = self.emission_pf(E_start, E_stop, T = T)
         denergies_eV = self.x[1] - self.x[0]
         Jrad0 = q * np.trapz(empf.y, dx = denergies_eV) *1e-4 /1e-3 #in mA/cm2
@@ -620,7 +624,6 @@ class diff_spectrum(spectrum):
         x = self.x.copy()
         y = self.y.copy()
         x_eV = h * c / (x[::-1] * 1e-9) / q
-        y#_eV = y[::-1] * (q * 1e-9) / (h*c) * x[::-1]**2
         y_eV = y[::-1] * h*c/(q*1e-9) * 1/x_eV**2
         
         # quants = {"x": "Photon energy", "y": "Spectral photon flux"}
@@ -1475,10 +1478,10 @@ class PEL_spectra(diff_spectra):
         super().__init__(sa)
         
     
-    def calc_calfn(mspec, calspec):
-        
+    def calc_calfn(self, calspec):
+
         calib = []
-        for i, sp in enumerate(mspec.sa):
+        for i, sp in enumerate(self.sa):
             # make sure that there are no negatve values and no 0 values
             sp.y = np.array([abs(z) if z !=0 else np.average(sp.y) for z in sp.y], dtype = float)
             calib.append(PEL_spectrum(sp.x, int_arr(calspec.x, calspec.y, sp.x) / sp.y, 

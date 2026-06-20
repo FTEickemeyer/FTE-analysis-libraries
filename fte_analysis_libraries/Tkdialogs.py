@@ -23,7 +23,9 @@ def getFilenames(title, types=[], initialdir=None):
     filePaths = []
     for f in var:
         filePaths.append(f)
-        
+
+    if not filePaths:
+        return None, []
     cell_directory = os.path.dirname(filePaths[0])
     cell_filenames = [os.path.basename(FN) for FN in filePaths]
     return cell_directory, cell_filenames
@@ -34,6 +36,8 @@ def getFilename(title, types=[], initialdir=None):
     root.call('wm', 'attributes', '.', '-topmost', True)
     filepath = filedialog.askopenfilename(title=title, filetypes=types, initialdir = initialdir)
     root.destroy()
+    if not filepath:
+        return None, ''
     cell_directory = os.path.dirname(filepath)
     cell_filename = os.path.basename(filepath)
     return cell_directory, cell_filename
