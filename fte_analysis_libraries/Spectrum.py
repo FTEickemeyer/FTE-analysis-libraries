@@ -733,85 +733,44 @@ class DiffSpectrum(Spectrum):
         return EtreV
     
     @staticmethod
-    def load_osram930(y_unit = 'Spectral photon flux'):
+    def _load_illuminant_spectrum(filename, y_unit, delimiter=',', header=0):
+        """Load an illuminant spectrum from system_dir and return a DiffSpectrum."""
+        dat = pd.read_csv(join(system_dir, filename), delimiter=delimiter, header=header)
+        dat_nm = np.array(dat, dtype=np.float64)[:, 0]
+        dat_SF = np.array(dat, dtype=np.float64)[:, 1]
+        dat_PF = dat_SF * dat_nm * 1e-09 / (h * c)
+        if (y_unit == 'Spectral photon flux') or (y_unit == 'PF'):
+            y = dat_PF
+            quants = {"x": "Wavelength", "y": "Spectral photon flux"}
+            units = {"x": "nm", "y": "1/[s m2 nm]"}
+        elif y_unit in ('Spectral irradiance', 'Spectral flux', 'SF'):
+            y = dat_SF
+            quants = {"x": "Wavelength", "y": "Spectral irradiance"}
+            units = {"x": "nm", "y": "W/[m2 nm]"}
+        else:
+            print('Attention: y_unit not known!')
+        sp = DiffSpectrum(dat_nm, y, quants, units, filename)
+        sp.equidist(delta=1)
+        return sp
 
+    @staticmethod
+    def load_osram930(y_unit='Spectral photon flux'):
         """
         Loads the OSRAM 930 Spectrum.
         y_unit: Either 'Spectral photon flux' ('PF') or 'Spectral irradiance' ('Spectral flux', 'SF')
         """
-        # Directory for OSRAM 930 Spectrum
-        OSRAM930 = 'OSRAM_930.txt'
-        
-        dat = pd.read_csv(join(system_dir, OSRAM930), delimiter = '\t', header = 2)
-        dat_nm = np.array(dat, dtype = np.float64)[:,0] # wavelength data in nm
-        dat_SF = np.array(dat, dtype = np.float64)[:,1] # spectral irradiance in W/(m2 nm)
-        dat_PF = dat_SF * dat_nm * 1e-09 / (h * c) # photon flux (PF) in photons / (s m2 nm)
-        
-        x = dat_nm 
-        
-        if (y_unit == 'Spectral photon flux') or (y_unit == 'PF'):
-        
-            y = dat_PF
-    
-            quants = {"x": "Wavelength", "y": "Spectral photon flux"}
-            units = {"x": "nm", "y": "1/[s m2 nm]"}
-            
-        elif (y_unit == 'Spectral irradiance') or (y_unit == 'Spectral flux') or (y_unit == 'SF'):
-            
-            y = dat_SF
-    
-            quants = {"x": "Wavelength", "y": "Spectral irradiance"}
-            units = {"x": "nm", "y": "W/[m2 nm]"}       
-            
-        else:
-            print('Attention: y_unit not known!')
-        
-        sp = DiffSpectrum(x, y, quants, units, OSRAM930)
-        sp.equidist(delta = 1)
-    
-        return sp
+        return DiffSpectrum._load_illuminant_spectrum('OSRAM_930.txt', y_unit, delimiter='\t', header=2)
 
-
-    
     @staticmethod
-    def load_led5000k(y_unit = 'Spectral photon flux'):
-        
+    def load_led5000k(y_unit='Spectral photon flux'):
         """
         Loads the high CRI LED (YJ-VTC-2835MX-G2) 5000 K Spectrum.
-        y_unit: Either 'Spectral photon flux' ('PF') or 'Spectral irradiance ('Spectral flux', 'SF')
+        y_unit: Either 'Spectral photon flux' ('PF') or 'Spectral irradiance' ('Spectral flux', 'SF')
         left = 383, right = 779, delta = 1
         """
-        # Directory for LED Spectrum
-        LED = 'high CRI LED (YJ-VTC-2835MX-G2) 5000 K.csv'
-        
-        dat = pd.read_csv(join(system_dir, LED), header = 0)
-        dat_nm = np.array(dat, dtype = np.float64)[:,0] # wavelength data in nm
-        dat_SF = np.array(dat, dtype = np.float64)[:,1] # spectral irradiance in W/[m2 nm]
-        dat_PF = dat_SF * dat_nm * 1e-09 / (h * c) # photon flux (PF) in photons/[s m2 nm]
-        
-        x = dat_nm 
-        
-        if (y_unit == 'Spectral photon flux') or (y_unit == 'PF'):
-        
-            y = dat_PF
-    
-            quants = {"x": "Wavelength", "y": "Spectral photon flux"}
-            units = {"x": "nm", "y": "1/[s m2 nm]"}
-            
-        elif (y_unit == 'Spectral irradiance') or (y_unit == 'Spectral flux') or (y_unit == 'SF'):
-            
-            y = dat_SF
-    
-            quants = {"x": "Wavelength", "y": "Spectral irradiance"}
-            units = {"x": "nm", "y": "W/[m2 nm]"}       
-            
-        else:
-            print('Attention: y_unit not known!')
-        
-        sp = DiffSpectrum(x, y, quants, units, LED)
-        sp.equidist(delta = 1)
-    
-        return sp
+        return DiffSpectrum._load_illuminant_spectrum(
+            'high CRI LED (YJ-VTC-2835MX-G2) 5000 K.csv', y_unit, delimiter=',', header=0
+        )
     
     
     def calc_integrated_photonflux(self, start = None, stop = None):
@@ -838,30 +797,9 @@ class DiffSpectrum(Spectrum):
 
         return np.trapz(self.y[r], dx = dx)
     
-    def photonflux(self, start = None, stop = None):
-        
-        """
-        This is the old version, please use calc_integrated_photonflux.
-        Calculates photon flux from self.x=start to self.x=stop. self.x values have to be equidistant. Standard is from min(self.x) to max(self.x).
-        """
-
-        if start is None:
-            start_x = min(self.x)
-        else:
-            start_x = start
-        
-        if stop is None:
-            stop_x = max(self.x)
-        else:
-            stop_x = stop
-            
-        index_start = findind(self.x, start_x)
-        index_stop = findind(self.x, stop_x)
-        r = range(index_start, index_stop+1)
-        
-        dx = (max(self.x) - min(self.x)) / (len(self.x) - 1)
-
-        return np.trapz(self.y[r], dx = dx) 
+    def photonflux(self, start=None, stop=None):
+        """Old alias for calc_integrated_photonflux; prefer that method."""
+        return self.calc_integrated_photonflux(start=start, stop=stop)
     
     
     def calc_illuminance(self):
