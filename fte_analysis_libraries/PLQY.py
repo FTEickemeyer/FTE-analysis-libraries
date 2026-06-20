@@ -21,7 +21,7 @@ except ImportError:
     thot = None
 
 from . import Spectrum as spc
-from .XYdata import xy_data, mxy_data
+from .XYdata import XYData, MXYData
 from .General import (
     linfit,
     save_ok,
@@ -32,9 +32,9 @@ from .General import (
     c,
     f1240,
     pi,
-    Vsq,
-    V_loss,
-    QFLS
+    v_sq,
+    v_loss,
+    qfls
 )
 
 
@@ -168,7 +168,7 @@ def raw_to_asset_with_metadata(container, asset_type, db, show_FN = False, show_
             asset_prop = dict(name = f'{idx}_raw calibration.csv', type = 'raw calibration', metadata = metadata, file = asset.file)
         elif container.name.lower() == 'samples':
             name = metadata['name']
-            asset_prop = dict(name = f'{idx}_{name}_raw PL spectrum.csv', type = 'raw PL spectrum', metadata = metadata, file = asset.file)
+            asset_prop = dict(name = f'{idx}_{name}_raw PL Spectrum.csv', type = 'raw PL Spectrum', metadata = metadata, file = asset.file)
         else:
             print('Attention: No known container_name!')
         asset = db.add_asset(asset_prop)
@@ -215,7 +215,7 @@ def find(dic, assets, show_details = False):
         return asts[0]
     
     
-class exp_param:
+class ExpParam:
     
     def __init__(self, which_sample = None, excitation_laser = None, PL_left = None, PL_right = None, PL_peak = None, corr_offs_left = 40, corr_offs_right = 50, PL_peak_auto = False, eval_Pb = False):
 
@@ -390,15 +390,15 @@ class exp_param:
             print('No valid laser wavelength! Valid wavelengths are: 403, 419, 421, 657')
 
 
-class PLQY_dataset:
+class PLQYDataset:
     
     def __init__(self, db, La, Lb, Lc, Pa, Pb, Pc, fs, sample_name, param):
         
         def load_spectrum(LP):
-            return spc.PEL_spectrum.load(os.path.dirname(LP.file), FN = os.path.basename(LP.file), take_quants_and_units_from_file = True)
+            return spc.PELSpectrum.load(os.path.dirname(LP.file), filepath = os.path.basename(LP.file), take_quants_and_units_from_file = True)
         
         def create_PELspectra_obj(sa):
-            PEL = spc.PEL_spectra(sa)
+            PEL = spc.PELSpectra(sa)
             PEL.label([])
         
         self.db = db
@@ -420,12 +420,12 @@ class PLQY_dataset:
         self.fs = load_spectrum(fs).cut_data_outside(left=param.PL_left, right=param.PL_right)
         self.PL_peak = param.PL_peak
 
-        self.all = spc.PEL_spectra([self.La, self.Lb, self.Lc, self.Pa, self.Pb, self.Pc, self.fs])
+        self.all = spc.PELSpectra([self.La, self.Lb, self.Lc, self.Pa, self.Pb, self.Pc, self.fs])
         self.all.label(['La', 'Lb', 'Lc', 'Pa', 'Pb', 'Pc', 'fs'])
         
-        self.P = spc.PEL_spectra([self.Pa, self.Pb, self.Pc])
+        self.P = spc.PELSpectra([self.Pa, self.Pb, self.Pc])
         self.P.label(['Pa', 'Pb', 'Pc'])
-        self.L = spc.PEL_spectra([self.La, self.Lb, self.Lc])
+        self.L = spc.PELSpectra([self.La, self.Lb, self.Lc])
         self.L.label(['La', 'Lb', 'Lc'])
 
     def plot(self, *args, **kwargs):
@@ -441,7 +441,7 @@ class PLQY_dataset:
                 ra = self.fs.idx_range(left = self.param.PL_left, right = self.param.PL_right)
                 self.PL_peak = self.fs.x_of(max(self.fs.y[ra]), start = self.param.PL_left)
         self.Eg = f1240/self.PL_peak #eV
-        self.Vsq = Vsq(self.Eg) #V
+        self.v_sq = v_sq(self.Eg) #V
     
         
     def inb_oob_adjust(self, what = 'inb', adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = True, show_inbeam_correction=False, divisor = 1e3):
@@ -489,17 +489,17 @@ class PLQY_dataset:
         
         sp_orig = sp.copy()
         if what == 'inb':
-            #We'll need the original spectrum later
+            #We'll need the original Spectrum later
             self.Pc_orig = sp_orig
             #self.Pc.y = fs.y * factor 
             self.Pc_corrfac = factor
         elif what == 'oob':
-            #We'll need the original spectrum later
+            #We'll need the original Spectrum later
             self.Pb_orig = sp_orig
             self.Pb_corrfac = factor
         sp.y = fs.y * factor  
 
-        fssp = spc.PEL_spectra([sp_orig, sp])
+        fssp = spc.PELSpectra([sp_orig, sp])
         fssp.label([what, 'adjusted'])
         
         fssp_lin_graph = fssp.plot(yscale = 'linear', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, hline=0, hline_colors='black', title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = show_plots or show_inbeam_correction)
@@ -518,7 +518,7 @@ class PLQY_dataset:
             self.inb_oob_adjust(what = 'oob', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, show_plots = show_plots, divisor = divisor)
 
     def calc_abs(self, what = 'inb', save_plots = False, show_plot = False, return_A = False):
-        #Calculates the absorptance spectrum from the fs and inbeam or outofbeam PL spectrum
+        #Calculates the absorptance Spectrum from the fs and inbeam or outofbeam PL Spectrum
         if what == 'inb':
             sp_orig = self.Pc_orig
             sp = self.Pc
@@ -535,9 +535,9 @@ class PLQY_dataset:
         y_fs = sp.y[r]
         zero_mask = np.where( y_fs != 0 )
         A = 1-y_ib[zero_mask]/y_fs[zero_mask]
-        s = spc.abs_spectrum(x[zero_mask], A)
+        s = spc.AbsSpectrum(x[zero_mask], A)
         s.qy = 'A'
-        abs_graph = s.plot(title = 'Absorptance spectrum', hline = 0, hline_colors='black', bottom = -0.2, top = 1, figsize = (8,5), return_fig = True, show_plot = show_plot)
+        abs_graph = s.plot(title = 'Absorptance Spectrum', hline = 0, hline_colors='black', bottom = -0.2, top = 1, figsize = (8,5), return_fig = True, show_plot = show_plot)
 
         if save_plots:
             add_graph(self.db, f'{self.sample_name}_absorptance_with_{what}.png', abs_graph)
@@ -606,13 +606,13 @@ class PLQY_dataset:
         self.PaPF = Pa
         self.PbPF = Pb
         self.PcPF = Pc
-        self.V_loss = V_loss(PLQY)
-        self.QFLS = QFLS(self.Eg, PLQY)
+        self.v_loss = v_loss(PLQY)
+        self.qfls = qfls(self.Eg, PLQY)
 
         
     def abs_pf_spec(self, nsuns = 1):
         """
-        Calculates the absolute photon flux spectrum for nsuns excitation and saves it as self.absPFspec
+        Calculates the absolute photon flux Spectrum for nsuns excitation and saves it as self.absPFspec
         :param nsuns: number of suns
         """
         PF = self.fs.calc_integrated_photonflux(start = self.param.PL_left, stop = self.param.PL_right)
@@ -631,16 +631,16 @@ class PLQY_dataset:
         sp = sp.cut_data_outside(left = self.param.PL_left, right = self.param.PL_right)
         
         PF_new = sp.calc_integrated_photonflux(start = self.param.PL_left, stop = self.param.PL_right)
-        #print(f'PF of absolute spectrum: {PF_new:.1e} 1/(s m2) (PLQY {self.PLQY:.1e})')
+        #print(f'PF of absolute Spectrum: {PF_new:.1e} 1/(s m2) (PLQY {self.PLQY:.1e})')
         #print(f'sun_PF = {sun_PF:.1e}, Eg = {Eg:.2f} eV, PL peak = {self.PL_peak:.0f} nm')
         self.absolutePFspec = sp
         
     def save_asset(self):
         
-        metadata = dict(A = self.A, PLQY = self.PLQY, Peak = self.PL_peak, Eg = self.Eg, Vsq = self.Vsq, dV = self.V_loss, QFLS = self.QFLS, adj_fac = self.adj_factor, fs_absint_factor = self.fs_absint_factor)
+        metadata = dict(A = self.A, PLQY = self.PLQY, Peak = self.PL_peak, Eg = self.Eg, v_sq = self.v_sq, dV = self.v_loss, qfls = self.qfls, adj_fac = self.adj_factor, fs_absint_factor = self.fs_absint_factor)
         #print(metadata)
-        asset_name = f'{self.sample_name}_absolute PL spectrum'
-        asset_prop = dict(name = asset_name + '.csv', type = 'absolute PL spectrum', metadata = metadata)
+        asset_name = f'{self.sample_name}_absolute PL Spectrum'
+        asset_prop = dict(name = asset_name + '.csv', type = 'absolute PL Spectrum', metadata = metadata)
         TFN = self.db.add_asset(asset_prop)
         fn = os.path.basename(TFN) 
         #print(fn)

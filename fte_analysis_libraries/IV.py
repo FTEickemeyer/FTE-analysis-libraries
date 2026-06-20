@@ -20,14 +20,14 @@ from importlib.resources import files as _resource_files
 system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data'))
 
 from .General import linfit, findind, save_ok, plx, q, k, T_RT
-from .XYdata import xy_data, mxy_data
-from .Spectrum import diff_spectrum, abs_spectrum
+from .XYdata import XYData, MXYData
+from .Spectrum import DiffSpectrum, AbsSpectrum
 
 
 @dataclass
-class fivep:
+class FiveParam:
     """
-    fivep stands for five parameters.
+    FiveParam stands for five parameters.
     Class for keeping track of the 5param of an IV curve.
 
     Parameters
@@ -64,10 +64,10 @@ class fivep:
         self.Rsh = Rsh
         
     def copy(self):
-        return fivep(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)
+        return FiveParam(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)
     
 @dataclass
-class perf_dat:
+class PerfData:
 
     cell_area: float = None # cm2
     Vmpp: float = None # V
@@ -83,33 +83,33 @@ class perf_dat:
     light_int: float = 100 # mW/cm2
     
     def copy(self):
-        return perf_dat(cell_area = self.cell_area, Vmpp = self.Vmpp, Jmpp = self.Jmpp, Pmpp = self.Pmpp, 
+        return PerfData(cell_area = self.cell_area, Vmpp = self.Vmpp, Jmpp = self.Jmpp, Pmpp = self.Pmpp, 
                       PCE = self.PCE, FF = self.FF, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, 
                       Rs = self.Rs, Rsh = self.Rsh, light_int = self.light_int)
     
-    def Jmpp_text(self, uA = False):
+    def jmpp_text(self, uA = False):
         if uA:
             text = f'$J_{{mpp}} = {self.Jmpp*1000:.2f} \; \mu A/cm^2$'
         else:
             text = f'$J_{{mpp}} = {self.Jmpp:.2f} \; mA/cm^2$'
         return text        
     
-    def Vmpp_text(self):
+    def vmpp_text(self):
         return f'$V_{{mpp}} = {self.Vmpp:.3f} \; V$'
     
-    def Pmpp_text(self):
+    def pmpp_text(self):
         return f'$P_{{mpp}} = {self.Pmpp:.2f} \; mW/cm^2$'
     
-    def PCE_text(self):
+    def pce_text(self):
         return f'$PCE = {self.PCE:.1f}\%$'
     
-    def FF_text(self):
+    def ff_text(self):
         return f'$FF = {self.FF:.1f}\%$'
     
-    def Voc_text(self):
+    def voc_text(self):
         return f'$V_{{oc}} = {self.Voc:.3f} \; V$'
 
-    def Jsc_text(self, uA = False):
+    def jsc_text(self, uA = False):
         if uA:
             text = f'$J_{{sc}} = {self.Jsc*1000:.2f} \; \mu A/cm^2$'
         else:
@@ -119,10 +119,10 @@ class perf_dat:
     def nid_text(self):
         return f'$n_{{id}} = {self.nid:.2f}$'
     
-    def Rs_text(self):
+    def rs_text(self):
         return f'$R_{{s}} = {self.Rs*1e3:.2e} \; \Omega \cdot cm^2$'
     
-    def Rsh_text(self):
+    def rsh_text(self):
         return f'$R_{{sh}} = {self.Rsh*1e3:.2e} \; \Omega \cdot cm^2$'
     
     def cell_area_text(self):
@@ -138,7 +138,7 @@ class perf_dat:
             return f'Light intensity $= {self.light_int:.2f} \; mW/cm^2$'
         
     @staticmethod
-    def SQ_limit(bg, illumspec_PF_eV = None, light_int = 100, show = False):
+    def sq_limit(bg, illumspec_PF_eV = None, light_int = 100, show = False):
         """
         Calculates the performance data of the Shockley-Queisser limit.
 
@@ -146,33 +146,33 @@ class perf_dat:
         ----------
         bg : FLOAT
             Bandgap in eV.
-        illumspec_PF_eV: diff_spectrum
-            Illumination spectrum ((spectral photon flux as a function of photon energy in eV)) other than AM1.5GT        
-            If None then AM1.5GT spectrum is taken
+        illumspec_PF_eV: DiffSpectrum
+            Illumination Spectrum ((spectral photon flux as a function of photon energy in eV)) other than AM1.5GT        
+            If None then AM1.5GT Spectrum is taken
         light_int: FLOAT
-            If AM1.5GT spectrum as illumination spectrum used, then with light_int the light intensity in mW/cm2 can be chosen.
+            If AM1.5GT Spectrum as illumination Spectrum used, then with light_int the light intensity in mW/cm2 can be chosen.
             If None than 100 mW/cm2 (1 sun) is used.
         show : BOOLEAN, optional
             If True it will show the performance data as formatted text. The default is False.
     
         Returns
         -------
-        fp : instance of perf_dat.
+        fp : instance of PerfData.
         
         Example
         -------
         bg = 2.30 #eV
-        pd = perf_dat.SQ_limit(bg, show = True)
+        pd = PerfData.sq_limit(bg, show = True)
 
         """
-        fp = IV_data.SQ_limit(bg, illumspec_PF_eV = illumspec_PF_eV, light_int = light_int)
+        fp = IVData.sq_limit(bg, illumspec_PF_eV = illumspec_PF_eV, light_int = light_int)
         x_arr = np.linspace(0, fp.Voc*1.01,  int(round((fp.Voc*1.01)/0.001)+1))
-        IV = IV_data.from_fp(x_arr, fp, name = '', light_int = light_int, T = T_RT, perfparam = True)
+        IV = IVData.from_fp(x_arr, fp, name = '', light_int = light_int, T = T_RT, perfparam = True)
         IV.det_perfparam(show = show)
         return IV.pd
     
 
-class IV_data(xy_data):
+class IVData(XYData):
     
     
     def __init__(self, x, y, cell_area = None, light_int = None, sweep_dir = 'rev', name = '', Voc = None, Jsc = None, quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, plotstyle = dict(linestyle = 'None', marker = 'o', color = 'blue', markersize = 5), check_data = True):
@@ -210,38 +210,38 @@ class IV_data(xy_data):
         self.uy = 'uA/cm2'
         
     @staticmethod
-    def from_J0(V, J0, Jph, nid, Rs, Rsh, cell_area = None, light_int = None, name = '', T = T_RT):
+    def from_j0(V, J0, Jph, nid, Rs, Rsh, cell_area = None, light_int = None, name = '', T = T_RT):
         Gp = 1/Rsh
         Vth = k * T / q
         expW = (V + Rs * (J0 + Jph)) / (nid * Vth * (1 + Rs * Gp))
         argW = J0 * Rs / (nid * Vth * (1 + Rs * Gp)) * np.exp(expW)
         J = nid * Vth / Rs * lambertw(argW) + (V * Gp - (J0 + Jph)) / (1 + Rs * Gp)
         J = J.real
-        return IV_data(V, J, cell_area = cell_area, light_int = light_int, sweep_dir = None, name = name, Voc = None, Jsc = None)
+        return IVData(V, J, cell_area = cell_area, light_int = light_int, sweep_dir = None, name = name, Voc = None, Jsc = None)
         
     def to_fp(self):
-        return fivep(self.cell_area, self.Voc, self.Jsc, self.nid, self.Rs, self.Rsh)
+        return FiveParam(self.cell_area, self.Voc, self.Jsc, self.nid, self.Rs, self.Rsh)
     
-    def norm_to_onesun(self, MMF = 1):
+    def norm_to_onesun(self, mmf = 1):
         """
-        Normalizes current density to one sun. Takes into account the MMF by dividing the current by MMF.
+        Normalizes current density to one sun. Takes into account the mmf by dividing the current by mmf.
 
         Returns
         -------
         None.
 
         """
-        self.y = self.y * 100 / self.light_int / MMF
+        self.y = self.y * 100 / self.light_int / mmf
         self.light_int = 100
     
 
     @staticmethod
-    def load_Igor_IV(dir, FN, print_lines = False):
+    def load_igor_iv(directory, filepath, print_lines = False):
         """
         Function that opens an igor IV file and returns a 2-dim data array, column 1: Voltage (V), column 2: Current (A)
         """
     
-        TFN = join(dir,FN)
+        TFN = join(directory,filepath)
     
         # Check if photocurrent data and load data
         PCdata = False
@@ -287,7 +287,7 @@ class IV_data(xy_data):
     
         if not(PCdata):
     
-            print('load_Igor_IV error: Data is not photocurrent data!')
+            print('load_igor_iv error: Data is not photocurrent data!')
     
         else:
                 
@@ -296,7 +296,7 @@ class IV_data(xy_data):
             x = np.linspace(startV, startV + (len(y) - 1) * deltaV, num=len(y))
     
             if len(x) != len(y):
-                print(FN + ': ATTENTION: Number of lines of column voltage (' + str(len(x)) + ' lines) does not match number of lines of column current (' + str(len(y)) +' lines)!')
+                print(filepath + ': ATTENTION: Number of lines of column voltage (' + str(len(x)) + ' lines) does not match number of lines of column current (' + str(len(y)) +' lines)!')
                 x = x[:len(y)]
     
             # If reverse measurement reverse the order of array
@@ -307,28 +307,28 @@ class IV_data(xy_data):
             else:
                 sweep_dir = 'fwd'
     
-        return IV_data(x, y, cell_area = cell_area, light_int = light_int, sweep_dir = sweep_dir, name = FN)
+        return IVData(x, y, cell_area = cell_area, light_int = light_int, sweep_dir = sweep_dir, name = filepath)
 
     @staticmethod
-    def load(filepath_or_directory, FN = '', data_format = 'csv', cell_area = 1, light_int = 100, delimiter = ',', header = 'infer', quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, 
+    def load(filepath_or_directory, filepath = '', data_format = 'csv', cell_area = 1, light_int = 100, delimiter = ',', header = 'infer', quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, 
          take_quants_and_units_from_file = False, J_1sun = None, reverse_scan = True, raw_data = False, print_lines = False, **kwargs):
 
-        fp = join(filepath_or_directory, FN)
-        FN = pathlib.Path(fp)
+        fp = join(filepath_or_directory, filepath)
+        filepath = pathlib.Path(fp)
         directory = dirname(fp)
         if data_format == 'Igor':
-            IV = IV_data.load_Igor_IV(directory, FN = FN, print_lines = print_lines)
+            IV = IVData.load_igor_iv(directory, filepath = filepath, print_lines = print_lines)
         elif data_format == 'csv':
-            xy = xy_data.load(filepath_or_directory, FN = FN, delimiter = delimiter, header = header, quants = quants, units = units, 
+            xy = XYData.load(filepath_or_directory, filepath = filepath, delimiter = delimiter, header = header, quants = quants, units = units, 
                                    take_quants_and_units_from_file = take_quants_and_units_from_file, **kwargs)
-            IV = IV_data(xy.x, xy.y, cell_area = cell_area, light_int = light_int, sweep_dir = None, name = FN.stem, Voc = None, Jsc = None, quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, **kwargs)
+            IV = IVData(xy.x, xy.y, cell_area = cell_area, light_int = light_int, sweep_dir = None, name = filepath.stem, Voc = None, Jsc = None, quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, **kwargs)
             #IV.y = -IV.y
         elif data_format == 'Biologic-CV':
-            IV = IV_data.load_Biologic_CV(directory, FN = FN, cell_area = cell_area, light_int = light_int, J_1sun = J_1sun, reverse_scan = reverse_scan, raw_data = raw_data)
+            IV = IVData.load_Biologic_CV(directory, filepath = filepath, cell_area = cell_area, light_int = light_int, J_1sun = J_1sun, reverse_scan = reverse_scan, raw_data = raw_data)
     
         return IV
     
-    def det_J0(self, T = T_RT):
+    def det_j0(self, T = T_RT):
         Jsc = self.Jsc
         Voc = self.Voc
         Rs = self.Rs
@@ -337,7 +337,7 @@ class IV_data(xy_data):
         return (Jsc + (Rs*Jsc-Voc)/Rsh) * math.exp(-q*Voc / (nid * k * T)) / (1 - math.exp(q * (Rs * Jsc - Voc) / (nid * k * T)))
       
         
-    def det_Voc(self, use_interpolate_extrapolate_method= True):
+    def det_voc(self, use_interpolate_extrapolate_method= True):
         """
         use_interpolate_extrapolate_method: Use interpolation/extrapolation method to determine Jsc
         """
@@ -378,7 +378,7 @@ class IV_data(xy_data):
             self.Voc = Voc
         return self.Voc
         
-    def det_Jsc(self, fit_to= None, show_fit= False, use_interpolate_extrapolate_method= True):
+    def det_jsc(self, fit_to= None, show_fit= False, use_interpolate_extrapolate_method= True):
         """
         Returns the short circuit current. Also stores the value in self.Jsc.
         fit_to: specifies the voltage up to which the IV curve is fitted. If None then the maximum V / 10 is taken.
@@ -427,7 +427,7 @@ class IV_data(xy_data):
             
         return self.Jsc
     
-    def ini_guess_Rsh(self, fit_to = None, show_fit = False):
+    def ini_guess_rsh(self, fit_to = None, show_fit = False):
         """
         Returns an initial guess for the shunt resistance Rsh in Ohm * cm2. Also stores the value in self.Rsh.
         fit_to: specifies the voltage up to which the IV curve is fitted. If None then the maximum V / 5 is taken.
@@ -459,7 +459,7 @@ class IV_data(xy_data):
         
         return Rsh
     
-    def ini_guess_nid_and_Rs(self, show_fit = False):
+    def ini_guess_nid_and_rs(self, show_fit = False):
         """
         See: Zhang et al., J. of Appl. Phys. 110, 064504 (2011) --> Eq. 12
         """
@@ -501,16 +501,16 @@ class IV_data(xy_data):
         """
         delta = np.exp(q * (self.Rs * self.Jsc - self.Voc) / (k * T))
         if delta > 0.1:
-            text1 = "IV_data.check_assumption: \n"
+            text1 = "IVData.check_assumption: \n"
             text2 = 'Attention: The assumption $\Delta \ll 1$ (eq. 6) is not satisfied!'
             plx(text1+text2)
         return delta
     
     def det_ini_5param(self, show_fit = False):
-        self.det_Voc()
-        self.det_Jsc(fit_to = None, show_fit = show_fit)
-        self.ini_guess_Rsh(fit_to = None, show_fit = show_fit)
-        self.ini_guess_nid_and_Rs(show_fit = show_fit)
+        self.det_voc()
+        self.det_jsc(fit_to = None, show_fit = show_fit)
+        self.ini_guess_rsh(fit_to = None, show_fit = show_fit)
+        self.ini_guess_nid_and_rs(show_fit = show_fit)
         self.check_assumption()
         
     
@@ -521,9 +521,9 @@ class IV_data(xy_data):
         #minimal: only determine Vmpp, Jmpp, Pmpp, PCE, FF
         #simple_calc: calculate Jsc and Voc in the simplest way , can be done later
         if self.Voc == None:
-            self.det_Voc(use_interpolate_extrapolate_method=use_interpolate_extrapolate_method)
+            self.det_voc(use_interpolate_extrapolate_method=use_interpolate_extrapolate_method)
         if self.Jsc == None:
-            self.det_Jsc(use_interpolate_extrapolate_method=use_interpolate_extrapolate_method)
+            self.det_jsc(use_interpolate_extrapolate_method=use_interpolate_extrapolate_method)
         JVinterp = interp1d(self.x, self.y, kind='cubic', bounds_error=False, fill_value='extrapolate')
         Vmpp = fmin(lambda x: x*JVinterp(x),.8*self.Voc,disp=False, maxiter = 100)[0]
         Jmpp = abs(JVinterp(Vmpp))
@@ -536,15 +536,15 @@ class IV_data(xy_data):
         if not(hasattr(self, 'light_int')):
             self.light_int = 100
         if not minimal:
-            pd = perf_dat(cell_area = self.cell_area, Vmpp = Vmpp, Jmpp = Jmpp, Pmpp = Pmpp, 
+            pd = PerfData(cell_area = self.cell_area, Vmpp = Vmpp, Jmpp = Jmpp, Pmpp = Pmpp, 
                           PCE = PCE, FF = FF, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, 
                           Rs = self.Rs, Rsh = self.Rsh, light_int = self.light_int)
-            text = pd.light_int_text(uW) + ', ' + pd.Vmpp_text() + ', ' + pd.Jmpp_text(uA) + '\n' + pd.Voc_text() + ', ' + pd.Jsc_text(uA) + ', ' + pd.FF_text() + ', ' + pd.PCE_text() + '\n' + pd.nid_text() + ', ' + pd.Rs_text() + ', ' + pd.Rsh_text() + '\n' + pd.cell_area_text()
+            text = pd.light_int_text(uW) + ', ' + pd.vmpp_text() + ', ' + pd.jmpp_text(uA) + '\n' + pd.voc_text() + ', ' + pd.jsc_text(uA) + ', ' + pd.ff_text() + ', ' + pd.pce_text() + '\n' + pd.nid_text() + ', ' + pd.rs_text() + ', ' + pd.rsh_text() + '\n' + pd.cell_area_text()
 
         else:
-            pd = perf_dat(cell_area = self.cell_area, Vmpp = Vmpp, Jmpp = Jmpp, Pmpp = Pmpp, 
+            pd = PerfData(cell_area = self.cell_area, Vmpp = Vmpp, Jmpp = Jmpp, Pmpp = Pmpp, 
                           PCE = PCE, FF = FF, Voc = self.Voc, Jsc = self.Jsc, light_int = self.light_int)            
-            text = pd.light_int_text(uW) + ', ' + pd.Vmpp_text() + ', ' + pd.Jmpp_text(uA) + '\n' + pd.Voc_text() + ', ' + pd.Jsc_text(uA) + ', ' + pd.FF_text() + ', ' + pd.PCE_text() + '\n' + pd.cell_area_text()
+            text = pd.light_int_text(uW) + ', ' + pd.vmpp_text() + ', ' + pd.jmpp_text(uA) + '\n' + pd.voc_text() + ', ' + pd.jsc_text(uA) + ', ' + pd.ff_text() + ', ' + pd.pce_text() + '\n' + pd.cell_area_text()
 
             
         self.pd = pd
@@ -572,10 +572,10 @@ class IV_data(xy_data):
         """
     
         def func(V_arr, nid, Rs, Rsh):
-            #J = np.array([IV_data.I_of_V(self.x[i], self.Jsc, self.Voc, nid, Rs, Rsh, T = T) for i in range(len(self.x))])
-            J = np.array([IV_data.I_of_V(V_arr[i], self.Jsc, self.Voc, nid, Rs, Rsh, T = T) for i in range(len(V_arr))])
+            #J = np.array([IVData.i_of_v(self.x[i], self.Jsc, self.Voc, nid, Rs, Rsh, T = T) for i in range(len(self.x))])
+            J = np.array([IVData.i_of_v(V_arr[i], self.Jsc, self.Voc, nid, Rs, Rsh, T = T) for i in range(len(V_arr))])
             return J
-        #IV_data.I_of_V(V, Isc, Voc, n, Rs, Rsh, T = T_RT)
+        #IVData.i_of_v(V, Isc, Voc, n, Rs, Rsh, T = T_RT)
             
         if p0 is None:
             if not(hasattr(self, 'nid')) or not(hasattr(self, 'Rs')) or not(hasattr(self, 'Rsh')):
@@ -590,7 +590,7 @@ class IV_data(xy_data):
         self.nid = popt[0]
         self.Rs = popt[1]
         self.Rsh = popt[2]
-        self.ini_fp = fivep(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)
+        self.ini_fp = FiveParam(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)
         
         return popt
     
@@ -617,7 +617,7 @@ class IV_data(xy_data):
         """
     
         def func(V, Jsc, Voc, nid, Rs, Rsh):
-            J = np.array([IV_data.I_of_V(V[i], Jsc, Voc, nid, Rs, Rsh, T = T) for i in range(len(V))])
+            J = np.array([IVData.i_of_v(V[i], Jsc, Voc, nid, Rs, Rsh, T = T) for i in range(len(V))])
             return J
     
         if p0 == None:
@@ -629,7 +629,7 @@ class IV_data(xy_data):
         popt, pcov = curve_fit(func, self.x, self.y, p0 = p0, bounds = bounds, verbose = 0, xtol = None)
     
         # store the initial 5 parameters in ini_fp
-        self.ini_fp = fivep(cell_area = self.cell_area, Voc = p0[1], Jsc = p0[0], nid = p0[2], Rs = p0[3], Rsh = p0[4])
+        self.ini_fp = FiveParam(cell_area = self.cell_area, Voc = p0[1], Jsc = p0[0], nid = p0[2], Rs = p0[3], Rsh = p0[4])
     
         self.Jsc = popt[0]
         self.Voc = popt[1]
@@ -642,7 +642,7 @@ class IV_data(xy_data):
 
     
     def get_fp(self):
-        return fivep(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)
+        return FiveParam(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)
     
     def table_param(PCE, Voc, Jsc, FF, Vmpp, Jmpp, light_int, cell_area):
             
@@ -664,7 +664,7 @@ class IV_data(xy_data):
              left = None, right = None, bottom = None, top = None, plot_table = False, hline = None, vline = None, figsize=(9,6), return_fig = False, show_plot = True, **kwargs):
         
         if plot_table:
-            cell_text, row_labels = IV_data.table_param(self.pd.PCE, self.Voc, self.Jsc, self.pd.FF, 
+            cell_text, row_labels = IVData.table_param(self.pd.PCE, self.Voc, self.Jsc, self.pd.FF, 
                                                         self.pd.Vmpp, self.pd.Jmpp, self.light_int, self.cell_area)
         else:
             cell_text = None
@@ -673,7 +673,7 @@ class IV_data(xy_data):
         if title == None:
             title = self.name
             
-        fig = xy_data.plot(self, title = title, xscale = xscale, yscale = yscale, left = left, right = right, 
+        fig = XYData.plot(self, title = title, xscale = xscale, yscale = yscale, left = left, right = right, 
                            bottom = bottom, top = top, plot_table = plot_table, cell_text = cell_text, row_labels = row_labels, hline = hline, vline = vline, figsize = figsize, return_fig = return_fig, show_plot = show_plot, **kwargs)        
         if return_fig:      
             return fig
@@ -686,14 +686,14 @@ class IV_data(xy_data):
         def print5param():
             text = f'$n_{{id}} = {self.nid:.2f}, \ R_s = {self.Rs*1e3:.2e} \ \Omega \cdot cm^2, \ R_{{sh}} = {self.Rsh*1e3:.2e} \ \Omega \cdot cm^2$'
             return text
-        J = np.array([IV_data.I_of_V(self.x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(self.x))])
-        IVp = IV_data(self.x, J, name = print5param())
+        J = np.array([IVData.i_of_v(self.x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(self.x))])
+        IVp = IVData(self.x, J, name = print5param())
         IVp.plotstyle = dict(linestyle = '-', color = 'red')
-        mIV = mIV_data([self, IVp])
+        mIV = MIVData([self, IVp])
         mIV.label(['Measurement', IVp.name])
         
         if plot_table:
-            cell_text, row_labels = IV_data.table_param(self.pd.PCE, self.Voc, self.Jsc, self.pd.FF, 
+            cell_text, row_labels = IVData.table_param(self.pd.PCE, self.Voc, self.Jsc, self.pd.FF, 
                                                         self.pd.Vmpp, self.pd.Jmpp, self.light_int, self.cell_area)
         else:
             cell_text = None
@@ -713,19 +713,19 @@ class IV_data(xy_data):
             #text = f'Voc = {Voc:.3f} V, Jsc = {Jsc:.2f} mA/cm2' '\n' f'nid = {nid:.2f}, Rs = {Rs:.2e} Ohm cm2, Rsh = {Rsh:.2e} Ohm cm2'
             text = f'$n_{{id}} = {nid:.2f}, \ R_s = {Rs*1e3:.2e} \ \Omega \cdot cm^2, \ R_{{sh}} = {Rsh*1e3:.2e} \ \Omega \cdot cm^2$'
             return text
-        J_int = np.array([IV_data.I_of_V(self.x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(self.x))])
-        J_ini = np.array([IV_data.I_of_V(self.x[i], self.ini_fp.Jsc, self.ini_fp.Voc, self.ini_fp.nid, self.ini_fp.Rs, self.ini_fp.Rsh, T = T_RT) for i in range(len(self.x))])
-        IV_int = IV_data(self.x, J_int, name = 'Fitted parameters:\n' + print5param(self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh))
-        IV_ini = IV_data(self.x, J_ini, name = 'Initial parameters:\n' + print5param(self.ini_fp.Jsc, self.ini_fp.Voc, self.ini_fp.nid, self.ini_fp.Rs, self.ini_fp.Rsh))
+        J_int = np.array([IVData.i_of_v(self.x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(self.x))])
+        J_ini = np.array([IVData.i_of_v(self.x[i], self.ini_fp.Jsc, self.ini_fp.Voc, self.ini_fp.nid, self.ini_fp.Rs, self.ini_fp.Rsh, T = T_RT) for i in range(len(self.x))])
+        IV_int = IVData(self.x, J_int, name = 'Fitted parameters:\n' + print5param(self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh))
+        IV_ini = IVData(self.x, J_ini, name = 'Initial parameters:\n' + print5param(self.ini_fp.Jsc, self.ini_fp.Voc, self.ini_fp.nid, self.ini_fp.Rs, self.ini_fp.Rsh))
         IV_int.plotstyle = dict(linestyle = '-', color = 'red')
         IV_ini.plotstyle = dict(linestyle = '-', color = 'green')
-        mIV = mIV_data([self, IV_ini, IV_int])
+        mIV = MIVData([self, IV_ini, IV_int])
         #mIV.names_to_label()
         mIV.label(['Measurement', IV_ini.name, IV_int.name])
         mIV.plot(plotstyle = 'individual', xscale = xscale, yscale = yscale, bottom = bottom, top = top, title = self.name)
      
     @staticmethod
-    def save_perf_data(sa, row_labels, col_labels, save_dir, FN):
+    def save_perf_data(sa, row_labels, col_labels, save_dir, filepath):
             
         cell_text = []
 
@@ -736,44 +736,44 @@ class IV_data(xy_data):
                     
         df = pd.DataFrame(data=alldata[0:,0:], columns = col_labels, index = row_labels)
                         
-        TFN = join(save_dir, FN)
+        TFN = join(save_dir, filepath)
         if save_ok(TFN):
-            df.to_csv(join(save_dir, FN), header = True, index = True)
+            df.to_csv(join(save_dir, filepath), header = True, index = True)
 
     @staticmethod
-    def IVsq(bg, x_max = None, light_int = None):
+    def iv_sq(bg, x_max = None, light_int = None):
         if light_int == None:
-            fp_sq = IV_data.SQ_limit(bg)
+            fp_sq = IVData.sq_limit(bg)
         else:
-            fp_sq = IV_data.SQ_limit(bg, light_int = light_int)
+            fp_sq = IVData.sq_limit(bg, light_int = light_int)
         if (x_max == None) or (x_max < (fp_sq.Voc+0.01)):
             #x_max = max(self.x)
             x_max = fp_sq.Voc + 0.01
         new_x = np.arange(0, x_max, step = 0.001, dtype = np.float64)
-        IVsq = IV_data.from_fp(new_x, fp_sq, name = f'SQ limit ($E_g = {bg:.3f} \ eV): \ V_{{oc,SQ}} = {fp_sq.Voc:.3f} \ V, \ J_{{sc,SQ}} = {fp_sq.Jsc:.2f} \ mA/cm^2, \ n_{{id}} = 1,\ R_s = 0,\ R_{{sh}} = \infty$')
-        IVsq.det_perfparam()
-        return IVsq
+        iv_sq = IVData.from_fp(new_x, fp_sq, name = f'SQ limit ($E_g = {bg:.3f} \ eV): \ V_{{oc,SQ}} = {fp_sq.Voc:.3f} \ V, \ J_{{sc,SQ}} = {fp_sq.Jsc:.2f} \ mA/cm^2, \ n_{{id}} = 1,\ R_s = 0,\ R_{{sh}} = \infty$')
+        iv_sq.det_perfparam()
+        return iv_sq
     
     @staticmethod
-    def IVrad(Vocrad, Jsc, light_int = 100, x_max = None):
+    def iv_rad(Vocrad, Jsc, light_int = 100, x_max = None):
         if (x_max == None) or (x_max < Vocrad):
             x_max = Vocrad
         step = 0.001
         new_x = np.arange(0, x_max+2*step, step= step, dtype= np.float64)
-        Jrad = np.array([IV_data.I_of_V(new_x[i], Jsc, Voc = Vocrad, nid = 1, Rs = 0, Rsh = 1e15, T = T_RT) for i in range(len(new_x))])
-        IVrad = IV_data(new_x, Jrad, light_int = light_int, name = f'Radiative limit: $V_{{oc,rad}} = {Vocrad:.3f} \ V, \ J_{{sc,rad}} = {Jsc:.2f} \ mA/cm^2, \ n_{{id}} = 1,\ R_s = 0,\ R_{{sh}} = \infty$')
-        IVrad.det_perfparam()
-        return IVrad
+        Jrad = np.array([IVData.i_of_v(new_x[i], Jsc, Voc = Vocrad, nid = 1, Rs = 0, Rsh = 1e15, T = T_RT) for i in range(len(new_x))])
+        iv_rad = IVData(new_x, Jrad, light_int = light_int, name = f'Radiative limit: $V_{{oc,rad}} = {Vocrad:.3f} \ V, \ J_{{sc,rad}} = {Jsc:.2f} \ mA/cm^2, \ n_{{id}} = 1,\ R_s = 0,\ R_{{sh}} = \infty$')
+        iv_rad.det_perfparam()
+        return iv_rad
     
     @staticmethod
-    def IVtrans(V_arr, Voc, Jsc, nid_rec, light_int = 100):
-        Jtrans = np.array([IV_data.I_of_V(V_arr[i], Jsc, Voc = Voc, nid = nid_rec, Rs = 0, Rsh = 1e10, T = T_RT) for i in range(len(V_arr))])
-        IVtrans = IV_data(V_arr, Jtrans, light_int = light_int, name = f'Transport limit: $V_{{oc}} = {Voc:.3f} \ V, \ J_{{sc,trans}} = {Jsc:.2f} \ mA/cm^2, \ n_{{id}} = {nid_rec:.2f},\ R_s = 0,\ R_{{sh}} = \infty$')
-        IVtrans.det_perfparam()
-        return IVtrans
+    def iv_trans(V_arr, Voc, Jsc, nid_rec, light_int = 100):
+        Jtrans = np.array([IVData.i_of_v(V_arr[i], Jsc, Voc = Voc, nid = nid_rec, Rs = 0, Rsh = 1e10, T = T_RT) for i in range(len(V_arr))])
+        iv_trans = IVData(V_arr, Jtrans, light_int = light_int, name = f'Transport limit: $V_{{oc}} = {Voc:.3f} \ V, \ J_{{sc,trans}} = {Jsc:.2f} \ mA/cm^2, \ n_{{id}} = {nid_rec:.2f},\ R_s = 0,\ R_{{sh}} = \infty$')
+        iv_trans.det_perfparam()
+        return iv_trans
         
         
-    def loss_plot(self, bg = None, Vocrad = None, nid_rec = None, x_max = None, IVsq = None, IVrad = None, IVtrans = None, IVfit = None, title = None, xscale = 'linear', yscale = 'linear', 
+    def loss_plot(self, bg = None, Vocrad = None, nid_rec = None, x_max = None, iv_sq = None, iv_rad = None, iv_trans = None, IVfit = None, title = None, xscale = 'linear', yscale = 'linear', 
                   left = None, right = None, bottom = None, top = None, what_to_show = ['measurement', 'fit', 'SQ limit', 'rad. limit', 'transp. limit'],
                   show_legend_details= False, plot_table = False, figsize=(12,8), save = False, save_dir = '', bbox = [0.15, 0.25, 0.5, 0.3], **kwargs):
         """
@@ -784,7 +784,7 @@ class IV_data(xy_data):
             text = f'Voc = {Voc:.3f} V, Jsc = {Jsc:.2f} mA/cm$^2$, $n_{{id}} = {nid:.2f}, \ R_s = {Rs*1e3:.2e} \ \Omega \cdot cm^2, \ R_{{sh}} = {Rsh*1e3:.2e} \ \Omega \cdot cm^2$'
             return text
         
-        #fp_sq = IV_data.SQ_limit(bg)
+        #fp_sq = IVData.sq_limit(bg)
 
         if x_max is None:
             x_max = max(self.x)
@@ -795,31 +795,31 @@ class IV_data(xy_data):
         if 'linewidth' in kwargs:
             linewidth = kwargs['linewidth']
 
-        if IVsq is None:
+        if iv_sq is None:
             if self.light_int == 100:
-                IVsq = IV_data.IVsq(bg, x_max = x_max)
+                iv_sq = IVData.iv_sq(bg, x_max = x_max)
             else:
-                IVsq = IV_data.IVsq(bg, x_max = x_max, light_int = self.light_int)
+                iv_sq = IVData.iv_sq(bg, x_max = x_max, light_int = self.light_int)
                 print(f'Attention: light intensity {self.light_int:.1e} mW/cm2 is used to calculate Shockley-Queisser limit!')
-        IVsq.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'black')
+        iv_sq.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'black')
         
-        if IVrad is None:
-            IVrad = IV_data.IVrad(Vocrad, self.Jsc, self.light_int, x_max = Vocrad + 0.01)
-        IVrad.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'green')
+        if iv_rad is None:
+            iv_rad = IVData.iv_rad(Vocrad, self.Jsc, self.light_int, x_max = Vocrad + 0.01)
+        iv_rad.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'green')
         
-        if IVtrans is None:
-            IVtrans = IV_data.IVtrans(self.x, self.Voc, self.Jsc, nid_rec, light_int = self.light_int)
-        IVtrans.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'cyan')
+        if iv_trans is None:
+            iv_trans = IVData.iv_trans(self.x, self.Voc, self.Jsc, nid_rec, light_int = self.light_int)
+        iv_trans.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'cyan')
         
         if IVfit is None and 'fit' in what_to_show:
-            Jfit = np.array([IV_data.I_of_V(new_x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(new_x))])
-            IVfit = IV_data(new_x, Jfit, light_int = self.light_int, name = 'Fit: ' + print5param(self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh))
+            Jfit = np.array([IVData.i_of_v(new_x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(new_x))])
+            IVfit = IVData(new_x, Jfit, light_int = self.light_int, name = 'Fit: ' + print5param(self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh))
             IVfit.det_perfparam()
             IVfit.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'red')
         
-        #IVsq.det_perfparam()
-        #IVrad.det_perfparam()
-        #IVtrans.det_perfparam()
+        #iv_sq.det_perfparam()
+        #iv_rad.det_perfparam()
+        #iv_trans.det_perfparam()
         
         show_this = []
         lab = []
@@ -833,25 +833,25 @@ class IV_data(xy_data):
             else:
                 lab.append('fit')
         if 'SQ limit' in what_to_show:
-            show_this.append(IVsq)
+            show_this.append(iv_sq)
             if show_legend_details:
-                lab.append(IVsq.name)
+                lab.append(iv_sq.name)
             else:
                 lab.append('SQ limit')
         if 'rad. limit' in what_to_show:
-            show_this.append(IVrad)
+            show_this.append(iv_rad)
             if show_legend_details:
-                lab.append(IVrad.name)
+                lab.append(iv_rad.name)
             else:
                 lab.append('Radiative limit')
         if 'transp. limit' in what_to_show:
-            show_this.append(IVtrans)
+            show_this.append(iv_trans)
             if show_legend_details:
-                lab.append(IVtrans.name)
+                lab.append(iv_trans.name)
             else:
                 lab.append('Transport limit')
 
-        mIV = mIV_data(show_this)
+        mIV = MIVData(show_this)
         #mIV.names_to_label()
         mIV.label(lab)
         if 'legend' in kwargs:
@@ -864,7 +864,7 @@ class IV_data(xy_data):
         
         if save:
             
-            FN = f'{title} - performance_data.csv'
+            filepath = f'{title} - performance_data.csv'
 
             row_labels = []
             if 'measurement' in what_to_show:
@@ -878,7 +878,7 @@ class IV_data(xy_data):
             if 'transp. limit' in what_to_show:
                 row_labels.append('Transp. lim.')
                 
-            IV_data.save_perf_data(mIV.sa, row_labels, col_labels, save_dir, FN)
+            IVData.save_perf_data(mIV.sa, row_labels, col_labels, save_dir, filepath)
             mIV.save(save_dir, title, row_labels)
         
         if plot_table:
@@ -887,13 +887,13 @@ class IV_data(xy_data):
             row_labels = []
             
             if 'SQ limit' in what_to_show:
-                cell_text.append([f'{IVsq.Voc:.3f}', f'{IVsq.Jsc:.2f}', f'{IVsq.pd.FF:2.1f}', f'{IVsq.pd.PCE:2.1f}'])
+                cell_text.append([f'{iv_sq.Voc:.3f}', f'{iv_sq.Jsc:.2f}', f'{iv_sq.pd.FF:2.1f}', f'{iv_sq.pd.PCE:2.1f}'])
                 row_labels.append('SQ lim.')
             if 'rad. limit' in what_to_show:
-                cell_text.append([f'{IVrad.Voc:.3f}', f'{IVrad.Jsc:.2f}', f'{IVrad.pd.FF:2.1f}', f'{IVrad.pd.PCE:2.1f}'])
+                cell_text.append([f'{iv_rad.Voc:.3f}', f'{iv_rad.Jsc:.2f}', f'{iv_rad.pd.FF:2.1f}', f'{iv_rad.pd.PCE:2.1f}'])
                 row_labels.append('Rad. lim.')
             if 'transp. limit' in what_to_show:
-                cell_text.append([f'{IVtrans.Voc:.3f}', f'{IVtrans.Jsc:.2f}', f'{IVtrans.pd.FF:2.1f}', f'{IVtrans.pd.PCE:2.1f}'])
+                cell_text.append([f'{iv_trans.Voc:.3f}', f'{iv_trans.Jsc:.2f}', f'{iv_trans.pd.FF:2.1f}', f'{iv_trans.pd.PCE:2.1f}'])
                 row_labels.append('Transp. lim.')
             if 'measurement' in what_to_show:
                 cell_text.append([f'{self.Voc:.3f}', f'{self.Jsc:.2f}', f'{self.pd.FF:2.1f}', f'{self.pd.PCE:2.1f}'])
@@ -912,11 +912,11 @@ class IV_data(xy_data):
                  title = title, plot_table = plot_table, cell_text = cell_text, row_labels = row_labels, 
                  col_labels = col_labels, bbox = bbox, figsize = figsize, **kwargs)
         
-        return IVsq, IVrad, IVtrans
+        return iv_sq, iv_rad, iv_trans
     
     
     @staticmethod
-    def loss_barplot(IV1, IVtrans1, IVrad1, IVsq1, IV2, IVtrans2, IVrad2, IVsq2, sample_names = ['Control', 'Treated'], save = False, save_dir = None, FN = None):
+    def loss_barplot(IV1, IVtrans1, IVrad1, IVsq1, IV2, IVtrans2, IVrad2, IVsq2, sample_names = ['Control', 'Treated'], save = False, save_dir = None, filepath = None):
     
         # Losses (for barplot)
     
@@ -1009,9 +1009,9 @@ class IV_data(xy_data):
                                 
             df = pd.DataFrame(data=allBars, columns = sample_names, index = labels)
                             
-            TFN = join(save_dir, FN)
+            TFN = join(save_dir, filepath)
             if save_ok(TFN):
-                df.to_csv(join(save_dir, FN), header = True, index = True)
+                df.to_csv(join(save_dir, filepath), header = True, index = True)
 
         
     def plot_fp(self, fp, title = None, xscale = 'linear', yscale = 'linear', bottom = None, top = None):
@@ -1023,10 +1023,10 @@ class IV_data(xy_data):
             text = f'$n_{{id}} = {fp.nid:.2f}, \ R_s = {fp.Rs*1e3:.2e} \ \Omega \cdot cm^2, \ R_{{sh}} = {fp.Rsh*1e3:.2e} \ \Omega \cdot cm^2$'
             return text
 
-        J = np.array([IV_data.I_of_V(self.x[i], fp.Jsc, fp.Voc, fp.nid, fp.Rs, fp.Rsh, T = T_RT) for i in range(len(self.x))])
-        IVp = IV_data(self.x, J, name = print5param())
+        J = np.array([IVData.i_of_v(self.x[i], fp.Jsc, fp.Voc, fp.nid, fp.Rs, fp.Rsh, T = T_RT) for i in range(len(self.x))])
+        IVp = IVData(self.x, J, name = print5param())
         IVp.plotstyle = dict(linestyle = '-', color = 'red')
-        mIV = mIV_data([self, IVp])
+        mIV = MIVData([self, IVp])
         #mIV.names_to_label()
         mIV.label(['Measurement', IVp.name])
         mIV.plot(plotstyle = 'individual', xscale = xscale, yscale = yscale, bottom = bottom, top = top, title = self.name)
@@ -1035,13 +1035,13 @@ class IV_data(xy_data):
     @staticmethod
     def from_fp(x_arr, fp, name = '', light_int = 100, T = T_RT, perfparam = True):
         """
-        Returns an instance of IV_data from the five parameters in fp.
+        Returns an instance of IVData from the five parameters in fp.
 
         Parameters
         ----------
         x_arr : numpy array
             array of Voltage in V.
-        fp : instance of fivep.
+        fp : instance of FiveParam.
             contains the five parameters Voc, Jsc, nid, Rs, Rsh (and cell_area).
         name: string
             Name of the curve.
@@ -1052,11 +1052,11 @@ class IV_data(xy_data):
 
         Returns
         -------
-        IV : Instance of IV_data
+        IV : Instance of IVData
             
         """
-        J = np.array([IV_data.I_of_V(x_arr[i], fp.Jsc, fp.Voc, fp.nid, fp.Rs, fp.Rsh, T = T) for i in range(len(x_arr))])
-        IV = IV_data(x_arr, J, light_int = light_int, name = name)
+        J = np.array([IVData.i_of_v(x_arr[i], fp.Jsc, fp.Voc, fp.nid, fp.Rs, fp.Rsh, T = T) for i in range(len(x_arr))])
+        IV = IVData(x_arr, J, light_int = light_int, name = name)
         if perfparam:
             IV.det_ini_5param()
             IV.det_perfparam()
@@ -1066,7 +1066,7 @@ class IV_data(xy_data):
     
     
     @staticmethod
-    def I_of_V(V, Isc, Voc, nid, Rs, Rsh, T = T_RT):
+    def i_of_v(V, Isc, Voc, nid, Rs, Rsh, T = T_RT):
         """
         Computes the I-V curve using an analytical LambertW-based model.
         See: Zhang et al., J. of Appl. Phys. 110, 064504 (2011) --> Eq. 8
@@ -1082,7 +1082,7 @@ class IV_data(xy_data):
             I   : current [mA/cm2]  (NumPy array, same shape as V)
         """
         if Rs * Isc > 700:
-            print(f'I_of_V error: The factor Rs * Isc is {Rs*Isc:.1e}, i.e. > 700, np.exp(Rs*Isc) is too large, decrease Rs (in kOhm cm2) to below {700/Isc:.0f}!')
+            print(f'i_of_v error: The factor Rs * Isc is {Rs*Isc:.1e}, i.e. > 700, np.exp(Rs*Isc) is too large, decrease Rs (in kOhm cm2) to below {700/Isc:.0f}!')
         if Rs == 0:
             Rs = 1e-10
         if Rsh == np.inf:
@@ -1093,7 +1093,7 @@ class IV_data(xy_data):
     
 
     @staticmethod
-    def I_of_V_safe(V, Isc, Voc, nid, Rs, Rsh, T=T_RT):
+    def i_of_v_safe(V, Isc, Voc, nid, Rs, Rsh, T=T_RT):
         """
         Computes the I-V curve using an analytical LambertW-based model.
         See: Zhang et al., J. Appl. Phys. 110, 064504 (2011), Eq. 8
@@ -1129,35 +1129,35 @@ class IV_data(xy_data):
 
     
     @staticmethod
-    def SQ_limit_Voc(bg, illumspec_PF_eV = None, light_int = None, from_file = True):
+    def sq_limit_voc(bg, illumspec_PF_eV = None, light_int = None, from_file = True):
         
         if from_file:
-            FN = 'Vocsq.csv'
-            d = xy_data.load(system_dir, FN, take_quants_and_units_from_file = True)
+            filepath = 'Vocsq.csv'
+            d = XYData.load(system_dir, filepath, take_quants_and_units_from_file = True)
             Vocsq = d.y_of(bg, interpolate = True)
         else:
             if illumspec_PF_eV == None:
-                AM15_eV = diff_spectrum.AM15_eV()
+                am15_ev = DiffSpectrum.am15_ev()
                 if light_int != None:
-                    AM15_eV.y = AM15_eV.y * light_int/100
-                illumspec_PF_eV = AM15_eV
+                    am15_ev.y = am15_ev.y * light_int/100
+                illumspec_PF_eV = am15_ev
                 
             left = min(illumspec_PF_eV.x)
             right = max(illumspec_PF_eV.x)
             eV_arr = np.arange(left, right, 0.001)
-            #Absorptance spectrum
-            ab = abs_spectrum(eV_arr, np.array([0 if eV < bg else 1 for eV in eV_arr]))
-            ab.calc_Jradlim(illumspec_PF_eV, start_eV = bg, handover_eV = bg+0.1)
-            ab.calc_Vocrad(E_start = bg-0.3, E_stop = bg+0.3, T = T_RT, show_table = False)
+            #Absorptance Spectrum
+            ab = AbsSpectrum(eV_arr, np.array([0 if eV < bg else 1 for eV in eV_arr]))
+            ab.calc_jradlim(illumspec_PF_eV, start_eV = bg, handover_eV = bg+0.1)
+            ab.calc_vocrad(E_start = bg-0.3, E_stop = bg+0.3, T = T_RT, show_table = False)
             Vocsq = ab.Vocrad
         
         return Vocsq
     
     @staticmethod
-    def SQ_limit_Jsc(bg, illumspec_PF_eV = None, light_int = None):
+    def sq_limit_jsc(bg, illumspec_PF_eV = None, light_int = None):
                 
         if illumspec_PF_eV == None:
-            AM15 = diff_spectrum.AM15_eV()
+            AM15 = DiffSpectrum.am15_ev()
             if light_int != None:
                 AM15.y = AM15.y * light_int/100
             illumspec_PF_eV = AM15
@@ -1169,7 +1169,7 @@ class IV_data(xy_data):
         
         
     @staticmethod
-    def SQ_limit(bg, illumspec_PF_eV = None, light_int = None):
+    def sq_limit(bg, illumspec_PF_eV = None, light_int = None):
         """
         Returns the SQ-limit five parameters. 
     
@@ -1177,29 +1177,29 @@ class IV_data(xy_data):
         ----------
         bg : FLOAT
             Bandgap in eV.
-        illumspec_PF_eV: diff_spectrum
-            Illumination spectrum (spectral photon flux as a function of photon energy in eV) other than AM1.5GT        
-            If None then AM1.5GT spectrum is taken
+        illumspec_PF_eV: DiffSpectrum
+            Illumination Spectrum (spectral photon flux as a function of photon energy in eV) other than AM1.5GT        
+            If None then AM1.5GT Spectrum is taken
         light_int: FLOAT
-            If AM1.5GT spectrum as illumination spectrum used, then with light_int the light intensity in mW/cm2 can be chosen.
+            If AM1.5GT Spectrum as illumination Spectrum used, then with light_int the light intensity in mW/cm2 can be chosen.
             If None than 100 mW/cm2 (1 sun) is used.
     
         Returns
         -------
-        fp : instance of fivep.
+        fp : instance of FiveParam.
     
         """
             
         if illumspec_PF_eV == None:
-            AM15_eV = diff_spectrum.AM15_eV(left = 0.310, right = 4.428, delta = 0.001, y_unit = 'Spectral photon flux')
+            am15_ev = DiffSpectrum.am15_ev(left = 0.310, right = 4.428, delta = 0.001, y_unit = 'Spectral photon flux')
             if light_int != None:
-                AM15_eV.y = AM15_eV.y * light_int/100
-            illumspec_PF_eV = AM15_eV
+                am15_ev.y = am15_ev.y * light_int/100
+            illumspec_PF_eV = am15_ev
         
-        Vsq = IV_data.SQ_limit_Voc(bg, illumspec_PF_eV, light_int = light_int, from_file = False)
-        Jsq = IV_data.SQ_limit_Jsc(bg, illumspec_PF_eV, light_int = light_int)
+        v_sq = IVData.sq_limit_voc(bg, illumspec_PF_eV, light_int = light_int, from_file = False)
+        Jsq = IVData.sq_limit_jsc(bg, illumspec_PF_eV, light_int = light_int)
         
-        return fivep(cell_area = 1, Voc = Vsq, Jsc = Jsq, nid = 1, Rs = 0, Rsh = np.inf)
+        return FiveParam(cell_area = 1, Voc = v_sq, Jsc = Jsq, nid = 1, Rs = 0, Rsh = np.inf)
     
         
     def calc_resistance_curve(self, left = None, right = None):
@@ -1215,7 +1215,7 @@ class IV_data(xy_data):
         dIV = curve.diff()
         #dIV.plot()
         resist_arr = 1 / dIV.y * 1000 # Ohm * cm2
-        R = IV_data(dIV.x, resist_arr, quants = dict(x = 'Voltage', y = 'Resistance'), units = dict(x = 'V', y = 'Ohm cm2'))        
+        R = IVData(dIV.x, resist_arr, quants = dict(x = 'Voltage', y = 'Resistance'), units = dict(x = 'V', y = 'Ohm cm2'))        
         return R
     
     def resistance_plot(self, V_rel, left = None, right = None, bottom = None, top = None, vline = None, hline=None, yscale = 'linear', title = None, noshow=False):
@@ -1241,7 +1241,7 @@ class IV_data(xy_data):
         return R_rel
         
         
-class mIV_data(mxy_data):
+class MIVData(MXYData):
     
     def __init__(self, sa):
         super().__init__(sa)

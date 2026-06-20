@@ -25,19 +25,19 @@ from impedance.visualization import plot_nyquist, plot_bode
 
 from . import General as gen
 from .General import linfit, findind, save_ok, plx, q, k, T_RT, str_round_sig, colors, idx_range
-from .XYdata import xy_data, mxy_data
-from .IV import IV_data
+from .XYdata import XYData, MXYData
+from .IV import IVData
 
 
-def load_Biologic_CV(dir, FN, cell_area, light_int = 100, J_1sun = None, raw_data = False, both_scans = False, reverse_scan = True, warning = True, encoding = "ISO-8859-1"):
+def load_Biologic_CV(directory, filepath, cell_area, light_int = 100, J_1sun = None, raw_data = False, both_scans = False, reverse_scan = True, warning = True, encoding = "ISO-8859-1"):
     """
     Loads CV data measured with a Biologic potentiostat. It works if the CV was measured first forward and then backward.
 
     Parameters
     ----------
-    :param dir: string
+    :param directory: string
         data directory.
-    FN : string
+    filepath : string
         data file name.
     cell_area : float
         active cell area in cm2.
@@ -57,14 +57,14 @@ def load_Biologic_CV(dir, FN, cell_area, light_int = 100, J_1sun = None, raw_dat
 
     Returns
     -------
-    :returns: an instance of IV_data if both_scans is False or raw_data is True, otherwise a tuple of two instances of IV_data
+    :returns: an instance of IVData if both_scans is False or raw_data is True, otherwise a tuple of two instances of IVData
 
     """
     if warning:
-        print('Function IV_data.load_Biologic_CV: The CV scan has to be first in forward then in reverse sweep direction!')
+        print('Function IVData.load_Biologic_CV: The CV scan has to be first in forward then in reverse sweep direction!')
         print('To switch off this message, set argument warning = False!')
 
-    TFN = join(dir,FN)
+    TFN = join(directory,filepath)
 
     # Returns the number of header lines in the .mpt file
     def header_lines(TFN):
@@ -90,7 +90,7 @@ def load_Biologic_CV(dir, FN, cell_area, light_int = 100, J_1sun = None, raw_dat
         V_array = raw_V
         J_array = raw_J
         sweep_dir = None
-        IV = IV_data(V_array, J_array, cell_area = cell_area, light_int = light_int, sweep_dir = sweep_dir, name = FN, check_data = False)
+        IV = IVData(V_array, J_array, cell_area = cell_area, light_int = light_int, sweep_dir = sweep_dir, name = filepath, check_data = False)
 
     else:
         
@@ -121,10 +121,10 @@ def load_Biologic_CV(dir, FN, cell_area, light_int = 100, J_1sun = None, raw_dat
             #    J_array[i] = JVinterp(V_array[i])[0]
             J_array = JVinterp(V_array)
             
-            IV = IV_data(V_array, J_array, cell_area = cell_area, light_int = light_int, sweep_dir = sweep_dir, name = FN)
+            IV = IVData(V_array, J_array, cell_area = cell_area, light_int = light_int, sweep_dir = sweep_dir, name = filepath)
 
             if light_int == None:
-                Jsc = IV.det_Jsc(fit_to = None, show_fit = False)
+                Jsc = IV.det_jsc(fit_to = None, show_fit = False)
                 light_int = Jsc/J_1sun*100
                 IV.light_int = light_int
         
@@ -158,12 +158,12 @@ def load_Biologic_CV(dir, FN, cell_area, light_int = 100, J_1sun = None, raw_dat
 
 
 
-def load_Biologic_CA(dir, FN, uA = False, cell_area = None):
+def load_Biologic_CA(directory, filepath, uA = False, cell_area = None):
     """
     Load chrono-amperometry files
     """
 
-    TFN = join(dir,FN)
+    TFN = join(directory,filepath)
 
     # Returns the number of header lines in the .mpt file
     def header_lines(TFN):
@@ -188,28 +188,28 @@ def load_Biologic_CA(dir, FN, uA = False, cell_area = None):
     if uA:
         raw_I *= 1000
         if cell_area == None:
-            I = xy_data(raw_t, raw_I, quants = dict(x = 'Time', y = 'Current'), units = dict(x = 's', y = 'uA'), name = FN.split('.mpt')[0])
+            I = XYData(raw_t, raw_I, quants = dict(x = 'Time', y = 'Current'), units = dict(x = 's', y = 'uA'), name = filepath.split('.mpt')[0])
         else:
-            I = xy_data(raw_t, raw_I/cell_area, quants = dict(x = 'Time', y = 'Current density'), units = dict(x = 's', y = 'uA/cm2'), name = FN.split('.mpt')[0])            
+            I = XYData(raw_t, raw_I/cell_area, quants = dict(x = 'Time', y = 'Current density'), units = dict(x = 's', y = 'uA/cm2'), name = filepath.split('.mpt')[0])            
     else:
         if cell_area == None:
-            I = xy_data(raw_t, raw_I, quants = dict(x = 'Time', y = 'Current'), units = dict(x = 's', y = 'mA'), name = FN.split('.mpt')[0])
+            I = XYData(raw_t, raw_I, quants = dict(x = 'Time', y = 'Current'), units = dict(x = 's', y = 'mA'), name = filepath.split('.mpt')[0])
         else:
-            I = xy_data(raw_t, raw_I/cell_area, quants = dict(x = 'Time', y = 'Current density'), units = dict(x = 's', y = 'mA/cm2'), name = FN.split('.mpt')[0])
+            I = XYData(raw_t, raw_I/cell_area, quants = dict(x = 'Time', y = 'Current density'), units = dict(x = 's', y = 'mA/cm2'), name = filepath.split('.mpt')[0])
 
     raw_V = np.array(raw)[:,9]
-    V = xy_data(raw_t, raw_V, quants = dict(x = 'Time', y = 'Voltage'), units = dict(x = 's', y = 'V'), name = FN.split('.mpt')[0])
+    V = XYData(raw_t, raw_V, quants = dict(x = 'Time', y = 'Voltage'), units = dict(x = 's', y = 'V'), name = filepath.split('.mpt')[0])
 
     return I, V
     
     
     
-def load_Biologic_CstC(dir, FN):
+def load_Biologic_CstC(directory, filepath):
     """
 
     """
 
-    TFN = join(dir,FN)
+    TFN = join(directory,filepath)
 
     # Returns the number of header lines in the .mpt file
     def header_lines(TFN):
@@ -233,8 +233,8 @@ def load_Biologic_CstC(dir, FN):
     raw_V = np.array(raw)[:,8]    
     raw_I = np.array(raw)[:,9]
 
-    V = xy_data(raw_t, raw_V, quants = dict(x = 'Time', y = 'Voltage'), units = dict(x = 's', y = 'V'), name = FN.split('.mpt')[0])
-    I = xy_data(raw_t, raw_I, quants = dict(x = 'Time', y = 'Current'), units = dict(x = 's', y = 'mA'), name = FN.split('.mpt')[0])
+    V = XYData(raw_t, raw_V, quants = dict(x = 'Time', y = 'Voltage'), units = dict(x = 's', y = 'V'), name = filepath.split('.mpt')[0])
+    I = XYData(raw_t, raw_I, quants = dict(x = 'Time', y = 'Current'), units = dict(x = 's', y = 'mA'), name = filepath.split('.mpt')[0])
 
     return V, I
 
@@ -266,7 +266,7 @@ def EIS_convert_mpt_to_csv(data_dir, save_dir, V_in_name = True, tolerance = 0.0
 
     # Note: The number of voltages is N + 1
 
-    def readfile(FN):
+    def readfile(filepath):
 
         data = []
         count = 0
@@ -275,7 +275,7 @@ def EIS_convert_mpt_to_csv(data_dir, save_dir, V_in_name = True, tolerance = 0.0
         Ei = 0
         Ef = 0
 
-        with open(FN, encoding = "ISO-8859-1") as z:
+        with open(filepath, encoding = "ISO-8859-1") as z:
             isdata = False
             for line in z:
 
