@@ -70,6 +70,9 @@ def _bottom_top_for_plot(obj: Any, left: float | None=None, right: float | None=
 
 
 class XYData:
+    """
+    Container for a single (x, y) data set with units and plotting helpers.
+    """
     
     def __init__(self, x: np.ndarray, y: np.ndarray, quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": None, "y": None}, name: str = '', plotstyle: Any = None, check_data: bool = True) -> None:
         """
@@ -115,6 +118,18 @@ class XYData:
         return s, o
 
     def __mul__(self, other: Any) -> None:
+        """
+        Multiply element-wise with another object or scalar.
+        
+        Parameters
+        ----------
+        other : Any
+            Other.
+        
+        Examples
+        --------
+        >>> obj.__mul__()
+        """
         if type(self).mro()[-2] == type(other).mro()[-2]:
             s, o = self._align_with(other)
             s.y = s.y * o.y
@@ -124,6 +139,18 @@ class XYData:
         return s
 
     def __add__(self, other: Any) -> None:
+        """
+        Add another object or scalar element-wise.
+        
+        Parameters
+        ----------
+        other : Any
+            Other.
+        
+        Examples
+        --------
+        >>> obj.__add__()
+        """
         if type(self).mro()[-2] == type(other).mro()[-2]:
             s, o = self._align_with(other)
             s.y = s.y + o.y
@@ -133,6 +160,18 @@ class XYData:
         return s
 
     def __sub__(self, other: Any) -> None:
+        """
+        Subtract another object or scalar element-wise.
+        
+        Parameters
+        ----------
+        other : Any
+            Other.
+        
+        Examples
+        --------
+        >>> obj.__sub__()
+        """
         if type(self).mro()[-2] == type(other).mro()[-2]:
             s, o = self._align_with(other)
             s.y = s.y - o.y
@@ -142,6 +181,18 @@ class XYData:
         return s
 
     def __truediv__(self, other: Any) -> None:
+        """
+        Divide element-wise by another object or scalar.
+        
+        Parameters
+        ----------
+        other : Any
+            Other.
+        
+        Examples
+        --------
+        >>> obj.__truediv__()
+        """
         if type(self).mro()[-2] == type(other).mro()[-2]:
             s, o = self._align_with(other)
             s.y = s.y / o.y
@@ -152,6 +203,27 @@ class XYData:
             
     @classmethod
     def from_df(cls, df: Any, y_col: int= 0, take_quants_and_units_from_df: bool= True, **kwargs) -> Any:
+        """
+        Construct an XYData object from a pandas DataFrame column.
+        
+        Parameters
+        ----------
+        df : Any
+            Df.
+        y_col : int
+            Y col.
+        take_quants_and_units_from_df : bool
+            Take quants and units from df.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.from_df()
+        """
         #The index is taken as
         #y_col can be either an integer to denote the y_colth column or a column name
     
@@ -191,6 +263,18 @@ class XYData:
             return cls(x, y, **kwargs)
                 
     def to_df(self) -> Any:
+        """
+        Export the XYData as a pandas DataFrame with labelled columns.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.to_df()
+        """
         col_name = self.qy
         if self.uy is not None and self.uy != '':
             col_name += f' ({self.uy})'
@@ -200,6 +284,18 @@ class XYData:
         return pd.DataFrame({index_name: self.x, col_name: self.y}).set_index(index_name)
     
     def data_check(self) -> Any:
+        """
+        Validate x/y arrays and optionally sort or trim the data.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.data_check()
+        """
         #Checks if the x-values are in ascending order and if there are nan values.
         #Returns True if data is ok and False if not.
         #Recommended usage: 
@@ -223,11 +319,35 @@ class XYData:
         
     @classmethod
     def generate_empty(cls) -> Any:
+        """
+        Generate an XYData with all-zero y values on a given x grid.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.generate_empty()
+        """
         x = np.array([])
         y = np.array([])
         return cls(x, y)
         
     def copy(self) -> Any:
+        """
+        Return a deep copy of this object.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.copy()
+        """
         x = self.x.copy()
         y = self.y.copy()
         qx = self.qx
@@ -239,6 +359,25 @@ class XYData:
         return type(self)(x, y, quants = dict(x = qx, y = qy), units = dict(x = ux, y = uy), name = name, plotstyle = plotstyle, check_data = False)
         
     def y_of(self, x_value: Any, interpolate: Any = False) -> Any:
+        """
+        Interpolate and return the y value at a given x position.
+        
+        Parameters
+        ----------
+        x_value : Any
+            X value.
+        interpolate : Any
+            Interpolate.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.y_of()
+        """
         if x_value < min(self.x):
             print('Attention: x_value is smaller than minimum, y of minimum x used!')
             y = self.y_of(min(self.x))
@@ -294,6 +433,20 @@ class XYData:
 
     
     def normalize(self, x_lim: Any | None = None, norm_val: float = 1) -> None:
+        """
+        Normalise y so that its maximum (or a chosen point) equals norm_val.
+        
+        Parameters
+        ----------
+        x_lim : Any | None
+            X lim.
+        norm_val : float
+            Norm val.
+        
+        Examples
+        --------
+        >>> obj.normalize()
+        """
         if x_lim is None:
             r = range(0, len(self.x))
         else:
@@ -306,7 +459,7 @@ class XYData:
         
     def equidist(self, left: float | None = None, right: float | None = None, delta: float = 0.1, kind: str = 'cubic') -> None:
         """
-        Change x values so that they are equidistant with a delta of delta. x ranges from left to right.
+        Resample y onto an equidistant x grid.
         If left (right) = None then the new left (right) value is the old one.
         """
         
@@ -327,12 +480,50 @@ class XYData:
         self.x = new_x
     
     def quants(self) -> Any:
+        """
+        Return the (x_quantity, y_quantity) axis label strings.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.quants()
+        """
         return dict(x=self.qx, y=self.qy)
     
     def units(self) -> Any:
+        """
+        Return the (x_unit, y_unit) string tuple.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.units()
+        """
         return dict(x=self.ux, y=self.uy)
     
     def qy_uy(self, qy: Any, uy: Any) -> None:
+        """
+        Return the (y_quantity, y_unit) strings for the y axis.
+        
+        Parameters
+        ----------
+        qy : Any
+            Qy.
+        uy : Any
+            Uy.
+        
+        Examples
+        --------
+        >>> obj.qy_uy()
+        """
         self.qy = qy
         self.uy = uy
         
@@ -427,6 +618,29 @@ class XYData:
 
         
     def plot_linfit(self, von: Any | None = None, bis: Any | None = None, residue: Any = False, return_data: bool = False) -> Any:
+        """
+        Plot data with a linear fit overlaid and residuals optionally shown.
+        
+        Parameters
+        ----------
+        von : Any | None
+            Von.
+        bis : Any | None
+            Bis.
+        residue : Any
+            Residue.
+        return_data : bool
+            Return data.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.plot_linfit()
+        """
         
         if von is None:
             von = min(self.x)
@@ -518,6 +732,22 @@ class XYData:
         return cls(x, y, quants = dict(x = qx, y = qy), units = dict(x = ux, y = uy), name = name,  check_data = check_data)
     
     def save(self, save_dir: str, filepath: str, check_existing: Any = True) -> None:
+        """
+        Save the data to a CSV file, prompting before overwriting.
+        
+        Parameters
+        ----------
+        save_dir : str
+            Save dir.
+        filepath : str
+            Filepath.
+        check_existing : Any
+            Check existing.
+        
+        Examples
+        --------
+        >>> obj.save()
+        """
         
         x_col_name = self.qx
         y_col_name = self.qy
@@ -537,6 +767,39 @@ class XYData:
             df.to_csv(TFN, header = True, index = False)
     
     def lowpass_filter(self, test: Any = False, yscale: str = 'log', left: float | None = None, right: float | None = None, T: float = 5.0, fs: Any = 30.0, cutoff: Any = 0.7, order: Any = 2, filter_only_from_left_to_right: Any = False) -> Any:
+        """
+        Apply a Butterworth low-pass filter to remove high-frequency noise.
+        
+        Parameters
+        ----------
+        test : Any
+            Test.
+        yscale : str
+            Yscale.
+        left : float | None
+            Left.
+        right : float | None
+            Right.
+        T : float
+            T.
+        fs : Any
+            Fs.
+        cutoff : Any
+            Cutoff.
+        order : Any
+            Order.
+        filter_only_from_left_to_right : Any
+            Filter only from left to right.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.lowpass_filter()
+        """
     
         # Filter requirements.
         #T = 5.0         # Sample Period
@@ -580,6 +843,27 @@ class XYData:
             self.y = y
             
     def savgol(self, n1: int = 51, n2: int = 1, name: str | None = None) -> Any:
+        """
+        Smooth y data with a Savitzky-Golay filter.
+        
+        Parameters
+        ----------
+        n1 : int
+            N1.
+        n2 : int
+            N2.
+        name : str | None
+            Name.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.savgol()
+        """
             
         sgf = self.copy()
         sgf.y = savgol_filter(self.y, n1, n2)
@@ -590,6 +874,29 @@ class XYData:
         return sgf 
     
     def residual(self, other: Any, left: float | None = None, right: float | None = None, relative: Any = False) -> Any:
+        """
+        Return the (weighted) residual between data and a reference array.
+        
+        Parameters
+        ----------
+        other : Any
+            Other.
+        left : float | None
+            Left.
+        right : float | None
+            Right.
+        relative : Any
+            Relative.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.residual()
+        """
         #Attention: selv and other have to have the same x_values!
         
         d = self.copy()
@@ -620,6 +927,29 @@ class XYData:
     
     @staticmethod
     def chisquare(data: Any, fit: Any, left: float | None = None, right: float | None = None) -> Any:
+        """
+        Compute the chi-square statistic between data and a model.
+        
+        Parameters
+        ----------
+        data : Any
+            Data.
+        fit : Any
+            Fit.
+        left : float | None
+            Left.
+        right : float | None
+            Right.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.chisquare()
+        """
         # data and fit must have the same x values
         if left is None:
             left = min(data.x)
@@ -636,6 +966,25 @@ class XYData:
         return np.sum(res.y**2/ np.abs(fit.y[ra]))/len(data.y[ra])
             
     def diff(self, left: float | None = None, right: float | None = None) -> Any:
+        """
+        Compute the numerical derivative dy/dx.
+        
+        Parameters
+        ----------
+        left : float | None
+            Left.
+        right : float | None
+            Right.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.diff()
+        """
         
         self_asc = self.copy()
         self_asc.strictly_ascending()
@@ -661,7 +1010,7 @@ class XYData:
            
     def max_within(self, left: float | None = None, right: float | None = None) -> Any:
         """
-        Returns the maximum y-value within left < x < right.
+        Return the maximum y value within [left, right].
         left: left x boundary
         right: right y boundary
         If no values for left or right are given then the global maximum is returned.
@@ -682,7 +1031,7 @@ class XYData:
     
     def min_within(self, left: float | None = None, right: float | None = None, absolute: Any = False) -> Any:
         """
-        Returns the minimum y-value within left < x < right.
+        Return the minimum y value within [left, right].
         left: left x boundary
         right: right y boundary
         If no values for left or right are given then the global maximum is returned.
@@ -735,7 +1084,7 @@ class XYData:
     
     def cut_data_outside(self, left: float | None = None, right: float | None = None) -> Any:
         """
-        Cuts the data outside x = [left, right].
+        Remove data points outside [left, right].
         """
     
         l = left
@@ -754,10 +1103,34 @@ class XYData:
         return new
     
     def reverse(self) -> Any:
+        """
+        Reverse.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.reverse()
+        """
         self.x = self.x[::-1]
         self.y = self.y[::-1]
         
     def swap_axes(self) -> Any:
+        """
+        Swap axes.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.swap_axes()
+        """
         self_copy = self.copy()
         new_x = self.y
         new_y = self.x
@@ -776,6 +1149,18 @@ class XYData:
         return self_copy
         
     def remove_nan(self) -> Any:
+        """
+        Remove nan.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.remove_nan()
+        """
         # Removes all numpy.nan values in self.x and self.y (only gives sensible result if there is a nan in both x[i] and y[i])
         x_raw = self.x
         y_raw = self.y
@@ -789,6 +1174,31 @@ class XYData:
         #    print('Attention: XYData.remove_nan() gave an x-array and a y-array with different sizes. The reason could be that, e.g. x[i] = nan but y[i] = number')
         
     def idfac_fit(self, left: float | None = None, right: float | None = None, plot: bool = False, plotrange: list | None = [None, None], return_fit: bool = True) -> Any:
+        """
+        Fit the diode ideality factor from a semi-log JV curve.
+        
+        Parameters
+        ----------
+        left : float | None
+            Left.
+        right : float | None
+            Right.
+        plot : bool
+            Plot.
+        plotrange : list | None
+            Plotrange.
+        return_fit : bool
+            Return fit.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.idfac_fit()
+        """
         
         if (left is None) or (left < min(self.x)):
             left = min(self.x)
@@ -825,6 +1235,29 @@ class XYData:
 
         
     def product(self, s2: Any, qy: Any | None = None, uy: Any | None = None, delta: float = 1) -> Any:
+        """
+        Product.
+        
+        Parameters
+        ----------
+        s2 : Any
+            S2.
+        qy : Any | None
+            Qy.
+        uy : Any | None
+            Uy.
+        delta : float
+            Delta.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.product()
+        """
         # Calculates the product self.y*s2.y at the right wavelengths and returns a new instance of class of the same class as self
     
         #Determine the global minimum x-value 
@@ -861,7 +1294,7 @@ class XYData:
     
     def all_values_greater_min(self, min_val: Any | None=None) -> Any:
         """
-        Looks for values < min_val and sets them to min_val.
+        Return True if all y values exceed the given minimum.
         """
         self.y = np.array([self.y[i] if (self.y[i] > min_val) else min_val for i in range(len(self.y))], dtype = np.float64)
     
@@ -879,10 +1312,54 @@ class XYData:
 
         
     def idx_range(self, left: float | None = None, right: float | None = None) -> Any:
+        """
+        Return the index range [i_left, i_right] for a value interval in a sorted array.
+        
+        Parameters
+        ----------
+        left : float | None
+            Left.
+        right : float | None
+            Right.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.idx_range()
+        """
         # Returns the x-index range which goes from x = left to x = right
         return idx_range(self.x, left = left, right = right)
     
     def polyfit(self, order: Any = 1, left: float | None = None, right: float | None = None, new_x_arr: np.ndarray | None = None, new_meshsize: np.ndarray | None = None) -> Any:
+        """
+        Fit a polynomial of specified degree to the data.
+        
+        Parameters
+        ----------
+        order : Any
+            Order.
+        left : float | None
+            Left.
+        right : float | None
+            Right.
+        new_x_arr : np.ndarray | None
+            New x arr.
+        new_meshsize : np.ndarray | None
+            New meshsize.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.polyfit()
+        """
         # Fits a polynomial of order to self and returns the data as an object of the same class as self.
         # new_x_arr: The x values of the fit.
         # new_meshsize: If no new_x_arr is provided, new_meshsize is a number of evenly spaced x-values between left and right.
@@ -901,11 +1378,40 @@ class XYData:
         return fit
 
     def del_first_and_last_n_data_points(self, n: float=1) -> Any:
+        """
+        Del first and last n data points.
+        
+        Parameters
+        ----------
+        n : float
+            N.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.del_first_and_last_n_data_points()
+        """
         r = range(n, len(self.x)-n)  # type: ignore
         self.x = self.x[r]
         self.y = self.y[r]
         
     def del_edge_zero_data(self) -> Any:
+        """
+        Del edge zero data.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.del_edge_zero_data()
+        """
         start_idx = 0
         while self.y[start_idx] == 0:
             start_idx += 1
@@ -955,6 +1461,18 @@ class XYData:
         return sp    
     
     def monotoneous_ascending(self) -> Any:
+        """
+        Monotoneous ascending.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.monotoneous_ascending()
+        """
         # Orders the data, so that x is monotoneous ascending
         s = self.x.argsort()
         self.x = self.x[s]
@@ -962,6 +1480,18 @@ class XYData:
 
 
     def strictly_ascending(self) -> Any:
+        """
+        Strictly ascending.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.strictly_ascending()
+        """
     # Transforms the data self, so that self.x is strictly ascending
     # Important is that the data is monotoneous ascending. To accomplish this use
     # the method monotoneous_ascending.
@@ -978,8 +1508,23 @@ class XYData:
     
     
 class MXYData:
+    """
+    Container for a collection of XYData objects (multi-spectrum).
+    """
     
     def __init__(self, sa: Any) -> None:
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        sa : Any
+            Sa.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         self.sa = sa
         self.label_defined = False
         self.n_y = len(sa)
@@ -989,25 +1534,84 @@ class MXYData:
             self.n_x = 0
         
     def __mul__(self, other: Any) -> None:
+        """
+        Multiply element-wise with another object or scalar.
+        
+        Parameters
+        ----------
+        other : Any
+            Other.
+        
+        Examples
+        --------
+        >>> obj.__mul__()
+        """
         new_sa = []
         for i, sp in enumerate(self.sa):
             new_sa.append(sp * other)
         return type(self)(new_sa)  # type: ignore
     
     def __iter__(self) -> None:
+        """
+        Iterate over elements.
+        
+        Examples
+        --------
+        >>> obj.__iter__()
+        """
         return iter(self.sa)
         
     def qx_ux(self, qx: Any, ux: Any) -> None:
+        """
+        Qx ux.
+        
+        Parameters
+        ----------
+        qx : Any
+            Qx.
+        ux : Any
+            Ux.
+        
+        Examples
+        --------
+        >>> obj.qx_ux()
+        """
         for i, sp in enumerate(self.sa):
             sp.qx = qx
             sp.ux = ux
 
     def qy_uy(self, qy: Any, uy: Any) -> None:
+        """
+        Qy uy.
+        
+        Parameters
+        ----------
+        qy : Any
+            Qy.
+        uy : Any
+            Uy.
+        
+        Examples
+        --------
+        >>> obj.qy_uy()
+        """
         for i, sp in enumerate(self.sa):
             sp.qy = qy
             sp.uy = uy
             
     def copy(self) -> Any:
+        """
+        Copy.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.copy()
+        """
         sa_new = []
         for i, sp in enumerate(self.sa):
             sa_new.append(sp.copy())
@@ -1019,6 +1623,23 @@ class MXYData:
         return ms
         
     def append(self, data: Any) -> Any:
+        """
+        Append another XYData to this collection.
+        
+        Parameters
+        ----------
+        data : Any
+            Data.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.append()
+        """
         self.sa.append(data)
         self.label_defined = False
         
@@ -1040,6 +1661,23 @@ class MXYData:
         return new_mxy
         
     def delete(self, data: Any) -> Any:
+        """
+        Delete.
+        
+        Parameters
+        ----------
+        data : Any
+            Data.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.delete()
+        """
         i = 0
         while i < len(self.sa):
             if self.sa[i].name == data.name:
@@ -1049,22 +1687,77 @@ class MXYData:
                 
     @classmethod
     def generate_empty(cls) -> Any:
+        """
+        Generate empty.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.generate_empty()
+        """
         return cls([])
 
         
     def label(self, lab: Any) -> None:
+        """
+        Label.
+        
+        Parameters
+        ----------
+        lab : Any
+            Lab.
+        
+        Examples
+        --------
+        >>> obj.label()
+        """
         self.lab = lab
         self.label_defined = True
         
     def no_label(self) -> Any:
+        """
+        No label.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.no_label()
+        """
         self.label_defined = False
                 
     def replace(self, idx: int, sp_new: Any) -> Any:
+        """
+        Replace.
+        
+        Parameters
+        ----------
+        idx : int
+            Idx.
+        sp_new : Any
+            Sp new.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.replace()
+        """
         self.sa[idx] = sp_new
         
     def remain(self, idx_list: Any) -> Any:
         """
-        Return all Spectra with indices in list idx_list.
+        Return a copy trimmed to the interval [left, right].
         """
         sa = []
         lab = []
@@ -1079,6 +1772,31 @@ class MXYData:
         return rem_sa
     
     def set_plotstyle(self, linestyle: Any | None = None, marker: Any | None = None, color: Any | None = None, markersize: Any | None = None, linewidth: Any | None = None) -> Any:
+        """
+        Set plotstyle.
+        
+        Parameters
+        ----------
+        linestyle : Any | None
+            Linestyle.
+        marker : Any | None
+            Marker.
+        color : Any | None
+            Color.
+        markersize : Any | None
+            Markersize.
+        linewidth : Any | None
+            Linewidth.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.set_plotstyle()
+        """
         for idx, sp in enumerate(self.sa):
             
             if linestyle is not None:
@@ -1097,6 +1815,23 @@ class MXYData:
                 sp.plotstyle['linewidth'] = linewidth
 
     def names_to_label(self, split_ch: str | None = None) -> Any:
+        """
+        Names to label.
+        
+        Parameters
+        ----------
+        split_ch : str | None
+            Split ch.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.names_to_label()
+        """
         lab = []
         for i, sp in enumerate(self.sa):
             if split_ch is None:
@@ -1108,6 +1843,31 @@ class MXYData:
         
         
     def print_all_names(self, split_ch: str | None = None, unique_only: Any = False, print_all: Any = True, print_idx: Any = True, return_list: bool = False) -> Any:
+        """
+        Print all names.
+        
+        Parameters
+        ----------
+        split_ch : str | None
+            Split ch.
+        unique_only : Any
+            Unique only.
+        print_all : Any
+            Print all.
+        print_idx : Any
+            Print idx.
+        return_list : bool
+            Return list.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.print_all_names()
+        """
         all_names = []
         idx = 0
         for i, sp in enumerate(self.sa):
@@ -1136,6 +1896,23 @@ class MXYData:
             return all_names
     
     def print_names_containing(self, name: str) -> Any:
+        """
+        Print names containing.
+        
+        Parameters
+        ----------
+        name : str
+            Name.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.print_names_containing()
+        """
         for i, sp in enumerate(self.sa):
             if name in sp.name:
                 print(sp.name)
@@ -1343,6 +2120,22 @@ class MXYData:
 
     
     def save(self, save_dir: str, title: str, label: Any | None = None) -> None:
+        """
+        Save.
+        
+        Parameters
+        ----------
+        save_dir : str
+            Save dir.
+        title : str
+            Title.
+        label : Any | None
+            Label.
+        
+        Examples
+        --------
+        >>> obj.save()
+        """
         if label is None:
             label = self.lab
         for i, xy_dat in enumerate(self.sa):
@@ -1350,6 +2143,18 @@ class MXYData:
             xy_dat.save(save_dir, filepath)
             
     def save_in_one_file(self, fp: Any) -> None:
+        """
+        Save all datasets to a single CSV file.
+        
+        Parameters
+        ----------
+        fp : Any
+            Fp.
+        
+        Examples
+        --------
+        >>> obj.save_in_one_file()
+        """
         #check if all files have the same wavelengths
         all_have_same_x = True
         x_arr = self.sa[0].x
@@ -1372,6 +2177,24 @@ class MXYData:
             print('Not saved: Not all XYData have the same x!')
             
     def save_individual(self, save_dir: str | None = None, FNs: str | None = None, check_existing: Any = True, check_FN_extension: Any = True) -> None:
+        """
+        Save each dataset to its own CSV file.
+        
+        Parameters
+        ----------
+        save_dir : str | None
+            Save dir.
+        FNs : str | None
+            Fns.
+        check_existing : Any
+            Check existing.
+        check_FN_extension : Any
+            Check fn extension.
+        
+        Examples
+        --------
+        >>> obj.save_individual()
+        """
         
         quitted = False
         if save_dir is None:
@@ -1412,7 +2235,7 @@ class MXYData:
     def load_individual(cls, directory: str, delimiter: str = ',', header: Any = 'infer', quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": "", "y": ""}, take_quants_and_units_from_file: bool = False) -> Any:
 
         """
-        Loads all xy data in individual files in directory.
+        Load multiple individual files into a collection.
         """
         FNs = os.listdir(directory)
         sa = []
@@ -1539,11 +2362,43 @@ class MXYData:
 
 
     def normalize(self, x_lim: Any | None = None, norm_val: float = 1) -> None:    
+        """
+        Normalize.
+        
+        Parameters
+        ----------
+        x_lim : Any | None
+            X lim.
+        norm_val : float
+            Norm val.
+        
+        Examples
+        --------
+        >>> obj.normalize()
+        """
 
         for i, sp in enumerate(self.sa):
             sp.normalize(x_lim = x_lim, norm_val = norm_val)
             
     def equidist(self, left: float | None = None, right: float | None = None, delta: float = 0.1, kind: str = 'cubic') -> None:
+        """
+        Equidist.
+        
+        Parameters
+        ----------
+        left : float | None
+            Left.
+        right : float | None
+            Right.
+        delta : float
+            Delta.
+        kind : str
+            Kind.
+        
+        Examples
+        --------
+        >>> obj.equidist()
+        """
 
         for i, sp in enumerate(self.sa):
             sp.equidist(left = left, right = right, delta = delta, kind = kind)
@@ -1582,15 +2437,63 @@ class MXYData:
         return new
     
     def del_first_and_last_n_data_points(self, n: float=1) -> Any:
+        """
+        Del first and last n data points.
+        
+        Parameters
+        ----------
+        n : float
+            N.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.del_first_and_last_n_data_points()
+        """
         for idx, sp in enumerate(self.sa):
             sp.del_first_and_last_n_data_points(n=n)
             
     def del_edge_zero_data(self) -> Any:
+        """
+        Del edge zero data.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.del_edge_zero_data()
+        """
         for idx, sp in enumerate(self.sa):
             sp.del_edge_zero_data()
             
             
     def rm_cosray(self, m: float = 3, threshold: Any = 5) -> Any:
+        """
+        Rm cosray.
+        
+        Parameters
+        ----------
+        m : float
+            M.
+        threshold : Any
+            Threshold.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.rm_cosray()
+        """
         new = self.copy()
         for idx, sp in enumerate(new.sa):
             sp_new = sp.rm_cosray(m = m, threshold = threshold)
@@ -1599,6 +2502,31 @@ class MXYData:
     
     
     def idfac_fit(self, left: float | None = None, right: float | None = None, plot: bool = True, plotrange: list | None = [None, None], return_all: bool = False) -> Any:
+        """
+        Idfac fit.
+        
+        Parameters
+        ----------
+        left : float | None
+            Left.
+        right : float | None
+            Right.
+        plot : bool
+            Plot.
+        plotrange : list | None
+            Plotrange.
+        return_all : bool
+            Return all.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.idfac_fit()
+        """
     
         all_data = []
         all_data_label = []
@@ -1641,6 +2569,18 @@ class MXYData:
             sp.shift_y(y)
             
     def average(self) -> Any:
+        """
+        Average.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.average()
+        """
         # Averages over all Spectra and returns the averaged Spectrum
         av = self.sa[0].copy()
         av.y *= 0
@@ -1650,6 +2590,25 @@ class MXYData:
         return av
     
     def diff(self, left: float | None = None, right: float | None = None) -> Any:
+        """
+        Diff.
+        
+        Parameters
+        ----------
+        left : float | None
+            Left.
+        right : float | None
+            Right.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.diff()
+        """
         new = self.copy()
         sa = []
         for sp in new.sa:
@@ -1658,15 +2617,42 @@ class MXYData:
         return new
     
     def remove_nan(self) -> Any:
+        """
+        Remove nan.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.remove_nan()
+        """
         for sp in self.sa:
             sp.remove_nan()
             
     def strictly_ascending(self) -> Any:
+        """
+        Strictly ascending.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.strictly_ascending()
+        """
         for sp in self.sa:
             sp.strictly_ascending()
 
                 
 class XYZData:
+    """
+    Container class for XYZData data and operations.
+    """
     
     def __init__(self, x: np.ndarray, y: np.ndarray, z: np.ndarray , quants: Any = {"x": "x", "y": "y", "z": "z"}, units: Any = {"x": "", "y": "", "z": ""}, name: str = '', plotstyle: Any = None) -> None:
         """
@@ -1696,7 +2682,7 @@ class XYZData:
               quants: Any = {"x": "x", "y": "y", "z": "z"}, units: Any = {"x": "", "y": "", "z": ""}, take_quants_and_units_from_file: bool = False) -> Any:
 
         """
-        Loads a single xyz data. If a filename is given it will be used, if not the first file in the directory will be used.
+        Load data from a CSV or text file.
         """
         
         if filepath == '':

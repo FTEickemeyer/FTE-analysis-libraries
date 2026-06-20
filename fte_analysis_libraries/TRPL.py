@@ -177,12 +177,58 @@ def MakeTridiagonalMatrix(main: Any, upper_offset_one: Any, lower_offset_one: An
     return A
 
 def PLsignal(u: float, dx: Any, k2: float) -> Any:
+    """
+    P Lsignal.
+    
+    Parameters
+    ----------
+    u : float
+        U.
+    dx : Any
+        Dx.
+    k2 : float
+        K2.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> PLsignal()
+    """
     return np.trapz(k2*u**2,dx=dx)  # type: ignore
 
 
 # Plot animation of carrier concentration
 
 def plot_animation(pset1: Any, pset2: Any, interval: Any = 1, ylim: Any=(1e-2,1.2), normalize_to_end: Any = False) -> Any:
+    """
+    Plot animation.
+    
+    Parameters
+    ----------
+    pset1 : Any
+        Pset1.
+    pset2 : Any
+        Pset2.
+    interval : Any
+        Interval.
+    ylim : Any
+        Ylim.
+    normalize_to_end : Any
+        Normalize to end.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> plot_animation()
+    """
 
     global u1, u2, time1, time2 # Necessary. 
     
@@ -285,6 +331,29 @@ def plot_animation(pset1: Any, pset2: Any, interval: Any = 1, ylim: Any=(1e-2,1.
 # Plot animation of quasi-Fermi level splitting
 
 def plot_animation_QFLS(pset1: Any, pset2: Any, interval: Any = 1, ylim: Any=(1e-2,1.2)) -> Any:
+    """
+    Plot animation QFLS.
+    
+    Parameters
+    ----------
+    pset1 : Any
+        Pset1.
+    pset2 : Any
+        Pset2.
+    interval : Any
+        Interval.
+    ylim : Any
+        Ylim.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> plot_animation_QFLS()
+    """
 
     global u1, u2, time1, time2 # Necessary. 
     
@@ -387,8 +456,47 @@ def plot_animation_QFLS(pset1: Any, pset2: Any, interval: Any = 1, ylim: Any=(1e
 
 
 class TRPLParam:
+    """
+    Container class for TRPLParam data and operations.
+    """
 
     def __init__(self, dt: Any = 2e-12, finaltime: Any = 200e-9, thickness: Any = 350, N_points: Any = 50, alpha: Any = 1e5, P_exc: Any = 1e10, pulse_len: Any = 60e-12, mu: Any = 1, k1: float = 0, k2: float = 1e-10, k3: Any = 8.8e-29, SL: Any = 0, SR: Any = 0) -> None:
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        dt : Any
+            Dt.
+        finaltime : Any
+            Finaltime.
+        thickness : Any
+            Thickness.
+        N_points : Any
+            N points.
+        alpha : Any
+            Alpha.
+        P_exc : Any
+            P exc.
+        pulse_len : Any
+            Pulse len.
+        mu : Any
+            Mu.
+        k1 : float
+            K1.
+        k2 : float
+            K2.
+        k3 : Any
+            K3.
+        SL : Any
+            Sl.
+        SR : Any
+            Sr.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
 
         self.dt = dt # s
         self.finaltime = finaltime # s
@@ -411,11 +519,42 @@ class TRPLParam:
         self.n0 = lambeer(self.alpha, self.x, self.P_exc)
         
     def copy(self) -> Any:
+        """
+        Return a deep copy of this object.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.copy()
+        """
         
         return TRPLParam(dt = self.dt, finaltime = self.finaltime, thickness = self.thickness, N_points = self.N_points, alpha = self.alpha, P_exc = self.P_exc, pulse_len = self.pulse_len, mu = self.mu, k1 = self.k1, k2 = self.k2, k3 = self.k3, SL = self.SL, SR = self.SR)
 
     @staticmethod
     def D_from_mu(mu: Any, T: float = T_RT) -> Any:
+        """
+        D from mu.
+        
+        Parameters
+        ----------
+        mu : Any
+            Mu.
+        T : float
+            T.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.D_from_mu()
+        """
         D = k * T / q * mu
         return D
     
@@ -453,8 +592,37 @@ class TRPLParam:
 
     
 class TRPLData(XYData):
+    """
+    Single time-resolved photoluminescence decay trace.
+    """
     
     def __init__(self, ns: Any, cts: Any, quants: Any = dict(x = "Time", y = "Intensity"), units: Any = dict(x = "ns", y = "cts"),  name: str = '', filepath: str = '', plotstyle: str = dict(linestyle = '-', color = 'black', linewidth = 3), check_data: bool = True) -> None:  # type: ignore
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        ns : Any
+            Ns.
+        cts : Any
+            Cts.
+        quants : Any
+            Quants.
+        units : Any
+            Units.
+        name : str
+            Name.
+        filepath : str
+            Filepath.
+        plotstyle : str
+            Plotstyle.
+        check_data : bool
+            Check data.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         super().__init__(ns, cts, quants = quants, units = units, name = name, plotstyle = plotstyle, check_data = check_data)
         self.filepath = filepath
         self.mexp_exist = False
@@ -463,6 +631,18 @@ class TRPLData(XYData):
         self.plotrange_right = 100
         
     def copy(self) -> Any:
+        """
+        Copy.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.copy()
+        """
         dat = super().copy()
         dat.filepath = self.filepath
         dat.mexp_exist = self.mexp_exist
@@ -492,6 +672,29 @@ class TRPLData(XYData):
     
     
     def mono_expfit(self, start: float = 400, stop: float | None = None, p0: Any = (1, 500), showparam: bool = False) -> Any:
+        """
+        Mono exponential fit.
+        
+        Parameters
+        ----------
+        start : float
+            Start.
+        stop : float | None
+            Stop.
+        p0 : Any
+            P0.
+        showparam : bool
+            Showparam.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.mono_expfit()
+        """
         
         f = lambda t, a, tau : a * np.e**(-t/tau)
         
@@ -793,6 +996,33 @@ class TRPLData(XYData):
         return d
     
     def dlifetime(self, x: np.ndarray = 'time', m: float = 2, wavelength: np.ndarray = 510, film_thickness: Any = 500, fluence: float = 5e-9, ni: float = 8.05e4) -> Any:    # type: ignore
+        """
+        Dlifetime.
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            X.
+        m : float
+            M.
+        wavelength : np.ndarray
+            Wavelength, in nm.
+        film_thickness : Any
+            Film thickness.
+        fluence : float
+            Fluence, in photons/cm².
+        ni : float
+            Ni.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.dlifetime()
+        """
         # m = 1 for low level injection, m = 2 for high level injection
         # ni = 8.05e4 cm-3
         # fluence in J/cm2
@@ -899,6 +1129,35 @@ class TRPLData(XYData):
 
     # Fit for the full continuity equation
     def model_fit(self, param: Any, fit_from: Any = 'end', fit_range_ns: Any = [30, 40], what: Any = 'SL', start_value: Any= 0, verbose: bool = 2, gtol: Any = 1e-12) -> Any:  # type: ignore
+        """
+        Model fit.
+        
+        Parameters
+        ----------
+        param : Any
+            Param.
+        fit_from : Any
+            Fit from.
+        fit_range_ns : Any
+            Fit range ns.
+        what : Any
+            What.
+        start_value : Any
+            Start value.
+        verbose : bool
+            Verbose.
+        gtol : Any
+            Gtol.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.model_fit()
+        """
         #Automized fitting routine
         
         fit_range_ns = np.array(fit_range_ns)
@@ -1049,7 +1308,7 @@ class TRPLData(XYData):
 
     def n0_fit(self, start: float | None=None, stop: float | None=None, n0: float=1e13, k1: float=1e6, k2: float=1e-8, used_for_fit: str='savgol', savgol_param: Any | None=None, show_all: bool=False, **kwargs) -> Any:
         """
-        Fits n0 to a TRPL trace.
+        Fit the initial carrier density n0 to TRPL data.
         Rate equation: dn/dt = -k1*n - k2*n**2
         """
         start, stop, dat, r, n0_initial = self._trpl_prepare(start, stop, used_for_fit, savgol_param)  # type: ignore
@@ -1064,6 +1323,35 @@ class TRPLData(XYData):
         return self._trpl_make_result(fit, k1, k2), popt  # type: ignore
     
     def k1_k2_model_fit(self, what_to_fit: Any = ['k1', 'k2'], start: float | None = None, stop: float | None = None, n0: float = 1e-15, k1: float = 1e6, k2: float = 1e-7, show: bool = None) -> Any:
+        """
+        K 1 k 2 model fit.
+        
+        Parameters
+        ----------
+        what_to_fit : Any
+            What to fit.
+        start : float | None
+            Start.
+        stop : float | None
+            Stop.
+        n0 : float
+            N0.
+        k1 : float
+            K1.
+        k2 : float
+            K2.
+        show : bool
+            Show.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.k1_k2_model_fit()
+        """
     
         if start is None:
             start = 0
@@ -1205,6 +1493,23 @@ class TRPLData(XYData):
         return dat
     
     def shift_zero(self, ns: Any) -> Any:
+        """
+        Shift zero.
+        
+        Parameters
+        ----------
+        ns : Any
+            Ns.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.shift_zero()
+        """
         ind = findind(self.x, ns)
         self.x = self.x[ind:] - self.x[ind]
         self.y = self.y[ind:]
@@ -1245,6 +1550,18 @@ class MTRPLData(MXYData):
     """
     
     def __init__(self, sa: Any) -> None:
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        sa : Any
+            Sa.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         super().__init__(sa)
         
     @classmethod
@@ -1306,19 +1623,138 @@ class MTRPLData(MXYData):
         return dafit  # type: ignore
 
     def mono_expfit(self, start: float=400, stop: float | None=None, p0: Any=(1, 500), showparam: bool=False) -> Any:
+        """
+        Mono exponential fit.
+        
+        Parameters
+        ----------
+        start : float
+            Start.
+        stop : float | None
+            Stop.
+        p0 : Any
+            P0.
+        showparam : bool
+            Showparam.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.mono_expfit()
+        """
         return self._batch_expfit('mono_expfit', 'mono exp fit_', start, stop, p0, showparam)  # type: ignore
 
     def mult2_expfit(self, start: float=0, stop: float | None=None, p0: Any=(1, 1e-1, 10, 100), showparam: bool=False) -> Any:
+        """
+        Mult 2 exponential fit.
+        
+        Parameters
+        ----------
+        start : float
+            Start.
+        stop : float | None
+            Stop.
+        p0 : Any
+            P0.
+        showparam : bool
+            Showparam.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.mult2_expfit()
+        """
         return self._batch_expfit('mult2_expfit', '2 exp fit_', start, stop, p0, showparam)  # type: ignore
 
     def mult3_expfit(self, start: float=0, stop: float | None=None, p0: Any=(1, 1e-1, 1e-2, 5, 20, 100), showparam: bool=False) -> Any:
+        """
+        Mult 3 exponential fit.
+        
+        Parameters
+        ----------
+        start : float
+            Start.
+        stop : float | None
+            Stop.
+        p0 : Any
+            P0.
+        showparam : bool
+            Showparam.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.mult3_expfit()
+        """
         return self._batch_expfit('mult3_expfit', '3 exp fit_', start, stop, p0, showparam)  # type: ignore
 
     def mult4_expfit(self, start: float=0, stop: float | None=None, p0: Any=(1, 1e-1, 1e-2, 1e-3, 5, 20, 100, 500), showparam: bool=False) -> Any:
+        """
+        Mult 4 exponential fit.
+        
+        Parameters
+        ----------
+        start : float
+            Start.
+        stop : float | None
+            Stop.
+        p0 : Any
+            P0.
+        showparam : bool
+            Showparam.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.mult4_expfit()
+        """
         return self._batch_expfit('mult4_expfit', '4 exp fit_', start, stop, p0, showparam)  # type: ignore
 
 
     def dlifetime(self, x: np.ndarray = 'time', m: float = 2, wavelength: np.ndarray = 510, film_thickness: Any = 500, fluence: float = 5e-9, ni: float = 8.05e4) -> Any:    # type: ignore
+        """
+        Dlifetime.
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            X.
+        m : float
+            M.
+        wavelength : np.ndarray
+            Wavelength, in nm.
+        film_thickness : Any
+            Film thickness.
+        fluence : float
+            Fluence, in photons/cm².
+        ni : float
+            Ni.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.dlifetime()
+        """
         diff_tau_sa = [] 
         for idx, sp in enumerate(self.sa):
             diff_tau = sp.dlifetime(x = x, m = m, wavelength = wavelength, film_thickness = film_thickness, fluence = fluence, ni = ni)

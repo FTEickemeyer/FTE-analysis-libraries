@@ -61,6 +61,31 @@ def conc_V_SO4(weight_pc_V: np.ndarray = 6.0, weight_pc_SO4: Any = 28, density: 
 
 
 def det_c_V_from_conc_and_electrolyte_details(conc: Any, weight_pc_V_start: Any=6.11, weight_pc_SO4: Any=28, density: Any= 1.35, show: bool=False) -> Any:
+    """
+    Determine c V from concentration and electrolyte details.
+    
+    Parameters
+    ----------
+    conc : Any
+        Conc, in mol/l.
+    weight_pc_V_start : Any
+        Weight pc v start.
+    weight_pc_SO4 : Any
+        Weight pc so4.
+    density : Any
+        Density.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> det_c_V_from_conc_and_electrolyte_details()
+    """
     def func(weight_pc_V: np.ndarray) -> Any:
         c_V, c_SO4 = conc_V_SO4(weight_pc_V=weight_pc_V, weight_pc_SO4=weight_pc_SO4, density=density, show=False)
         return c_V - conc 
@@ -74,13 +99,30 @@ def det_c_V_from_conc_and_electrolyte_details(conc: Any, weight_pc_V_start: Any=
 
 
 def pH_c_H_plus(c_H_plus: Any) -> Any:
+    """
+    P H c H plus.
+    
+    Parameters
+    ----------
+    c_H_plus : Any
+        C h plus.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> pH_c_H_plus()
+    """
     return -np.log10(c_H_plus)
 
 
 def calc_conc_functions(c_V: np.ndarray, c_SO4: Any) -> Any:
 
     """
-    This function calculates the H+ and HSO4- concentration as a function fo the average vanadium oxidation state from 2 to 5.
+    Calculate vanadium species concentrations as functions of average oxidation state.
 
     We have the following five equations:  
 
@@ -175,6 +217,27 @@ def calc_conc_functions(c_V: np.ndarray, c_SO4: Any) -> Any:
 
 
 def calc_df_conc(c_V: np.ndarray, c_SO4: Any, show: bool=False) -> Any:
+    """
+    Calculate DataFrame concentration.
+    
+    Parameters
+    ----------
+    c_V : np.ndarray
+        C v.
+    c_SO4 : Any
+        C so4.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> calc_df_conc()
+    """
     
     #This function calculates the H+ and HSO4- concentration as a function of the average vanadium oxidation state from 2 to 5.
 
@@ -273,6 +336,23 @@ def fit_proton_concentration(dfH: Any, show: bool=False) -> Any:
 #%% Charging protocol
 
 def upload_charging_protocol_Neware(fp: Any) -> Any:
+    """
+    Upload charging protocol Neware.
+    
+    Parameters
+    ----------
+    fp : Any
+        Fp.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> upload_charging_protocol_Neware()
+    """
     
     def time_to_seconds(time_str: Any) -> Any:
         # Split the input string by the colon ':'
@@ -326,6 +406,27 @@ def upload_charging_protocol_Neware(fp: Any) -> Any:
 
 
 def split_dfcharging(df_charging: Any, df_charging_step1: Any, df_charging_step2: Any) -> Any:
+    """
+    Split dfcharging.
+    
+    Parameters
+    ----------
+    df_charging : Any
+        Df charging.
+    df_charging_step1 : Any
+        Df charging step1.
+    df_charging_step2 : Any
+        Df charging step2.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> split_dfcharging()
+    """
     
     # Split into voltage, current and total charge
     
@@ -370,6 +471,31 @@ def split_dfcharging(df_charging: Any, df_charging_step1: Any, df_charging_step2
     
     
 def combine_both_steps(df_charge_step1: Any, df_charge_step2: Any, df_voltage: Any, df_current: Any, show: bool=False) -> Any:
+    """
+    Combine both steps.
+    
+    Parameters
+    ----------
+    df_charge_step1 : Any
+        Df charge step1.
+    df_charge_step2 : Any
+        Df charge step2.
+    df_voltage : Any
+        Df voltage.
+    df_current : Any
+        Df current.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> combine_both_steps()
+    """
     
     #Combine the charge of both steps
     df_charge = pd.concat([df_charge_step1, df_charge_step2])
@@ -419,6 +545,23 @@ def combine_both_steps(df_charge_step1: Any, df_charge_step2: Any, df_voltage: A
 
 
 def check_unique_time(df_charge: Any) -> Any:
+    """
+    Check unique time.
+    
+    Parameters
+    ----------
+    df_charge : Any
+        Df charge.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> check_unique_time()
+    """
     if len(df_charge.index) != len(df_charge.index.unique()):
         print('Attention: df_charge indices are not unique!')
         print(df_charge.index[df_charge.index.duplicated()])
@@ -431,6 +574,29 @@ def check_unique_time(df_charge: Any) -> Any:
         
         
 def det_time_and_charge_SOC0_and_SOC1_from_charging_protocol(df_charge: Any, conc: Any, Vol: float, show: bool=False) -> Any:
+    """
+    Determine time and charge SO 0 and SO 1 from charging protocol.
+    
+    Parameters
+    ----------
+    df_charge : Any
+        Df charge.
+    conc : Any
+        Conc, in mol/l.
+    Vol : float
+        Vol.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> det_time_and_charge_SOC0_and_SOC1_from_charging_protocol()
+    """
     # Determine time when V3.5 is oxidized/reduced to V4+/V3+ (SOC 0%) and to SOC 100%
     # Charge in mAh for it to happen
     charge = lambda el_per_species: conc * Vol * F / s_per_h * el_per_species #Ah
@@ -470,6 +636,35 @@ def det_time_and_charge_SOC0_and_SOC1_from_charging_protocol(df_charge: Any, con
     
 
 def det_no_equidist_times(df_charge: Any, time_to_reach_SOC0: Any, time_to_reach_SOC1: Any, charge_SOC0: Any, charge_SOC1: Any, no: float=10, show: bool=False) -> Any:
+    """
+    Determine no equidist times.
+    
+    Parameters
+    ----------
+    df_charge : Any
+        Df charge.
+    time_to_reach_SOC0 : Any
+        Time to reach soc0.
+    time_to_reach_SOC1 : Any
+        Time to reach soc1.
+    charge_SOC0 : Any
+        Charge soc0.
+    charge_SOC1 : Any
+        Charge soc1.
+    no : float
+        No.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> det_no_equidist_times()
+    """
     #Determine 10 equidistant times until V3.5 is oxidized/reduced to V4/V3
     times_until_SOC0 = np.array([int(round(time_to_reach_SOC0*i/no)) for i in range(no+1)])  # type: ignore
     if show:
@@ -486,6 +681,31 @@ def det_no_equidist_times(df_charge: Any, time_to_reach_SOC0: Any, time_to_reach
 
 
 def det_df_conc_from_charging(c_V: np.ndarray, Vol: float, av_ox_state_initial: Any, df_charge: Any, show: bool=False) -> Any:
+    """
+    Determine DataFrame concentration from charging.
+    
+    Parameters
+    ----------
+    c_V : np.ndarray
+        C v.
+    Vol : float
+        Vol.
+    av_ox_state_initial : Any
+        Av ox state initial.
+    df_charge : Any
+        Df charge.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> det_df_conc_from_charging()
+    """
 
     df_charge_avox = df_charge.copy().to_frame()
     #n_redox is the number of redox reactions per vanadium species
@@ -514,6 +734,33 @@ def det_df_conc_from_charging(c_V: np.ndarray, Vol: float, av_ox_state_initial: 
     return df_conc
 
 def upload_charging_protocol_BKPrecision(fp: Any, voltage_limit_step1: Any, correct_time: Any=True, potential_measurement_system: Any | None=None, FN_negolyte_potential: str | None=None, data_dir: str | None=None) -> Any:
+    """
+    Upload charging protocol BK Precision.
+    
+    Parameters
+    ----------
+    fp : Any
+        Fp.
+    voltage_limit_step1 : Any
+        Voltage limit step1.
+    correct_time : Any
+        Correct time.
+    potential_measurement_system : Any | None
+        Potential measurement system.
+    FN_negolyte_potential : str | None
+        Fn negolyte potential.
+    data_dir : str | None
+        Data dir.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> upload_charging_protocol_BKPrecision()
+    """
     #BKPrecision uses "Sample" which is not exactly the time in s. To correct we take the time of the potential measurement.
     if correct_time:
         time_end_s = determine_end_time_s(potential_measurement_system, FN_negolyte_potential, data_dir)  # type: ignore
@@ -539,6 +786,29 @@ def upload_charging_protocol_BKPrecision(fp: Any, voltage_limit_step1: Any, corr
 
 
 def plot_charging_protocol(df_charge: Any, df_voltage: Any, df_current: Any, first_charging_step_end_s: Any) -> Any:
+    """
+    Plot charging protocol.
+    
+    Parameters
+    ----------
+    df_charge : Any
+        Df charge.
+    df_voltage : Any
+        Df voltage.
+    df_current : Any
+        Df current.
+    first_charging_step_end_s : Any
+        First charging step end s.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> plot_charging_protocol()
+    """
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 6))
         
@@ -579,6 +849,31 @@ def upload_potential_difference_measurement(potential_measurement_system: Any,
                                                           data_dir: str, 
                                                           no_times: Any = 500, 
                                                           show: bool=False) -> Any:
+    """
+    Upload potential difference measurement.
+    
+    Parameters
+    ----------
+    potential_measurement_system : Any
+        Potential measurement system.
+    FN_potential_difference : str
+        Fn potential difference.
+    data_dir : str
+        Data dir.
+    no_times : Any
+        No times.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> upload_potential_difference_measurement()
+    """
     #Load measurement
     #no_times: Reduce the size to n_times time steps
     
@@ -640,6 +935,35 @@ def upload_potential_difference_measurement(potential_measurement_system: Any,
     return raw_data.squeeze()
 
 def det_times_and_charge_SOC0_from_potential_difference(df_charge: Any, Pdiff: Any, delta_SOC_posneg: Any='positive', avox_greater_3p5: Any | None=None, xlim: Any | None=None, threshold_divisor: Any=3, show: bool=False) -> Any:
+    """
+    Determine times and charge SO 0 from potential difference.
+    
+    Parameters
+    ----------
+    df_charge : Any
+        Df charge.
+    Pdiff : Any
+        Pdiff.
+    delta_SOC_posneg : Any
+        Delta soc posneg.
+    avox_greater_3p5 : Any | None
+        Avox greater 3p5.
+    xlim : Any | None
+        Xlim.
+    threshold_divisor : Any
+        Threshold divisor.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> det_times_and_charge_SOC0_from_potential_difference()
+    """
     #threshold_divisor: Only those peaks are detected that are >= peak_max/threshold_divisor
     # delta_SOC = SOC(posolyte) - SOC(negolyte); this quantity characterizes the imbalance, can be zero, positive or negative
     # This replaces the old avox_greater_3p5 used for the V-V electrolyte
@@ -705,6 +1029,27 @@ def det_times_and_charge_SOC0_from_potential_difference(df_charge: Any, Pdiff: A
 #%% Potential measurement vs. reference cell
 
 def determine_end_time_s(potential_measurement_system: Any, filepath: str, data_dir: str) -> Any:
+    """
+    Determine end time s.
+    
+    Parameters
+    ----------
+    potential_measurement_system : Any
+        Potential measurement system.
+    filepath : str
+        Filepath.
+    data_dir : str
+        Data dir.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> determine_end_time_s()
+    """
     #Load measurement
     if potential_measurement_system == 'biologic':
         fp = os.path.join(data_dir, filepath)
@@ -723,6 +1068,37 @@ def upload_potential_measurement(potential_measurement_system: Any,
                                  refCellCalibration_pos: Any,
                                  no_times: Any=1000,
                                  show: bool=False) -> Any:
+    """
+    Upload potential measurement.
+    
+    Parameters
+    ----------
+    potential_measurement_system : Any
+        Potential measurement system.
+    FN_negolyte_potential : str
+        Fn negolyte potential.
+    FN_posolyte_potential : str
+        Fn posolyte potential.
+    data_dir : str
+        Data dir.
+    refCellCalibration_neg : Any
+        Refcellcalibration neg.
+    refCellCalibration_pos : Any
+        Refcellcalibration pos.
+    no_times : Any
+        No times.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> upload_potential_measurement()
+    """
     #Load measurement
     #no_times: Reduce the size to n_times time steps
     
@@ -784,6 +1160,31 @@ def upload_potential_measurement(potential_measurement_system: Any,
 
 
 def restrict_P_to_xlim(df_charge: Any, Ppos_raw: Any, Pneg_raw: Any, xlim: Any = (0, 2800), show: bool=False) -> Any:
+    """
+    Restrict P to xlim.
+    
+    Parameters
+    ----------
+    df_charge : Any
+        Df charge.
+    Ppos_raw : Any
+        Ppos raw.
+    Pneg_raw : Any
+        Pneg raw.
+    xlim : Any
+        Xlim.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> restrict_P_to_xlim()
+    """
 
     #Choose range: Make sure that time non-ambiguous
     def restrict_to_xlim(ser: Any, xlim: Any) -> Any:
@@ -811,6 +1212,27 @@ def restrict_P_to_xlim(df_charge: Any, Ppos_raw: Any, Pneg_raw: Any, xlim: Any =
 
 
 def plot_first_n_seconds(Ppos_raw: Any, Pneg_raw: Any, n: float=1000) -> Any:
+    """
+    Plot first n seconds.
+    
+    Parameters
+    ----------
+    Ppos_raw : Any
+        Ppos raw.
+    Pneg_raw : Any
+        Pneg raw.
+    n : float
+        N.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> plot_first_n_seconds()
+    """
     # Plot around t=0
     print('Plot around t=0.')
     xlim = (0, n)
@@ -829,6 +1251,31 @@ def plot_first_n_seconds(Ppos_raw: Any, Pneg_raw: Any, n: float=1000) -> Any:
     
 
 def shift_time(Ppos_raw: Any, Pneg_raw: Any, t_shift: Any=40, n: float=1000, show: bool=False) -> Any:
+    """
+    Shift time.
+    
+    Parameters
+    ----------
+    Ppos_raw : Any
+        Ppos raw.
+    Pneg_raw : Any
+        Pneg raw.
+    t_shift : Any
+        T shift.
+    n : float
+        N.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> shift_time()
+    """
     #Charging switched on after the spike, therefore delete first seconds and shift time
     #Set the potentials equal at new t=0
     #Plot first n seconds
@@ -858,6 +1305,29 @@ def shift_time(Ppos_raw: Any, Pneg_raw: Any, t_shift: Any=40, n: float=1000, sho
 
 
 def plot_Ppos_Pneg(Ppos: Any, Pneg: Any, time_to_reach_SOC0: Any, xlim: Any | None=None) -> Any:
+    """
+    Plot Ppos Pneg.
+    
+    Parameters
+    ----------
+    Ppos : Any
+        Ppos.
+    Pneg : Any
+        Pneg.
+    time_to_reach_SOC0 : Any
+        Time to reach soc0.
+    xlim : Any | None
+        Xlim.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> plot_Ppos_Pneg()
+    """
     fig, ax = plt.subplots()
     ax.plot(Ppos.index, Ppos.values, linewidth=5, label='Posolyte')
     ax.plot(Pneg.index, Pneg.values, linewidth=5, label='Negolyte')
@@ -874,6 +1344,31 @@ def plot_Ppos_Pneg(Ppos: Any, Pneg: Any, time_to_reach_SOC0: Any, xlim: Any | No
     
 
 def det_times_and_charge_SOC0_from_potential(df_charge: Any, Ppos: Any, Pneg: Any, xlim: Any | None=None, show: bool=False) -> Any:
+    """
+    Determine times and charge SO 0 from potential.
+    
+    Parameters
+    ----------
+    df_charge : Any
+        Df charge.
+    Ppos : Any
+        Ppos.
+    Pneg : Any
+        Pneg.
+    xlim : Any | None
+        Xlim.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> det_times_and_charge_SOC0_from_potential()
+    """
 
     if xlim is None:
         xlim = (0, Ppos.index[-1])
@@ -929,6 +1424,39 @@ def det_times_and_charge_SOC0_from_potential(df_charge: Any, Ppos: Any, Pneg: An
 
 
 def det_initial_av_ox_state_from_potential(df_charge: Any, tV4_pos: Any, tV3_neg: Any, charge_tV4_pos: Any, charge_tV3_neg: Any, Vol_neg: Any, Vol_pos: Any, c_V: np.ndarray, show: bool=False) -> Any:
+    """
+    Determine initial av ox state from potential.
+    
+    Parameters
+    ----------
+    df_charge : Any
+        Df charge.
+    tV4_pos : Any
+        Tv4 pos.
+    tV3_neg : Any
+        Tv3 neg.
+    charge_tV4_pos : Any
+        Charge tv4 pos.
+    charge_tV3_neg : Any
+        Charge tv3 neg.
+    Vol_neg : Any
+        Vol neg.
+    Vol_pos : Any
+        Vol pos.
+    c_V : np.ndarray
+        C v.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> det_initial_av_ox_state_from_potential()
+    """
 
     #Caluclate number of redox reactions per vanadium ion carried out until tV4_pos and tV3_neg
     n_redox_neg = 1/q*charge_tV3_neg*3600 / (c_V * Vol_neg * Avogadro_const)
@@ -962,6 +1490,31 @@ def det_initial_av_ox_state_from_potential(df_charge: Any, tV4_pos: Any, tV3_neg
     #print(new_c_V)
 
 def det_conc_and_initial_oxidation_state(charge_tV4_pos: Any, charge_tV3_neg: Any, Vol_pos: Any, Vol_neg: Any, show: bool=False) -> Any:
+    """
+    Determine concentration and initial oxidation state.
+    
+    Parameters
+    ----------
+    charge_tV4_pos : Any
+        Charge tv4 pos.
+    charge_tV3_neg : Any
+        Charge tv3 neg.
+    Vol_pos : Any
+        Vol pos.
+    Vol_neg : Any
+        Vol neg.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> det_conc_and_initial_oxidation_state()
+    """
     delta_n_pos_tV4pos_times_conc = charge_tV4_pos*3600/(F*Vol_pos)
     delta_n_neg_tV3neg_times_conc = charge_tV3_neg*3600/(F*Vol_neg)
     conc = delta_n_pos_tV4pos_times_conc + delta_n_neg_tV3neg_times_conc
@@ -977,6 +1530,27 @@ def det_conc_and_initial_oxidation_state(charge_tV4_pos: Any, charge_tV3_neg: An
     return conc, noxi
 
 def amount_oxalic_acid_necessary_to_rebalance(charge_tV3_neg: Any, charge_tV4_pos: Any, show: bool=False) -> Any:
+    """
+    Amount oxalic acid necessary to rebalance.
+    
+    Parameters
+    ----------
+    charge_tV3_neg : Any
+        Charge tv3 neg.
+    charge_tV4_pos : Any
+        Charge tv4 pos.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> amount_oxalic_acid_necessary_to_rebalance()
+    """
     # Amount of oxalic acid necessary to rebalance.
     delta_charge = charge_tV3_neg - charge_tV4_pos
     #Delta_charge in mol
@@ -990,6 +1564,29 @@ def amount_oxalic_acid_necessary_to_rebalance(charge_tV3_neg: Any, charge_tV4_po
 
 
 def P_vs_charge(Ppos: Any, Pneg: Any, df_charge: Any, show: bool=False) -> Any:
+    """
+    P vs charge.
+    
+    Parameters
+    ----------
+    Ppos : Any
+        Ppos.
+    Pneg : Any
+        Pneg.
+    df_charge : Any
+        Df charge.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> P_vs_charge()
+    """
     
     def P_charge(P: float) -> Any:
         lower_limit = min(P.index.values)  # type: ignore
@@ -1030,6 +1627,49 @@ def P_vs_charge(Ppos: Any, Pneg: Any, df_charge: Any, show: bool=False) -> Any:
 
 
 def fit_potentials(c_V: np.ndarray, c_SO4: Any, Ppos: Any, Pneg: Any, df_charge: Any, Ppos_charge: Any, Pneg_charge: Any, E_start_exp: Any, Vol: float, use_proton_concentration: bool, T: float=gen.T_RT, fit_conc: Any=True, show_details: bool=True, redox_potential_guess_V_vs_SHE: Any=dict(E0_V2X3=-0.25, E0_V3X4=0.394, E0_V4X5=1.00)) -> Any:
+    """
+    Fit potentials.
+    
+    Parameters
+    ----------
+    c_V : np.ndarray
+        C v.
+    c_SO4 : Any
+        C so4.
+    Ppos : Any
+        Ppos.
+    Pneg : Any
+        Pneg.
+    df_charge : Any
+        Df charge.
+    Ppos_charge : Any
+        Ppos charge.
+    Pneg_charge : Any
+        Pneg charge.
+    E_start_exp : Any
+        E start exp.
+    Vol : float
+        Vol.
+    use_proton_concentration : bool
+        Use proton concentration, in mol/l.
+    T : float
+        T.
+    fit_conc : Any
+        Fit conc.
+    show_details : bool
+        Show details.
+    redox_potential_guess_V_vs_SHE : Any
+        Redox potential guess v vs she.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> fit_potentials()
+    """
     #Fit function
 
     # Proton concentration as a function of ratio between V4 and V3 and between V5 and V4
@@ -1297,6 +1937,51 @@ def calculate_fit(c_V_start: Any, c_SO4_start: Any,
                   show_details: bool=False, 
                   do_recalculation: Any=True,
                   redox_potential_guess_V_vs_SHE: Any=dict(E0_V2X3=-0.25, E0_V3X4=0.394, E0_V4X5=1.00)) -> Any:
+    """
+    Calculate fit.
+    
+    Parameters
+    ----------
+    c_V_start : Any
+        C v start.
+    c_SO4_start : Any
+        C so4 start.
+    Ppos : Any
+        Ppos.
+    Pneg : Any
+        Pneg.
+    Ppos_charge : Any
+        Ppos charge.
+    df_charge : Any
+        Df charge.
+    Pneg_charge : Any
+        Pneg charge.
+    E_start_exp : Any
+        E start exp.
+    Vol : float
+        Vol.
+    fit_conc : Any
+        Fit conc.
+    use_proton_concentration : bool
+        Use proton concentration, in mol/l.
+    T : float
+        T.
+    show_details : bool
+        Show details.
+    do_recalculation : Any
+        Do recalculation.
+    redox_potential_guess_V_vs_SHE : Any
+        Redox potential guess v vs she.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> calculate_fit()
+    """
     c_V, E0s, df_fits, conc_pos, conc_neg = fit_potentials(c_V_start, c_SO4_start, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, E_start_exp, Vol, use_proton_concentration, T=T, fit_conc=fit_conc, show_details=show_details, redox_potential_guess_V_vs_SHE=redox_potential_guess_V_vs_SHE)
     if show_details:
         print(f'First calculation finished (c_V = {c_V:.2f} M).')
@@ -1314,6 +1999,49 @@ def plot_complete_dataset(fit_data: np.ndarray, Ppos: Any, Pneg: Any,
                           t_V4_pos: Any, t_V3_neg: Any, time_to_reach_SOC0: Any, time_to_reach_SOC1: Any, first_charging_step_end_s: Any, 
                           xlim: Any | None=None, ylim: Any | None=None, 
                           plot_fit: bool=True, plot_redox_potentials: bool=True, plot_t_V34: bool=True, plot_time_to_reach_SOC0: bool=True) -> Any:
+    """
+    Plot complete dataset.
+    
+    Parameters
+    ----------
+    fit_data : np.ndarray
+        Fit data.
+    Ppos : Any
+        Ppos.
+    Pneg : Any
+        Pneg.
+    t_V4_pos : Any
+        T v4 pos.
+    t_V3_neg : Any
+        T v3 neg.
+    time_to_reach_SOC0 : Any
+        Time to reach soc0.
+    time_to_reach_SOC1 : Any
+        Time to reach soc1.
+    first_charging_step_end_s : Any
+        First charging step end s.
+    xlim : Any | None
+        Xlim.
+    ylim : Any | None
+        Ylim.
+    plot_fit : bool
+        Plot fit.
+    plot_redox_potentials : bool
+        Plot redox potentials.
+    plot_t_V34 : bool
+        Plot t v34.
+    plot_time_to_reach_SOC0 : bool
+        Plot time to reach soc0.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> plot_complete_dataset()
+    """
     c_V = fit_data['c_V']
     (E0_V2X3, E0_V3X4, E0_V4X5) = fit_data['E0s']
     (df_fit_pos, df_fit_neg) = fit_data['df_fits']
@@ -1407,6 +2135,25 @@ def plot_complete_dataset(fit_data: np.ndarray, Ppos: Any, Pneg: Any,
     
 
 def fitted_times(fit_data: np.ndarray, show: bool=False) -> Any:
+    """
+    Fitted times.
+    
+    Parameters
+    ----------
+    fit_data : np.ndarray
+        Fit data.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> fitted_times()
+    """
     
     #**Time when posolyte consists of pure V(IV) and negolyte consists of pure V(III)**
     c_V = fit_data['c_V']
@@ -1429,6 +2176,25 @@ def fitted_times(fit_data: np.ndarray, show: bool=False) -> Any:
     
     
 def fitted_average_ox_state(fit_data: np.ndarray, show: bool=False) -> Any:
+    """
+    Fitted average ox state.
+    
+    Parameters
+    ----------
+    fit_data : np.ndarray
+        Fit data.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> fitted_average_ox_state()
+    """
 
     c_V = fit_data['c_V']
     (E0_V2X3, E0_V3X4, E0_V4X5) = fit_data['E0s']
@@ -1448,6 +2214,27 @@ def fitted_average_ox_state(fit_data: np.ndarray, show: bool=False) -> Any:
     return av_ox_state
 
 def fitted_m_oxalic_acid(fit_data: np.ndarray, Vol: float, show: bool=False) -> Any:
+    """
+    Fitted m oxalic acid.
+    
+    Parameters
+    ----------
+    fit_data : np.ndarray
+        Fit data.
+    Vol : float
+        Vol.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> fitted_m_oxalic_acid()
+    """
 
     (E0_V2X3, E0_V3X4, E0_V4X5) = fit_data['E0s']
     (df_fit_pos, df_fit_neg) = fit_data['df_fits']
@@ -1469,6 +2256,29 @@ def fitted_m_oxalic_acid(fit_data: np.ndarray, Vol: float, show: bool=False) -> 
 #%% UV-VIS
 
 def load_ref_spec(ref_spec_dir: str, nm_array: Any, electrolyte_system: Any='V-V', xlim: Any | None=None) -> Any:
+    """
+    Load ref spectrum.
+    
+    Parameters
+    ----------
+    ref_spec_dir : str
+        Ref spec dir.
+    nm_array : Any
+        Nm array, in nm.
+    electrolyte_system : Any
+        Electrolyte system.
+    xlim : Any | None
+        Xlim.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> load_ref_spec()
+    """
     
     def df_to_series(df: Any) -> Any:
         df = gen.df_interpolate(df, nm_array)
@@ -1492,6 +2302,35 @@ def load_ref_spec(ref_spec_dir: str, nm_array: Any, electrolyte_system: Any='V-V
 
 
 def plot_ref_spectra(ref_spec_negred: Any, ref_spec_negox: Any, ref_spec_posred: Any, ref_spec_posox: Any, electrolyte_system: Any='V-V', xlim: Any | None= None, ylim: Any | None= None) -> Any:
+    """
+    Plot ref spectra.
+    
+    Parameters
+    ----------
+    ref_spec_negred : Any
+        Ref spec negred.
+    ref_spec_negox : Any
+        Ref spec negox.
+    ref_spec_posred : Any
+        Ref spec posred.
+    ref_spec_posox : Any
+        Ref spec posox.
+    electrolyte_system : Any
+        Electrolyte system.
+    xlim : Any | None
+        Xlim.
+    ylim : Any | None
+        Ylim.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> plot_ref_spectra()
+    """
     
     if electrolyte_system == 'V-V':
         label_negred = 'V(II)'
@@ -1528,6 +2367,27 @@ def plot_ref_spectra(ref_spec_negred: Any, ref_spec_negox: Any, ref_spec_posred:
 
 
 def load_absorbance_data(fp_cuv_pos: Any, fp_cuv_neg: Any, xlim: Any | None=None) -> Any:
+    """
+    Load absorbance data.
+    
+    Parameters
+    ----------
+    fp_cuv_pos : Any
+        Fp cuv pos.
+    fp_cuv_neg : Any
+        Fp cuv neg.
+    xlim : Any | None
+        Xlim.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> load_absorbance_data()
+    """
     
     def read_and_int_col(fp: Any, xlim: Any) -> Any:
         df = pd.read_csv(fp)
@@ -1546,6 +2406,27 @@ def load_absorbance_data(fp_cuv_pos: Any, fp_cuv_neg: Any, xlim: Any | None=None
     return df_cuv_pos, df_cuv_neg
 
 def load_UVVIS_raw_data(data_dir: str, nm_array: Any, xlim: Any | None=None) -> Any:
+    """
+    Load UVVIS raw data.
+    
+    Parameters
+    ----------
+    data_dir : str
+        Data dir.
+    nm_array : Any
+        Nm array, in nm.
+    xlim : Any | None
+        Xlim.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> load_UVVIS_raw_data()
+    """
     
     def read_file(data_dir: str, filepath: str, xlim: Any) -> Any:
         if filepath in os.listdir(data_dir):
@@ -1598,6 +2479,41 @@ def load_UVVIS_raw_data(data_dir: str, nm_array: Any, xlim: Any | None=None) -> 
     
 
 def plot_UVVIS_data(df_cuv_pos: Any, df_cuv_neg: Any, ylabel: Any='Absorbance', time_array_pos: Any | None= None, time_array_neg: Any | None= None, no_curves: Any=20, xlim_cuv_pos: Any=(380, 400), xlim_cuv_neg: Any=(280, 1100), ylim_cuv_pos: Any=(0, 2), ylim_cuv_neg: Any=(-0.5, 2)) -> Any:
+    """
+    Plot UVVIS data.
+    
+    Parameters
+    ----------
+    df_cuv_pos : Any
+        Df cuv pos.
+    df_cuv_neg : Any
+        Df cuv neg.
+    ylabel : Any
+        Ylabel.
+    time_array_pos : Any | None
+        Time array pos.
+    time_array_neg : Any | None
+        Time array neg.
+    no_curves : Any
+        No curves.
+    xlim_cuv_pos : Any
+        Xlim cuv pos.
+    xlim_cuv_neg : Any
+        Xlim cuv neg.
+    ylim_cuv_pos : Any
+        Ylim cuv pos.
+    ylim_cuv_neg : Any
+        Ylim cuv neg.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> plot_UVVIS_data()
+    """
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 6))
     ax1 = ax[0]
@@ -1634,6 +2550,41 @@ def plot_UVVIS_data(df_cuv_pos: Any, df_cuv_neg: Any, ylabel: Any='Absorbance', 
 def plot_UVVIS_data_SOC(df_cuv_pos_raw: Any, df_cuv_neg_raw: Any, tV4_pos: Any, tV3_neg: Any, 
                         ylabel: Any='Absorbance', no_curves: Any=10, 
                         xlim_cuv_pos: Any=(380, 1000), xlim_cuv_neg: Any=(300, 1100), ylim_cuv_pos: Any=(0, 0.5), ylim_cuv_neg: Any=(-0.5, 2)) -> Any:
+    """
+    Plot UVVIS data state of charge.
+    
+    Parameters
+    ----------
+    df_cuv_pos_raw : Any
+        Df cuv pos raw.
+    df_cuv_neg_raw : Any
+        Df cuv neg raw.
+    tV4_pos : Any
+        Tv4 pos.
+    tV3_neg : Any
+        Tv3 neg.
+    ylabel : Any
+        Ylabel.
+    no_curves : Any
+        No curves.
+    xlim_cuv_pos : Any
+        Xlim cuv pos.
+    xlim_cuv_neg : Any
+        Xlim cuv neg.
+    ylim_cuv_pos : Any
+        Ylim cuv pos.
+    ylim_cuv_neg : Any
+        Ylim cuv neg.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> plot_UVVIS_data_SOC()
+    """
 
     #Plot absorbance curves until SOC0 is reached
     time_array_neg = np.array([int(round(tV3_neg*i/no_curves)) for i in range(no_curves+1)])
@@ -1648,37 +2599,36 @@ def plot_UVVIS_data_SOC(df_cuv_pos_raw: Any, df_cuv_neg_raw: Any, tV4_pos: Any, 
 
 
 def UVVIS_get_offset_and_scaling_factor_cuv_pos(first_spectra: Any | None=None, show: bool=False) -> Any:
+    """
+    Uvvis get offset and scaling factor cuv pos.
+    
+    Parameters
+    ----------
+    first_spectra : Any | None
+        First spectra.
+    show : bool
+        Show.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> UVVIS_get_offset_and_scaling_factor_cuv_pos()
+    """
 
     if first_spectra is not None:
         #This works only if negolyte and posolyte are the same at t=0
         def fit_scalingfactor_and_offset(target_spectrum: Any, spec: Any, initial_guess: Any = [-0.04, 12]) -> Any:
         
             def fit_model(wavelengths: np.ndarray, offset: Any, scaling_factor: Any) -> Any:
-                #offset, scaling_factor = p[0], p[1]
-                return (spec + offset) * scaling_factor
-        
-            # Extract wavelength and absorbance data from target Spectrum
-            wavelengths = target_spectrum.index
-        
-            # Initial guess for coefficients and offsets [c1, c2, offset1, offset2]
-            #bounds = ([0, 0], [np.inf, np.inf])
-        
-            # Perform curve fitting
-            #popt, _ = curve_fit(fit_model, wavelengths, absorbance, p0=initial_guess, bounds=bounds)
-            try:
-                popt, _ = curve_fit(fit_model, wavelengths, target_spectrum, p0=initial_guess)
-            except RuntimeError:
-                popt = initial_guess    
-            # Extract fitted coefficients and offsets
-            offset = popt[0]
-            scaling_factor = popt[1]
-        
-            # Compute the fitted Spectrum
-            fitted_spectrum = fit_model(wavelengths, offset, scaling_factor)
+                pass
             #df_fit = pd.Series(fitted_spectrum, index=target_spectrum.index)
         
             # Return the fit results and coefficients
-            return fitted_spectrum, offset, scaling_factor
+            return fitted_spectrum, offset, scaling_factor  # type: ignore
         
         cuv_pos_t0 = first_spectra[0]
         cuv_neg_t0 = first_spectra[1]
@@ -1708,6 +2658,35 @@ def UVVIS_get_offset_and_scaling_factor_cuv_pos(first_spectra: Any | None=None, 
 
 
 def UVVIS_to_molar_extinction_coefficient(df_cuv_pos_raw: Any, df_cuv_neg_raw: Any, conc: Any, pathlength_cuv_neg: Any, scaling_factor_cuv_pos: Any, offset_cuv_pos: Any, show_details: bool=False) -> Any:
+    """
+    Uvvis to molar extinction coefficient.
+    
+    Parameters
+    ----------
+    df_cuv_pos_raw : Any
+        Df cuv pos raw.
+    df_cuv_neg_raw : Any
+        Df cuv neg raw.
+    conc : Any
+        Conc, in mol/l.
+    pathlength_cuv_neg : Any
+        Pathlength cuv neg.
+    scaling_factor_cuv_pos : Any
+        Scaling factor cuv pos.
+    offset_cuv_pos : Any
+        Offset cuv pos.
+    show_details : bool
+        Show details.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> UVVIS_to_molar_extinction_coefficient()
+    """
 
     df_cuv_pos = df_cuv_pos_raw.copy()
     df_cuv_neg = df_cuv_neg_raw.copy()
@@ -1725,12 +2704,64 @@ def UVVIS_to_molar_extinction_coefficient(df_cuv_pos_raw: Any, df_cuv_neg_raw: A
 # Fitting and plot functions
 
 def UVVIS_new_range(df1: Any, df2: Any, df3: Any, xlim: Any) -> Any:
+    """
+    Uvvis new range.
+    
+    Parameters
+    ----------
+    df1 : Any
+        Df1.
+    df2 : Any
+        Df2.
+    df3 : Any
+        Df3.
+    xlim : Any
+        Xlim.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> UVVIS_new_range()
+    """
     von = xlim[0]
     bis = xlim[1]
     return df1.loc[von:bis], df2.loc[von:bis], df3.loc[von:bis]
 
 
 def UVVIS_plot_fitted_single(target_spectrum: Any, df_fit: Any, popt: Any, spec_Vr: Any, spec_Vo: Any, xlim: Any, ylim: Any) -> Any:
+    """
+    Uvvis plot fitted single.
+    
+    Parameters
+    ----------
+    target_spectrum : Any
+        Target spectrum.
+    df_fit : Any
+        Df fit.
+    popt : Any
+        Popt.
+    spec_Vr : Any
+        Spec vr.
+    spec_Vo : Any
+        Spec vo.
+    xlim : Any
+        Xlim.
+    ylim : Any
+        Ylim.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> UVVIS_plot_fitted_single()
+    """
     fig, ax = plt.subplots(figsize = (6,4))
 
     def plot_df(ax: Any, df: Any, linewidth: Any, color: Any, label: Any) -> Any:
@@ -1756,6 +2787,37 @@ def UVVIS_plot_fitted_single(target_spectrum: Any, df_fit: Any, popt: Any, spec_
     plt.show()
 
 def UVVIS_plot_fitted_multiple(time_list: Any, target_spectrum_list: Any, df_fit_list: Any, ar_cuv_list: Any, ao_cuv_list: Any, xlim: Any, ylim: Any, title: str='Spectra') -> Any:
+    """
+    Uvvis plot fitted multiple.
+    
+    Parameters
+    ----------
+    time_list : Any
+        Time list.
+    target_spectrum_list : Any
+        Target spectrum list.
+    df_fit_list : Any
+        Df fit list.
+    ar_cuv_list : Any
+        Ar cuv list.
+    ao_cuv_list : Any
+        Ao cuv list.
+    xlim : Any
+        Xlim.
+    ylim : Any
+        Ylim.
+    title : str
+        Title.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> UVVIS_plot_fitted_multiple()
+    """
     fig, axes = plt.subplots(1, 2, figsize = (12,4))
 
     ax = axes[0]
@@ -1797,6 +2859,27 @@ def UVVIS_plot_fitted_multiple(time_list: Any, target_spectrum_list: Any, df_fit
     plt.show()
 
 def UVVIS_fit_spectrum(target_spectrum: Any, spec_Vr: Any, spec_Vo: Any) -> Any:
+    """
+    Uvvis fit spectrum.
+    
+    Parameters
+    ----------
+    target_spectrum : Any
+        Target spectrum.
+    spec_Vr : Any
+        Spec vr.
+    spec_Vo : Any
+        Spec vo.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> UVVIS_fit_spectrum()
+    """
 
     #def fit_model(wavelengths, ar, ao, offset_r, offset_o):
     def fit_model(wavelengths: np.ndarray, ar: float, ao: Any) -> Any:
@@ -1832,6 +2915,35 @@ def UVVIS_fit_spectrum(target_spectrum: Any, spec_Vr: Any, spec_Vo: Any) -> Any:
 
 
 def UVVIS_calculate_fit_for_all(df: Any, conc: Any, time_switch_fitspectra: Any, fit_spectra: Any, time_from: Any, time_to: Any, nm_lim_fit: Any) -> Any:
+    """
+    Uvvis calculate fit for all.
+    
+    Parameters
+    ----------
+    df : Any
+        Df.
+    conc : Any
+        Conc, in mol/l.
+    time_switch_fitspectra : Any
+        Time switch fitspectra.
+    fit_spectra : Any
+        Fit spectra.
+    time_from : Any
+        Time from.
+    time_to : Any
+        Time to.
+    nm_lim_fit : Any
+        Nm lim fit, in nm.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> UVVIS_calculate_fit_for_all()
+    """
     ar_list = []
     ao_list = []
     target_list = []
@@ -1882,6 +2994,27 @@ def UVVIS_calculate_fit_for_all(df: Any, conc: Any, time_switch_fitspectra: Any,
 
 
 def UVVIS_reduce_number_of_spectra(df_cuv_pos: Any, df_cuv_neg: Any, one_out_of: Any) -> Any:
+    """
+    Uvvis reduce number of spectra.
+    
+    Parameters
+    ----------
+    df_cuv_pos : Any
+        Df cuv pos.
+    df_cuv_neg : Any
+        Df cuv neg.
+    one_out_of : Any
+        One out of.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> UVVIS_reduce_number_of_spectra()
+    """
     df_cuv_pos_reduced = df_cuv_pos.iloc[:, ::one_out_of]
     df_cuv_neg_reduced = df_cuv_neg.iloc[:, ::one_out_of]
     return df_cuv_pos_reduced, df_cuv_neg_reduced
@@ -1890,6 +3023,47 @@ def UVVIS_reduce_number_of_spectra(df_cuv_pos: Any, df_cuv_neg: Any, one_out_of:
 def UVVIS_fit(conc: Any, df_cuv_pos: Any, df_cuv_neg: Any, ref_spec_negred: Any, ref_spec_negox: Any, ref_spec_posred: Any, ref_spec_posox: Any,
               one_out_of: Any=1, time_cuv_pos_limits: Any=(0,-1), time_cuv_neg_limits: Any=(0,-1), nm_lim_fit: Any=(380, 1000),
               tV4_pos: Any | None=None, tV3_neg: Any | None=None) -> Any:
+    """
+    Uvvis fit.
+    
+    Parameters
+    ----------
+    conc : Any
+        Conc, in mol/l.
+    df_cuv_pos : Any
+        Df cuv pos.
+    df_cuv_neg : Any
+        Df cuv neg.
+    ref_spec_negred : Any
+        Ref spec negred.
+    ref_spec_negox : Any
+        Ref spec negox.
+    ref_spec_posred : Any
+        Ref spec posred.
+    ref_spec_posox : Any
+        Ref spec posox.
+    one_out_of : Any
+        One out of.
+    time_cuv_pos_limits : Any
+        Time cuv pos limits.
+    time_cuv_neg_limits : Any
+        Time cuv neg limits.
+    nm_lim_fit : Any
+        Nm lim fit, in nm.
+    tV4_pos : Any | None
+        Tv4 pos.
+    tV3_neg : Any | None
+        Tv3 neg.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> UVVIS_fit()
+    """
 
     if one_out_of > 1:
         df_cuv_pos_reduced, df_cuv_neg_reduced = UVVIS_reduce_number_of_spectra(df_cuv_pos, df_cuv_neg, one_out_of)
@@ -1920,6 +3094,25 @@ def UVVIS_fit(conc: Any, df_cuv_pos: Any, df_cuv_neg: Any, ref_spec_negred: Any,
     return data_cuv_pos, data_cuv_neg
 
 def UVVIS_reduce_data(data_cuv: Any, one_out_of: Any) -> Any:
+    """
+    Uvvis reduce data.
+    
+    Parameters
+    ----------
+    data_cuv : Any
+        Data cuv.
+    one_out_of : Any
+        One out of.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> UVVIS_reduce_data()
+    """
     (df_target, df_fit, ar_array, ao_array, cr_array, co_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
 
     df_target = df_target.iloc[:, ::one_out_of]
@@ -1938,6 +3131,41 @@ def animate_UVVIS(data_cuv_pos: Any, data_cuv_neg: Any, conc: Any,
                   ylim_spec_cuv_pos: Any=(0, 80), ylim_spec_cuv_neg: Any=(0, 80),  
                   ylim_conc_cuv_pos: Any | None=None, ylim_conc_cuv_neg: Any | None=None, 
                   normalize_conc: Any=False, figsize: Any=(12, 8), save_FN: str | None=None, **FFMpegWriter_kwargs: Any) -> Any:
+    """
+    Animate UVVIS.
+    
+    Parameters
+    ----------
+    data_cuv_pos : Any
+        Data cuv pos.
+    data_cuv_neg : Any
+        Data cuv neg.
+    conc : Any
+        Conc, in mol/l.
+    ylim_spec_cuv_pos : Any
+        Ylim spec cuv pos.
+    ylim_spec_cuv_neg : Any
+        Ylim spec cuv neg.
+    ylim_conc_cuv_pos : Any | None
+        Ylim conc cuv pos.
+    ylim_conc_cuv_neg : Any | None
+        Ylim conc cuv neg.
+    normalize_conc : Any
+        Normalize conc.
+    figsize : Any
+        Figsize.
+    save_FN : str | None
+        Save fn.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> animate_UVVIS()
+    """
 
     
     if ylim_conc_cuv_pos is None:
@@ -2016,56 +3244,7 @@ def animate_UVVIS(data_cuv_pos: Any, data_cuv_neg: Any, conc: Any,
     # Animation function
     def animate(i: float) -> Any:
         def set_data_spectra(line1: Any, line2: Any, line3: Any, line4: Any, time_label: Any, data_cuv: Any) -> Any:
-            (df_target, df_fit, ar_array, ao_array, cr_array, co_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
-            wavelengths = df_target.index.values
-            idx = i
-            if idx >= len(time_list)-1:
-                idx = len(time_list)-1
-            time = time_list[idx]
-            line1.set_data(wavelengths, df_fit_spectra_Vr[time].values)
-            line2.set_data(wavelengths, df_fit_spectra_Vo[time].values)
-            line3.set_data(wavelengths, df_target[time].values)
-            line4.set_data(wavelengths, df_fit[time].values)
-            time_label.set_text(f'{time}s')
-            #return line1, line2, line3, line4
-
-        def set_data_conc(line1: Any, line2: Any, SOC_label: Any, data_cuv: Any) -> Any:
-            (df_target, df_fit, ar_array, ao_array, cr_array, co_array, time_list, df_fit_spectra_Vr, df_fit_spectra_Vo) = tuple(data_cuv.values())
-            idx = i
-            if idx >= len(time_list)-1:
-                idx = len(time_list)-1
-            time = time_list[idx]
-            if normalize_conc:
-                line1.set_data(time_list[:idx], cr_array[:idx])
-                line2.set_data(time_list[:idx], co_array[:idx])
-            else:
-                line1.set_data(time_list[:idx], ar_array[:idx]*conc)
-                line2.set_data(time_list[:idx], ao_array[:idx]*conc)
-            #SOC = cr_array[idx]
-            if normalize_conc:
-                SOC_label.set_text(f'{time}s; cr = {cr_array[idx]:.2f} M, co = {co_array[idx]:.2f} M')
-            else:
-                SOC_label.set_text(f'{time}s; cr = {ar_array[idx]*conc:.2f} M, co = {ao_array[idx]*conc:.2f} M, conc. = {(ar_array[idx]+ao_array[idx])*conc:.2f} M')
-            #return line1, line2
-            
-        set_data_spectra(line00_1, line00_2, line00_3, line00_4,time_label00, data_cuv_neg)
-        set_data_spectra(line01_1, line01_2, line01_3, line01_4,time_label01, data_cuv_pos)        
-        set_data_conc(line10_1, line10_2, SOC_label10, data_cuv_neg)
-        set_data_conc(line11_1, line11_2, SOC_label11, data_cuv_pos)        
-        return [line00_1, line00_2, line00_3, line00_4, line01_1, line01_2, line01_3, line01_4, line10_1, line10_2, line11_1, line11_2],
-    
-    # Create animation
-    time_list1 = data_cuv_pos['Time (s)']
-    time_list2 = data_cuv_neg['Time (s)']
-    frames = max(len(time_list1), len(time_list2))
-    anim = animation.FuncAnimation(fig, animate, init_func=init, frames=frames, interval=100)
-    # saving to m4 using ffmpeg writer 
-    if save_FN is not None:
-        writervideo = animation.FFMpegWriter(**FFMpegWriter_kwargs) 
-        anim.save(save_FN, writer=writervideo) 
-    return anim
-
-
+            pass
 #%%
 if __name__ == "__main__":
 

@@ -201,6 +201,31 @@ def load_Biologic_CstC(directory: str, filepath: str) -> Any:
 
 
 def EIS_convert_mpt_to_csv(data_dir: str, save_dir: str, V_in_name: str = True, tolerance: Any = 0.005, show_details: bool = True) -> Any:  # type: ignore
+    """
+    Eis convert Biologic MPT file to csv.
+    
+    Parameters
+    ----------
+    data_dir : str
+        Data dir.
+    save_dir : str
+        Save dir.
+    V_in_name : str
+        V in name.
+    tolerance : Any
+        Tolerance.
+    show_details : bool
+        Show details.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> EIS_convert_mpt_to_csv()
+    """
     # Converts EIS data as a Biologic mpt file into csv
     # tolerance: Voltage tolerance for the evaluation
     # Get filenames of all *.mpt files
@@ -386,6 +411,37 @@ def Z_in_4th_quadrant(frequencies: Any, Z: np.ndarray) -> Any:
 
 
 def EIS_get_data(TFNs: str, f_range: Any | None = None, Z_4th_quadrant: Any = True, cell_area: float = 1, V_idx_list: Any | None = None, show_details: bool = True, title: str = '', show_title: bool = True) -> Any:
+    """
+    Eis get data.
+    
+    Parameters
+    ----------
+    TFNs : str
+        Tfns.
+    f_range : Any | None
+        F range.
+    Z_4th_quadrant : Any
+        Z 4th quadrant.
+    cell_area : float
+        Cell area, in cm².
+    V_idx_list : Any | None
+        V idx list.
+    show_details : bool
+        Show details.
+    title : str
+        Title.
+    show_title : bool
+        Show title.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> EIS_get_data()
+    """
     #Get EIS data of one sample for all voltages given in V_idx_list
     #TFNs: list of file names (including directory) with each element corresponding to one voltage according to V_idx_list. If only one voltage used then use [TFN]
     #Attention: in a previous version title was the first argument, now it is changed to a keyword argument
@@ -487,6 +543,27 @@ def EIS_get_data(TFNs: str, f_range: Any | None = None, Z_4th_quadrant: Any = Tr
 
 
 def EIS_predict(f: float, circuit_str: Any, params: Any) -> Any:
+    """
+    Eis predict.
+    
+    Parameters
+    ----------
+    f : float
+        F.
+    circuit_str : Any
+        Circuit str.
+    params : Any
+        Params.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> EIS_predict()
+    """
     
     circuit = CustomCircuit(circuit_str, initial_guess = params)
 
@@ -495,6 +572,39 @@ def EIS_predict(f: float, circuit_str: Any, params: Any) -> Any:
     return Z_pred
 
 def EIS_fit(f: float, Z: np.ndarray, circuit_str: Any, initial_guess: Any, f_range: Any | None = None, bounds: Any | None = None, show_details: bool = True, data_label: Any = '', simulation: Any = False) -> Any:
+    """
+    Eis fit.
+    
+    Parameters
+    ----------
+    f : float
+        F.
+    Z : np.ndarray
+        Z.
+    circuit_str : Any
+        Circuit str.
+    initial_guess : Any
+        Initial guess.
+    f_range : Any | None
+        F range.
+    bounds : Any | None
+        Bounds.
+    show_details : bool
+        Show details.
+    data_label : Any
+        Data label.
+    simulation : Any
+        Simulation.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> EIS_fit()
+    """
 
 
     circuit = CustomCircuit(circuit_str, initial_guess=initial_guess)
@@ -521,6 +631,45 @@ def EIS_fit(f: float, Z: np.ndarray, circuit_str: Any, initial_guess: Any, f_ran
 
     
 def multiple_Nyquist_and_Bode_plot(f_list: Any, Z_list: Any, f_range: Any | None = None, f_fit_list: Any | None = None, Z_fit_list: Any | None = None, label_list: Any | None = None, what_to_show: Any = ['nyquist', 'bode'], show_label: bool = True, figsize: Any = (10, 10), textsize: Any = 16, colors: Any = colors, fmts: Any | None = None) -> Any:
+    """
+    Multiple Nyquist and Bode plot.
+    
+    Parameters
+    ----------
+    f_list : Any
+        F list.
+    Z_list : Any
+        Z list.
+    f_range : Any | None
+        F range.
+    f_fit_list : Any | None
+        F fit list.
+    Z_fit_list : Any | None
+        Z fit list.
+    label_list : Any | None
+        Label list.
+    what_to_show : Any
+        What to show.
+    show_label : bool
+        Show label.
+    figsize : Any
+        Figsize.
+    textsize : Any
+        Textsize.
+    colors : Any
+        Colors.
+    fmts : Any | None
+        Fmts.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> multiple_Nyquist_and_Bode_plot()
+    """
 
     if isinstance(figsize, int):
         figsize = (figsize, figsize)
@@ -697,6 +846,43 @@ def plot_capacitance(axes: Any, f: float, Z: np.ndarray, scale: Any=1, units: An
     return axes
     
 def multiple_capacitance_plot(f_list: Any, Z_list: Any, f_range: Any | None = None, f_fit_list: Any | None = None, Z_fit_list: Any | None = None, label_list: Any | None = None, show_label: bool = True, figsize: Any = (10, 10), textsize: Any = 16, colors: Any = gen.colors, fmts: Any | None = None) -> Any:
+    """
+    Multiple capacitance plot.
+    
+    Parameters
+    ----------
+    f_list : Any
+        F list.
+    Z_list : Any
+        Z list.
+    f_range : Any | None
+        F range.
+    f_fit_list : Any | None
+        F fit list.
+    Z_fit_list : Any | None
+        Z fit list.
+    label_list : Any | None
+        Label list.
+    show_label : bool
+        Show label.
+    figsize : Any
+        Figsize.
+    textsize : Any
+        Textsize.
+    colors : Any
+        Colors.
+    fmts : Any | None
+        Fmts.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> multiple_capacitance_plot()
+    """
 
     if isinstance(figsize, int):
         figsize = (figsize, figsize)

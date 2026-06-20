@@ -23,8 +23,35 @@ from .XYdata import XYData, MXYData
 from typing import Any
 
 class Spectrum(XYData):
+    """
+    Container class for Spectrum data and operations.
+    """
     
     def __init__(self, x: np.ndarray, y: np.ndarray, quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": "", "y": ""}, name: str = '', plotstyle: str = dict(linestyle = '-', color = 'black', linewidth = 3), check_data: bool = True) -> None:  # type: ignore
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            X.
+        y : np.ndarray
+            Y.
+        quants : Any
+            Quants.
+        units : Any
+            Units.
+        name : str
+            Name.
+        plotstyle : str
+            Plotstyle.
+        check_data : bool
+            Check data.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         super().__init__(x, y, quants, units, name, plotstyle, check_data = check_data)
                   
     
@@ -86,14 +113,58 @@ class Spectrum(XYData):
     
     @staticmethod
     def luminosity_fn(y_unit: str = 'Spectral photon flux') -> Any:
+        """
+        Luminosity fn.
+        
+        Parameters
+        ----------
+        y_unit : str
+            Y unit.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.luminosity_fn()
+        """
         lum_FN = 'luminosity function CIE 1931.csv'
         return Spectrum.load(system_dir, lum_FN, quants = dict(x = 'Wavelength', y = 'Conversion factor'), units = dict(x = 'nm', y = 'lx/(W/m2)'))
 
 
 
 class EQESpectrum(Spectrum):
+    """
+    Container class for EQESpectrum data and operations.
+    """
     
     def __init__(self, x: np.ndarray, y: np.ndarray, quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": "", "y": ""}, name: str = '', plotstyle: str = dict(linestyle = '-', color = 'black', linewidth = 3), check_data: bool = True) -> None:  # type: ignore
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            X.
+        y : np.ndarray
+            Y.
+        quants : Any
+            Quants.
+        units : Any
+            Units.
+        name : str
+            Name.
+        plotstyle : str
+            Plotstyle.
+        check_data : bool
+            Check data.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         super().__init__(x, y, quants, units, name, plotstyle, check_data = check_data)
         
     @staticmethod
@@ -173,7 +244,7 @@ class EQESpectrum(Spectrum):
         
     def calc_jsc(self, left: float | None = None, right: float | None = None, delta: float | None = None, sp: Any = 'AM15GT') -> Any:    
         """
-        #Calculates the integrated Jsc of an EQE Spectrum. sp is the spectral photon flux (type DiffSpectrum) of the light source.
+        Calculate Jsc from overlap of this EQE with the AM1.5G spectrum.
         #It works if self and sp are both functions of nm or eV.
         """
         if sp != 'AM15GT':
@@ -236,12 +307,41 @@ class EQESpectrum(Spectrum):
 
 
     def normalize_to_jsc(self, Jsc: float) -> Any:
+        """
+        Normalize to short-circuit current density.
+        
+        Parameters
+        ----------
+        Jsc : float
+            Jsc, in ma/cm².
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.normalize_to_jsc()
+        """
         
         Jsc_EQE = self.calc_jsc()
         self.y = self.y / Jsc_EQE * Jsc
         
     
     def to_ab(self) -> Any:
+        """
+        To ab.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.to_ab()
+        """
         x = self.x.copy()
         y = self.y.copy() / 100 # absorptance is EQE (in %) / 100
         
@@ -255,6 +355,25 @@ class EQESpectrum(Spectrum):
     
     @staticmethod
     def load_cicci(directory: str, filepath: str) -> Any:
+        """
+        Load cicci.
+        
+        Parameters
+        ----------
+        directory : str
+            Directory.
+        filepath : str
+            Filepath.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.load_cicci()
+        """
         
         return EQESpectrum.load(directory, filepath, delimiter = '\t', header = 0, quants = {"x": "Wavelength", "y": "EQE"}, units = {"x": "nm", "y": "%"})
     
@@ -264,6 +383,30 @@ class AbsSpectrum(Spectrum):
     """
     
     def __init__(self, x: np.ndarray, y: np.ndarray, quants: Any = {"x": "Photon energy", "y": "Absorptance"}, units: Any = {"x": "eV", "y": ""}, name: str = 'Absorptance', plotstyle: str = dict(linestyle = '-', color = 'black', linewidth = 3), check_data: bool = True) -> None:  # type: ignore
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            X.
+        y : np.ndarray
+            Y.
+        quants : Any
+            Quants.
+        units : Any
+            Units.
+        name : str
+            Name.
+        plotstyle : str
+            Plotstyle.
+        check_data : bool
+            Check data.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         super().__init__(x, y, quants, units, name, plotstyle, check_data = check_data)
         
         
@@ -282,6 +425,25 @@ class AbsSpectrum(Spectrum):
         return UE_fit
     
     def new_ue(self, UE: float, E_takeover: Any) -> Any:
+        """
+        New ue.
+        
+        Parameters
+        ----------
+        UE : float
+            Ue.
+        E_takeover : Any
+            E takeover.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.new_ue()
+        """
         m = 1000/UE
         idx = self.x_idx_of(E_takeover)
         b = self.y[idx]
@@ -340,7 +502,7 @@ class AbsSpectrum(Spectrum):
 
     def calc_vocrad(self, E_start: Any, E_stop: Any, T: float = T_RT, show_table: bool = False) -> None:
         """
-        Calculates the Voc,rad for the absorptance self (of type Spectrum) and plots a table with all relevant information.
+        Calculate the radiative open-circuit voltage limit Voc,rad.
         E_start: Photon energy to start integration (in eV)
         E_stop: Photon energy to stop integration (in eV)
         Jph: Photo current (in mA/cm2)
@@ -381,7 +543,7 @@ class AbsSpectrum(Spectrum):
  
     def calc_jradlim(self, illumspec_eV: Any | None = None, start_eV: Any | None = None, handover_eV: Any | None = None) -> None:
         """
-        Calculates the radiative limit phtocurrent taking the absorptance Spectrum (self).
+        Calculate the radiative recombination limited current density.
         Absorptance Spectrum has to be a function of photon energy in eV.
 
         Parameters
@@ -420,6 +582,18 @@ class AbsSpectrum(Spectrum):
         self.Jradlim = np.trapz(asp.y[start_idx:] * illumspec_eV.y[start_idx:] * q, dx = dx) * 1e3 / 1e4  # type: ignore
 
     def convert_absorbance_to_absorptance(self) -> Any:
+        """
+        Convert absorbance to absorptance.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.convert_absorbance_to_absorptance()
+        """
         A = self.copy()
         new_y = 1 - 10**(-A.y)
         ab = AbsSpectrum(self.x, new_y, self.quants(), self.units(), self.name)
@@ -427,6 +601,18 @@ class AbsSpectrum(Spectrum):
         return ab
     
     def convert_absorptance_to_absorbance(self) -> Any:
+        """
+        Convert absorptance to absorbance.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.convert_absorptance_to_absorbance()
+        """
         A = self.copy()
         new_y = -np.log10(1-A.y)
         ab = AbsSpectrum(self.x, new_y, self.quants(), self.units(), self.name)
@@ -435,9 +621,49 @@ class AbsSpectrum(Spectrum):
 
     @staticmethod
     def load_absorbance(directory: str, filepath: str) -> Any:
+        """
+        Load absorbance.
+        
+        Parameters
+        ----------
+        directory : str
+            Directory.
+        filepath : str
+            Filepath.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.load_absorbance()
+        """
         return AbsSpectrum.load(directory, filepath = filepath, delimiter = ',', header = 'infer', take_quants_and_units_from_file = True)
 
     def absorbed_photonflux(self, left: float, right: float, details: Any = True) -> Any:
+        """
+        Absorbed photonflux.
+        
+        Parameters
+        ----------
+        left : float
+            Left.
+        right : float
+            Right.
+        details : Any
+            Details.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.absorbed_photonflux()
+        """
         # Calculates the absorbed photon flux in 1/(s m²) of an absoptance Spectrum under AM1.5G.
         sp = self.copy()
         sp.equidist(left = left, right = right, delta = 1)
@@ -456,8 +682,35 @@ class AbsSpectrum(Spectrum):
 
         
 class DiffSpectrum(Spectrum):   
+    """
+    Container class for DiffSpectrum data and operations.
+    """
     
     def __init__(self, x: np.ndarray, y: np.ndarray, quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": "", "y": ""}, name: str = '', plotstyle: str = dict(linestyle = '-', color = 'black', linewidth = 3), check_data: bool = True) -> None:  # type: ignore
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            X.
+        y : np.ndarray
+            Y.
+        quants : Any
+            Quants.
+        units : Any
+            Units.
+        name : str
+            Name.
+        plotstyle : str
+            Plotstyle.
+        check_data : bool
+            Check data.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         super().__init__(x, y, quants, units, name, plotstyle, check_data = check_data)
             
             
@@ -861,10 +1114,50 @@ class DiffSpectrum(Spectrum):
     #Black body spectral photon flux in 1/(s m2 J), energy in Joule
     @staticmethod
     def phi_bb(E: float, T: float) -> Any:
+        """
+        Phi bb.
+        
+        Parameters
+        ----------
+        E : float
+            E.
+        T : float
+            T.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.phi_bb()
+        """
         return 1/(4 * math.pi**2 * (h/(2 * math.pi))**3 * c**2) * E**2 / (np.exp(E / (k * T)) - 1)
 
     @staticmethod
     def bb_spectrum(sp: Any, T: float = T_RT, fit_eV: Any = 1.5) -> Any:
+        """
+        Bb spectrum.
+        
+        Parameters
+        ----------
+        sp : Any
+            Sp.
+        T : float
+            T.
+        fit_eV : Any
+            Fit ev, in ev.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.bb_spectrum()
+        """
         x_eV = sp.x
         ind = findind(x_eV, fit_eV)
         BB = DiffSpectrum.phi_bb(x_eV * q, T) * q
@@ -875,6 +1168,23 @@ class DiffSpectrum(Spectrum):
         return DiffSpectrum(x_eV, BB, quants = quants, units = units, name = name)    
     
     def integrated_current(self, EQE: Any | None=None) -> Any:
+        """
+        Integrated current.
+        
+        Parameters
+        ----------
+        EQE : Any | None
+            Eqe.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.integrated_current()
+        """
         # Calculates an integrated current plot as a function of wavelength
         # Works only with photon flux Spectrum
         # EQE in % and as a function fo wavelength
@@ -895,6 +1205,18 @@ class DiffSpectrum(Spectrum):
 
 
     def integrated_irradiance(self) -> Any:
+        """
+        Integrated irradiance.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.integrated_irradiance()
+        """
         # Calculates an integrated irradiance plot as a function of wavelength
         # Works only with spectral irradiance
     
@@ -903,6 +1225,27 @@ class DiffSpectrum(Spectrum):
     
 
     def calculate_irradiance_illuminance(self, left: float=400, right: float=720, show: bool=True) -> Any:
+        """
+        Calculate irradiance illuminance.
+        
+        Parameters
+        ----------
+        left : float
+            Left.
+        right : float
+            Right.
+        show : bool
+            Show.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.calculate_irradiance_illuminance()
+        """
 
         sp_new = self.copy().cut_data_outside(left=left, right=right)
         sp_irr = sp_new.photonflux_to_irradiance()
@@ -920,6 +1263,30 @@ class PELSpectrum(DiffSpectrum):
     """
     
     def __init__(self, x: np.ndarray, y: np.ndarray, quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": "", "y": ""}, name: str = '', plotstyle: str = dict(linestyle = '-', color = 'black', linewidth = 3), check_data: bool = True) -> None:  # type: ignore
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            X.
+        y : np.ndarray
+            Y.
+        quants : Any
+            Quants.
+        units : Any
+            Units.
+        name : str
+            Name.
+        plotstyle : str
+            Plotstyle.
+        check_data : bool
+            Check data.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         super().__init__(x, y, quants, units, name, plotstyle, check_data = check_data)
         
         
@@ -964,21 +1331,72 @@ class PELSpectrum(DiffSpectrum):
         
 
 class Spectra(MXYData):
+    """
+    Container class for Spectra data and operations.
+    """
     
     def __init__(self, sa: Any) -> None:
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        sa : Any
+            Sa.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         super().__init__(sa)
         
     @classmethod
     def generate_empty(cls, empty_spectra_list: Any=[]) -> Any:
+        """
+        Generate an XYData with all-zero y values on a given x grid.
+        
+        Parameters
+        ----------
+        empty_spectra_list : Any
+            Empty spectra list.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.generate_empty()
+        """
         return cls(empty_spectra_list)   
         
                 
     def replace(self, idx: int, sp_new: Any) -> Any:
+        """
+        Replace.
+        
+        Parameters
+        ----------
+        idx : int
+            Idx.
+        sp_new : Any
+            Sp new.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.replace()
+        """
         self.sa[idx] = sp_new
         
     def remain(self, idx_list: Any) -> Any:
         """
-        Return all Spectra with indices in list idx_list.
+        Return a copy trimmed to the interval [left, right].
         """
         new_sa = self.copy()
         sa = []
@@ -991,6 +1409,23 @@ class Spectra(MXYData):
         return new_sa
 
     def names_to_label(self, split_ch: str | None = None) -> Any:
+        """
+        Names to label.
+        
+        Parameters
+        ----------
+        split_ch : str | None
+            Split ch.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.names_to_label()
+        """
         lab = []
         for i, sp in enumerate(self.sa):
             if split_ch is None:
@@ -1014,6 +1449,20 @@ class Spectra(MXYData):
         return spa_new
             
     def save(self, save_dir: str, filepath: str) -> None:  # type: ignore
+        """
+        Save.
+        
+        Parameters
+        ----------
+        save_dir : str
+            Save dir.
+        filepath : str
+            Filepath.
+        
+        Examples
+        --------
+        >>> obj.save()
+        """
         
         if not(self.all_spectra_have_same_x_range()):
             
@@ -1126,6 +1575,25 @@ class Spectra(MXYData):
        
                 
     def save_names(self, save_dir: str, filepath: str) -> Any:
+        """
+        Save names.
+        
+        Parameters
+        ----------
+        save_dir : str
+            Save dir.
+        filepath : str
+            Filepath.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.save_names()
+        """
         TFN = join(save_dir, filepath)
         if save_ok(TFN):
             names  = []
@@ -1135,6 +1603,25 @@ class Spectra(MXYData):
                 f.write("\n".join(names))    
                 
     def load_names(self, directory: str, filepath: str) -> Any:
+        """
+        Load names.
+        
+        Parameters
+        ----------
+        directory : str
+            Directory.
+        filepath : str
+            Filepath.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.load_names()
+        """
         TFN = join(directory, filepath)
         with open(TFN, 'r') as f:
             FNstring = f.read()
@@ -1195,24 +1682,86 @@ class Spectra(MXYData):
     
 
 class AbsSpectra(Spectra):
+    """
+    Container class for AbsSpectra data and operations.
+    """
     
     def __init__(self, sa: Any) -> None:
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        sa : Any
+            Sa.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         super().__init__(sa)
 
             
 class DiffSpectra(Spectra):
+    """
+    Container class for DiffSpectra data and operations.
+    """
     
     def __init__(self, sa: Any) -> None:
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        sa : Any
+            Sa.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         super().__init__(sa)
         
     
 class PELSpectra(DiffSpectra):
+    """
+    Container class for PELSpectra data and operations.
+    """
     
     def __init__(self, sa: Any) -> None:
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        sa : Any
+            Sa.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         super().__init__(sa)
         
     
     def calc_calfn(self, calspec: Any) -> Any:
+        """
+        Calculate calfn.
+        
+        Parameters
+        ----------
+        calspec : Any
+            Calspec.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.calc_calfn()
+        """
 
         calib = []
         for i, sp in enumerate(self.sa):
@@ -1352,6 +1901,39 @@ class PELSpectra(DiffSpectra):
         return PLQY_sa
     
     def calc_plqy_param(self, laser_marker: Any, left_laser: Any, right_laser: Any, PL_marker: Any, left_PL: Any, right_PL: Any, eval_Pa: Any = False, eval_Pb: Any = True, show_errmsg: bool = True) -> Any:
+        """
+        Calculate plqy parameters.
+        
+        Parameters
+        ----------
+        laser_marker : Any
+            Laser marker.
+        left_laser : Any
+            Left laser.
+        right_laser : Any
+            Right laser.
+        PL_marker : Any
+            Pl marker.
+        left_PL : Any
+            Left pl.
+        right_PL : Any
+            Right pl.
+        eval_Pa : Any
+            Eval pa.
+        eval_Pb : Any
+            Eval pb.
+        show_errmsg : bool
+            Show errmsg.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.calc_plqy_param()
+        """
         
         if 'La' in self.expl:  # type: ignore
             La = self.sa[self.expl['La']].photonflux(start = left_laser, stop = right_laser)  # type: ignore
@@ -1426,6 +2008,39 @@ class PELSpectra(DiffSpectra):
         return result.x[0]
         
     def udata_plot(self, overlap: Any, yscale: str = 'log', left: float | None = None, right: float | None = None, save: bool = False, save_dir: str = '', save_name: str | None = None, return_fig: bool = False, show_plot: bool = True) -> Any:
+        """
+        Udata plot.
+        
+        Parameters
+        ----------
+        overlap : Any
+            Overlap.
+        yscale : str
+            Yscale.
+        left : float | None
+            Left.
+        right : float | None
+            Right.
+        save : bool
+            Save.
+        save_dir : str
+            Save dir.
+        save_name : str | None
+            Save name.
+        return_fig : bool
+            Return fig.
+        show_plot : bool
+            Show plot.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.udata_plot()
+        """
         ab = self.sa[0]
         uf = self.sa[1]
         sp = self.sa[2].copy()

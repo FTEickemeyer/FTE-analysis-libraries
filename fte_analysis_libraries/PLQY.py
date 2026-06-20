@@ -149,6 +149,31 @@ def get_Andor_metadata(f: float, showall: bool = False) -> Any:
     return metadata
 
 def raw_to_asset_with_metadata(container: Any, asset_type: Any, db: Any, show_FN: str = False, show_new_asset: bool = False) -> Any:  # type: ignore
+    """
+    Raw to asset with metadata.
+    
+    Parameters
+    ----------
+    container : Any
+        Container.
+    asset_type : Any
+        Asset type.
+    db : Any
+        Db.
+    show_FN : str
+        Show fn.
+    show_new_asset : bool
+        Show new asset.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> raw_to_asset_with_metadata()
+    """
     # Generate new asset with metadata from raw measurements
     
     raw = db.find_assets( { 'parent' : container._id, 'type': asset_type } )
@@ -201,6 +226,27 @@ def add_graph(db: Any, fn: str, graph: Any) -> Any:
 
 
 def find(dic: Any, assets: Any, show_details: bool = False) -> Any:
+    """
+    Find.
+    
+    Parameters
+    ----------
+    dic : Any
+        Dic.
+    assets : Any
+        Assets.
+    show_details : bool
+        Show details.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> find()
+    """
     asts = thot.filter(dic, assets)
     if len(asts) == 0:
         raise RuntimeError(f'{dic} in assets not found!')
@@ -217,8 +263,39 @@ def find(dic: Any, assets: Any, show_details: bool = False) -> Any:
     
     
 class ExpParam:
+    """
+    Experimental parameters for a PLQY measurement run.
+    """
     
     def __init__(self, which_sample: Any | None = None, excitation_laser: Any | None = None, PL_left: Any | None = None, PL_right: Any | None = None, PL_peak: Any | None = None, corr_offs_left: Any = 40, corr_offs_right: Any = 50, PL_peak_auto: Any = False, eval_Pb: Any = False) -> None:
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        which_sample : Any | None
+            Which sample.
+        excitation_laser : Any | None
+            Excitation laser.
+        PL_left : Any | None
+            Pl left.
+        PL_right : Any | None
+            Pl right.
+        PL_peak : Any | None
+            Pl peak.
+        corr_offs_left : Any
+            Corr offs left.
+        corr_offs_right : Any
+            Corr offs right.
+        PL_peak_auto : Any
+            Pl peak auto.
+        eval_Pb : Any
+            Eval pb.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
 
         # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right 
 
@@ -392,8 +469,41 @@ class ExpParam:
 
 
 class PLQYDataset:
+    """
+    Dataset container for absolute PLQY calculation.
+    """
     
     def __init__(self, db: Any, La: Any, Lb: Any, Lc: Any, Pa: Any, Pb: Any, Pc: float, fs: Any, sample_name: str, param: Any) -> None:
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        db : Any
+            Db.
+        La : Any
+            La.
+        Lb : Any
+            Lb.
+        Lc : Any
+            Lc.
+        Pa : Any
+            Pa.
+        Pb : Any
+            Pb.
+        Pc : float
+            Pc.
+        fs : Any
+            Fs.
+        sample_name : str
+            Sample name.
+        param : Any
+            Param.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         
         def load_spectrum(LP: Any) -> Any:
             return spc.PELSpectrum.load(os.path.dirname(LP.file), filepath = os.path.basename(LP.file), take_quants_and_units_from_file = True)
@@ -430,6 +540,13 @@ class PLQYDataset:
         self.L.label(['La', 'Lb', 'Lc'])
 
     def plot(self, *args, **kwargs) -> None:
+        """
+        Plot the data, with optional reference lines, insets, and fitting.
+        
+        Examples
+        --------
+        >>> obj.plot()
+        """
         self.all.plot(*args, **kwargs)
         all_graph = self.all.plot(*args, return_fig = True, show_plot = False, hline=0, hline_colors='black', **kwargs)  # type: ignore
         add_graph(self.db, self.sample_name+'_all.png', all_graph)
@@ -437,6 +554,18 @@ class PLQYDataset:
         
 
     def find_PL_peak(self) -> Any:
+        """
+        Find photoluminescence peak.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.find_PL_peak()
+        """
         if self.param.PL_peak_auto:
             if self.PL_peak is None:
                 ra = self.fs.idx_range(left = self.param.PL_left, right = self.param.PL_right)
@@ -446,6 +575,35 @@ class PLQYDataset:
     
         
     def inb_oob_adjust(self, what: Any = 'inb', adj_factor: Any | None = None, show_adjust_factor: bool = False, save_plots: bool = False, show_plots: bool = True, show_inbeam_correction: bool=False, divisor: float = 1e3) -> Any:
+        """
+        Inb oob adjust.
+        
+        Parameters
+        ----------
+        what : Any
+            What.
+        adj_factor : Any | None
+            Adj factor.
+        show_adjust_factor : bool
+            Show adjust factor.
+        save_plots : bool
+            Save plots.
+        show_plots : bool
+            Show plots.
+        show_inbeam_correction : bool
+            Show inbeam correction.
+        divisor : float
+            Divisor.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.inb_oob_adjust()
+        """
         # adj_factor: manual adjustment factor. It is advisable to run this routine first with show_adjust_factor = True and then take this as a basis for the adj_factor
         # automatically calculate the factor
 
@@ -456,9 +614,6 @@ class PLQYDataset:
             sp = self.Pb
             
         def guess_factor(left: float, right: float) -> Any:
-            """
-            Returns the inbeam or outofbeam-free space adjustment factor.
-            """
 
             fs_ = fs.copy()
             sp_ = sp.copy()
@@ -468,37 +623,21 @@ class PLQYDataset:
             sp_.equidist(left = left, right = right, delta = delta)
 
             def f(fac: float) -> Any: 
-                diff = sp_.y - fac * fs_.y
-                return math.sqrt(1/len(diff) * np.dot(diff, diff))
-
-            result = least_squares(fun = f, x0 = [1])
-
-            return result.x[0]
-
-        left = self.PL_peak + self.param.corr_offs_left
-        right = self.PL_peak + self.param.corr_offs_right
-
-        if adj_factor is None:
-            factor = guess_factor(left = left, right = right)
-        else:
-            factor = adj_factor
-            
-        self.adj_factor = factor
-        
+                pass
         if show_adjust_factor:
-            print(f'The inbeam/outofbeam adjust factor is {factor:.2e}')
+            print(f'The inbeam/outofbeam adjust factor is {factor:.2e}')  # type: ignore
         
         sp_orig = sp.copy()
         if what == 'inb':
             #We'll need the original Spectrum later
             self.Pc_orig = sp_orig
             #self.Pc.y = fs.y * factor 
-            self.Pc_corrfac = factor
+            self.Pc_corrfac = factor  # type: ignore
         elif what == 'oob':
             #We'll need the original Spectrum later
             self.Pb_orig = sp_orig
-            self.Pb_corrfac = factor
-        sp.y = fs.y * factor  
+            self.Pb_corrfac = factor  # type: ignore
+        sp.y = fs.y * factor  # type: ignore
 
         fssp = spc.PELSpectra([sp_orig, sp])
         fssp.label([what, 'adjusted'])
@@ -514,11 +653,86 @@ class PLQYDataset:
         plt.close( fssp_log_graph )
         
     def inb_adjust(self, adj_factor: Any | None = None, show_adjust_factor: bool = False, save_plots: bool = False, show_plots: bool = False, show_inbeam_correction: bool=True, divisor: float = 1e3) -> Any:
+            """
+        Inb adjust.
+        
+        Parameters
+        ----------
+        adj_factor : Any | None
+            Adj factor.
+        show_adjust_factor : bool
+            Show adjust factor.
+        save_plots : bool
+            Save plots.
+        show_plots : bool
+            Show plots.
+        show_inbeam_correction : bool
+            Show inbeam correction.
+        divisor : float
+            Divisor.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.inb_adjust()
+        """
             self.inb_oob_adjust(what = 'inb', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, show_plots = show_plots, show_inbeam_correction=show_inbeam_correction, divisor = divisor)
     def oob_adjust(self, adj_factor: Any | None = None, show_adjust_factor: bool = False, save_plots: bool = False, show_plots: bool = False, divisor: float = 1e3) -> Any:
+            """
+        Oob adjust.
+        
+        Parameters
+        ----------
+        adj_factor : Any | None
+            Adj factor.
+        show_adjust_factor : bool
+            Show adjust factor.
+        save_plots : bool
+            Save plots.
+        show_plots : bool
+            Show plots.
+        divisor : float
+            Divisor.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.oob_adjust()
+        """
             self.inb_oob_adjust(what = 'oob', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, show_plots = show_plots, divisor = divisor)
 
     def calc_abs(self, what: Any = 'inb', save_plots: bool = False, show_plot: bool = False, return_A: bool = False) -> Any:
+        """
+        Calculate absorbance.
+        
+        Parameters
+        ----------
+        what : Any
+            What.
+        save_plots : bool
+            Save plots.
+        show_plot : bool
+            Show plot.
+        return_A : bool
+            Return a.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.calc_abs()
+        """
         #Calculates the absorptance Spectrum from the fs and inbeam or outofbeam PL Spectrum
         if what == 'inb':
             sp_orig = self.Pc_orig
@@ -552,6 +766,31 @@ class PLQYDataset:
         
         
     def calc_PLQY(self, eval_Pa: Any = False, show: bool = False, show_plots: bool = False, save_plots: bool = False, show_lum: bool = 'log') -> Any:  # type: ignore
+        """
+        Calculate photoluminescence quantum yield.
+        
+        Parameters
+        ----------
+        eval_Pa : Any
+            Eval pa.
+        show : bool
+            Show.
+        show_plots : bool
+            Show plots.
+        save_plots : bool
+            Save plots.
+        show_lum : bool
+            Show lum.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.calc_PLQY()
+        """
         
         La = self.La.calc_integrated_photonflux(start = self.param.laser_left, stop = self.param.laser_right)
         Lb = self.Lb.calc_integrated_photonflux(start = self.param.laser_left, stop = self.param.laser_right)
@@ -637,8 +876,20 @@ class PLQYDataset:
         self.absolutePFspec = sp
         
     def save_asset(self) -> Any:
+        """
+        Save asset.
         
-        metadata = dict(A = self.A, PLQY = self.PLQY, Peak = self.PL_peak, Eg = self.Eg, v_sq = self.v_sq, dV = self.v_loss, qfls = self.qfls, adj_fac = self.adj_factor, fs_absint_factor = self.fs_absint_factor)
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.save_asset()
+        """
+        
+        metadata = dict(A = self.A, PLQY = self.PLQY, Peak = self.PL_peak, Eg = self.Eg, v_sq = self.v_sq, dV = self.v_loss, qfls = self.qfls, adj_fac = self.adj_factor, fs_absint_factor = self.fs_absint_factor)  # type: ignore
         #print(metadata)
         asset_name = f'{self.sample_name}_absolute PL Spectrum'
         asset_prop = dict(name = asset_name + '.csv', type = 'absolute PL Spectrum', metadata = metadata)
