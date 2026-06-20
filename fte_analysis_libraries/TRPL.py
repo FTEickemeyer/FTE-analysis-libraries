@@ -956,228 +956,111 @@ class TRPLData(XYData):
 #________________________________________________________________________________________
 # simplified model dn/dt = -k1*n - k2*n**2 begin
 
-    def k1_k2_fit(self, start = None, stop = None, x0 = [3e5, 2.4e4], used_for_fit = 'savgol', savgol_param = None, show_all = False, **kwargs):
+    def _trpl_prepare(self, start, stop, used_for_fit, savgol_param):
+        """Common setup for k-fit methods: defaults, smoothing, index range, n0 initial."""
+        if start is None:
+            start = 0
+        if stop is None:
+            stop = self.x[-1]
+        if used_for_fit == 'savgol':
+            if savgol_param is None:
+                savgol_param = dict(n1=51, n2=1, name='Savgol')
+            dat = self.savgol(**savgol_param)
+        else:
+            dat = self
+        start_idx = dat.x_idx_of(start)
+        stop_idx = dat.x_idx_of(stop)
+        r = range(start_idx, stop_idx + 1)
+        return start, stop, dat, r, dat.y[start_idx]
+
+    def _trpl_show_debug(self, dat, fit, start, stop):
+        """Show raw + smoothed + fit trace on log scale."""
+        dta = MTRPLData([self, dat, fit])
+        dta.label([self.name, 'savgol', 'fit'])
+        dta.sa[0].plotstyle = dict(linestyle='-', color='blue', linewidth=1)
+        dta.sa[1].plotstyle = dict(linestyle='-', color='orange', linewidth=3)
+        dta.sa[2].plotstyle = dict(linestyle='-', color='red', linewidth=3)
+        m = dta.max_within(left=start, right=stop)
+        dta.plot(yscale='log', left=0, right=stop, bottom=m/100, top=m*1.1, plotstyle='individual')
+
+    def _trpl_make_result(self, fit, k1, k2):
+        """Assemble a labeled MTRPLData containing measured + fit traces."""
+        da_new = MTRPLData([self, fit])
+        da_new.label([self.name, f'fit, k1 = {k1:.2e} s-1, k2 = {k2:.2e} cm3 s-1'])
+        da_new.sa[0].plotstyle = dict(linestyle='-', color='blue', linewidth=1)
+        da_new.sa[1].plotstyle = dict(linestyle='-', color='red', linewidth=3)
+        return da_new
+
+    def k1_k2_fit(self, start=None, stop=None, x0=[3e5, 2.4e4], used_for_fit='savgol', savgol_param=None, show_all=False, **kwargs):
         """
         Fits k1, k2 to a TRPL trace.
         Rate equation: dn/dt = -k1*n - k2*n**2
         """
-
-        if start is None:
-            start = 0
-        if stop is None:
-            stop = self.x[-1]
-
-        if used_for_fit == 'savgol':
-            if savgol_param is None:
-                savgol_param = dict(n1 = 51, n2 = 1, name = 'Savgol')
-            dat = self.savgol(**savgol_param)
-        else:
-            dat = self
-
-        start_idx = dat.x_idx_of(start)
-        stop_idx = dat.x_idx_of(stop)
-        r = range(start_idx, stop_idx+1)
-
-        t = dat.x[r] - start
-        n0 = dat.y[start_idx]
-        p0 = [n0, x0[0], x0[1]]
+        start, stop, dat, r, n0 = self._trpl_prepare(start, stop, used_for_fit, savgol_param)
 
         def n_of_t(t, n0, k1, k2):
-            # n**2 is proportional to PL
-            #t in ns
             return k1/k2 * 1/(np.exp(k1*t*1e-9)*(1+k1/(n0*k2))-1)
 
-        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0 = p0, bounds=(0, np.inf), **kwargs)
-
-        n0 = popt[0]
-        k1 = popt[1]
-        k2 = popt[2]
-
+        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0=[n0, x0[0], x0[1]], bounds=(0, np.inf), **kwargs)
+        k1, k2 = popt[1], popt[2]
         fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))
-
         if show_all:
-            dta = MTRPLData([self, dat, fit])
-            dta.label([self.name, 'savgol', 'fit'])
-            dta.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
-            dta.sa[1].plotstyle = dict(linestyle = '-', color = 'orange', linewidth = 3)
-            dta.sa[2].plotstyle = dict(linestyle = '-', color = 'red', linewidth = 3)
-            m = dta.max_within(left = start, right = stop)
-            dta.plot(yscale = 'log', left = 0, right = stop, bottom = m/100, top = m*1.1, plotstyle = 'individual')
+            self._trpl_show_debug(dat, fit, start, stop)
+        return self._trpl_make_result(fit, k1, k2), popt
 
-        da_new = MTRPLData([self, fit])
-        da_new.label([self.name, f'fit, k1 = {k1:.2e} s-1, k2 = {k2:.2e} cm3 s-1'])
-        da_new.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
-        da_new.sa[1].plotstyle = dict(linestyle = '-', color = 'red', linewidth = 3)
-
-        return da_new, popt
-
-
-    def k1_fit(self, start = None, stop = None, x0 = [2.4e4], k2 = 1e-8, used_for_fit = 'savgol', savgol_param = None, show_all = False, **kwargs):
+    def k1_fit(self, start=None, stop=None, x0=[2.4e4], k2=1e-8, used_for_fit='savgol', savgol_param=None, show_all=False, **kwargs):
         """
         Fits k1 to a TRPL trace.
         Rate equation: dn/dt = -k1*n - k2*n**2
         """
-
-        if start is None:
-            start = 0
-        if stop is None:
-            stop = self.x[-1]
-
-        if used_for_fit == 'savgol':
-            if savgol_param is None:
-                savgol_param = dict(n1 = 51, n2 = 1, name = 'Savgol')
-            dat = self.savgol(**savgol_param)
-        else:
-            dat = self
-
-        start_idx = dat.x_idx_of(start)
-        stop_idx = dat.x_idx_of(stop)
-        r = range(start_idx, stop_idx+1)
-
-        t = dat.x[r] - start
-        n0 = dat.y[start_idx]
-        p0 = [n0, x0[0]]
+        start, stop, dat, r, n0 = self._trpl_prepare(start, stop, used_for_fit, savgol_param)
 
         def n_of_t(t, n0, k1):
-            # n**2 is proportional to PL
-            #t in ns
             if k2 != 0:
                 return k1/k2 * 1/(np.exp(k1*t*1e-9)*(1+k1/(n0*k2))-1)
             else:
                 return n0*np.exp(-k1*t*1e-9)
 
-        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0 = p0, bounds=(0, np.inf), **kwargs)
-
-        n0 = popt[0]
+        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0=[n0, x0[0]], bounds=(0, np.inf), **kwargs)
         k1 = popt[1]
-
         fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))
-
         if show_all:
-            dta = MTRPLData([self, dat, fit])
-            dta.label([self.name, 'savgol', 'fit'])
-            dta.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
-            dta.sa[1].plotstyle = dict(linestyle = '-', color = 'orange', linewidth = 3)
-            dta.sa[2].plotstyle = dict(linestyle = '-', color = 'red', linewidth = 3)
-            m = dta.max_within(left = start, right = stop)
-            dta.plot(yscale = 'log', left = 0, right = stop, bottom = m/100, top = m*1.1, plotstyle = 'individual')
+            self._trpl_show_debug(dat, fit, start, stop)
+        return self._trpl_make_result(fit, k1, k2), popt
 
-        da_new = MTRPLData([self, fit])
-        da_new.label([self.name, f'fit, k1 = {k1:.2e} s-1, k2 = {k2:.2e} cm3 s-1'])
-        da_new.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
-        da_new.sa[1].plotstyle = dict(linestyle = '-', color = 'red', linewidth = 3)
-
-        return da_new, popt
-
-
-    def k2_fit(self, start = None, stop = None, x0 = [1e-8], k1 = 1e6, used_for_fit = 'savgol', savgol_param = None, show_all = False, **kwargs):
+    def k2_fit(self, start=None, stop=None, x0=[1e-8], k1=1e6, used_for_fit='savgol', savgol_param=None, show_all=False, **kwargs):
         """
         Fits k2 to a TRPL trace.
         Rate equation: dn/dt = -k1*n - k2*n**2
         """
-
-        if start is None:
-            start = 0
-        if stop is None:
-            stop = self.x[-1]
-
-        if used_for_fit == 'savgol':
-            if savgol_param is None:
-                savgol_param = dict(n1 = 51, n2 = 1, name = 'Savgol')
-            dat = self.savgol(**savgol_param)
-        else:
-            dat = self
-
-        start_idx = dat.x_idx_of(start)
-        stop_idx = dat.x_idx_of(stop)
-        r = range(start_idx, stop_idx+1)
-
-        t = dat.x[r] - start
-        n0 = dat.y[start_idx]
-        p0 = [n0, x0[0]]
+        start, stop, dat, r, n0 = self._trpl_prepare(start, stop, used_for_fit, savgol_param)
 
         def n_of_t(t, n0, k2):
-            # n**2 is proportional to PL
-            #t in ns
             return k1/k2 * 1/(np.exp(k1*t*1e-9)*(1+k1/(n0*k2))-1)
-            
-        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0 = p0, bounds=([n0/10, 0], np.inf), **kwargs) #if the lower n0 bound is set to 0 then n0 goes towards 0 sometimes and results in an error
 
-        n0 = popt[0]
+        # lower n0 bound kept above 0 to prevent n0 from collapsing
+        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0=[n0, x0[0]], bounds=([n0/10, 0], np.inf), **kwargs)
         k2 = popt[1]
-
         fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))
-
         if show_all:
-            dta = MTRPLData([self, dat, fit])
-            dta.label([self.name, 'savgol', 'fit'])
-            dta.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
-            dta.sa[1].plotstyle = dict(linestyle = '-', color = 'orange', linewidth = 3)
-            dta.sa[2].plotstyle = dict(linestyle = '-', color = 'red', linewidth = 3)
-            m = dta.max_within(left = start, right = stop)
-            dta.plot(yscale = 'log', left = 0, right = stop, bottom = m/100, top = m*1.1, plotstyle = 'individual')
+            self._trpl_show_debug(dat, fit, start, stop)
+        return self._trpl_make_result(fit, k1, k2), popt
 
-        da_new = MTRPLData([self, fit])
-        da_new.label([self.name, f'fit, k1 = {k1:.2e} s-1, k2 = {k2:.2e} cm3 s-1'])
-        da_new.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
-        da_new.sa[1].plotstyle = dict(linestyle = '-', color = 'red', linewidth = 3)
-
-        return da_new, popt
-
-
-
-    def n0_fit(self, start = None, stop = None, n0 = 1e13, k1 = 1e6, k2 = 1e-8, used_for_fit = 'savgol', savgol_param = None, show_all = False, **kwargs):
+    def n0_fit(self, start=None, stop=None, n0=1e13, k1=1e6, k2=1e-8, used_for_fit='savgol', savgol_param=None, show_all=False, **kwargs):
         """
         Fits n0 to a TRPL trace.
         Rate equation: dn/dt = -k1*n - k2*n**2
         """
-
-        if start is None:
-            start = 0
-        if stop is None:
-            stop = self.x[-1]
-
-        if used_for_fit == 'savgol':
-            if savgol_param is None:
-                savgol_param = dict(n1 = 51, n2 = 1, name = 'Savgol')
-            dat = self.savgol(**savgol_param)
-        else:
-            dat = self
-
-        start_idx = dat.x_idx_of(start)
-        stop_idx = dat.x_idx_of(stop)
-        r = range(start_idx, stop_idx+1)
-
-        t = dat.x[r] - start
-        n0 = dat.y[start_idx]
-        p0 = [n0]
+        start, stop, dat, r, n0_initial = self._trpl_prepare(start, stop, used_for_fit, savgol_param)
 
         def n_of_t(t, n0):
-            # n**2 is proportional to PL
-            #t in ns
             return k1/k2 * 1/(np.exp(k1*t*1e-9)*(1+k1/(n0*k2))-1)
 
-        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0 = p0, bounds=(0, np.inf), **kwargs)
-
-        n0 = popt[0]
-
+        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0=[n0_initial], bounds=(0, np.inf), **kwargs)
         fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))
-
         if show_all:
-            dta = MTRPLData([self, dat, fit])
-            dta.label([self.name, 'savgol', 'fit'])
-            dta.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
-            dta.sa[1].plotstyle = dict(linestyle = '-', color = 'orange', linewidth = 3)
-            dta.sa[2].plotstyle = dict(linestyle = '-', color = 'red', linewidth = 3)
-            m = dta.max_within(left = start, right = stop)
-            dta.plot(yscale = 'log', left = 0, right = stop, bottom = m/100, top = m*1.1, plotstyle = 'individual')
-
-        da_new = MTRPLData([self, fit])
-        da_new.label([self.name, f'fit, k1 = {k1:.2e} s-1, k2 = {k2:.2e} cm3 s-1'])
-        da_new.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
-        da_new.sa[1].plotstyle = dict(linestyle = '-', color = 'red', linewidth = 3)
-
-        return da_new, popt
+            self._trpl_show_debug(dat, fit, start, stop)
+        return self._trpl_make_result(fit, k1, k2), popt
     
     def k1_k2_model_fit(self, what_to_fit = ['k1', 'k2'], start = None, stop = None, n0 = 1e-15, k1 = 1e6, k2 = 1e-7, show = None):
     
@@ -1402,82 +1285,36 @@ class MTRPLData(MXYData):
     
         return result
         
-    def mono_expfit(self, start = 400, stop = None, p0 = (1, 500), showparam = False):
+    def _batch_expfit(self, method_name, name_prefix, start, stop, p0, showparam):
+        """Shared loop scaffold for all batch multi-exponential fit wrappers."""
         dafit_sa = []
-        for idx, d in enumerate(self.sa):
+        for d in self.sa:
             if showparam:
                 print(d.name)
-            dfit = d.mono_expfit(start = start, stop = stop, p0 = p0, showparam = showparam)
-            dfit.name = 'mono exp fit_' + d.name
+            dfit = getattr(d, method_name)(start=start, stop=stop, p0=p0, showparam=showparam)
+            dfit.name = name_prefix + d.name
             dafit_sa.append(dfit)
             if showparam:
-                dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
+                dfit.plotstyle = dict(linestyle='--', color='tab:red', linewidth=2)
                 delta = d.residual(dfit, relative=True)
-                print(f'chi**2 = {XYData.chisquare(d, dfit, right = stop):.2e}')
-                delta.plot(right = stop, hline = 0, title = 'Residual plot')
-                md = MTRPLData([d, dfit])
-                md.label(['original', 'fit'])
-        dafit = MTRPLData(dafit_sa)  
-        dafit.names_to_label(split_ch = '.csv')
-        return dafit   
-        
-    def mult2_expfit(self, start = 0, stop = None, p0 = (1, 1e-1, 10, 100), showparam = False):
-        dafit_sa = []
-        for idx, d in enumerate(self.sa):
-            if showparam:
-                print(d.name)
-            dfit = d.mult2_expfit(start = start, stop = stop, p0 = p0, showparam = showparam)
-            dfit.name = '2 exp fit_' + d.name
-            dafit_sa.append(dfit)
-            if showparam:
-                dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
-                delta = d.residual(dfit, relative=True)
-                print(f'chi**2 = {XYData.chisquare(d, dfit, right = stop):.2e}')
-                delta.plot(right = stop, hline = 0, title = 'Residual plot')
-                md = MTRPLData([d, dfit])
-                md.label(['original', 'fit'])
-        dafit = MTRPLData(dafit_sa)  
-        dafit.names_to_label(split_ch = '.csv')
-        return dafit
-    
-    def mult3_expfit(self, start = 0, stop = None, p0 = (1, 1e-1, 1e-2, 5, 20, 100), showparam = False):
-        dafit_sa = []
-        for idx, d in enumerate(self.sa):
-            if showparam:
-                print(d.name)
-            dfit = d.mult3_expfit(start = start, stop = stop, p0 = p0, showparam = showparam)
-            dfit.name = '3 exp fit_' + d.name
-            dafit_sa.append(dfit)
-            if showparam:
-                dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
-                delta = d.residual(dfit, relative=True)
-                print(f'chi**2 = {XYData.chisquare(d, dfit, right = stop):.2e}')
-                delta.plot(right = stop, hline = 0, title = 'Residual plot')
-                md = MTRPLData([d, dfit])
-                md.label(['original', 'fit'])
-    
-        dafit = MTRPLData(dafit_sa)  
-        dafit.names_to_label(split_ch = '.csv')
+                print(f'chi**2 = {XYData.chisquare(d, dfit, right=stop):.2e}')
+                delta.plot(right=stop, hline=0, title='Residual plot')
+                MTRPLData([d, dfit]).label(['original', 'fit'])
+        dafit = MTRPLData(dafit_sa)
+        dafit.names_to_label(split_ch='.csv')
         return dafit
 
-    def mult4_expfit(self, start = 0, stop = None, p0 = (1, 1e-1, 1e-2, 1e-3, 5, 20, 100, 500), showparam = False):
-        dafit_sa = []
-        for idx, d in enumerate(self.sa):
-            if showparam:
-                print(d.name)
-            dfit = d.mult4_expfit(start = start, stop = stop, p0 = p0, showparam = showparam)
-            dfit.name = '4 exp fit_' + d.name
-            dafit_sa.append(dfit)
-            if showparam:
-                dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
-                delta = d.residual(dfit, relative=True)
-                print(f'chi**2 = {XYData.chisquare(d, dfit, right = stop):.2e}')
-                delta.plot(right = stop, hline = 0, title = 'Residual plot')
-                md = MTRPLData([d, dfit])
-                md.label(['original', 'fit'])
-        dafit = MTRPLData(dafit_sa)  
-        dafit.names_to_label(split_ch = '.csv')
-        return dafit
+    def mono_expfit(self, start=400, stop=None, p0=(1, 500), showparam=False):
+        return self._batch_expfit('mono_expfit', 'mono exp fit_', start, stop, p0, showparam)
+
+    def mult2_expfit(self, start=0, stop=None, p0=(1, 1e-1, 10, 100), showparam=False):
+        return self._batch_expfit('mult2_expfit', '2 exp fit_', start, stop, p0, showparam)
+
+    def mult3_expfit(self, start=0, stop=None, p0=(1, 1e-1, 1e-2, 5, 20, 100), showparam=False):
+        return self._batch_expfit('mult3_expfit', '3 exp fit_', start, stop, p0, showparam)
+
+    def mult4_expfit(self, start=0, stop=None, p0=(1, 1e-1, 1e-2, 1e-3, 5, 20, 100, 500), showparam=False):
+        return self._batch_expfit('mult4_expfit', '4 exp fit_', start, stop, p0, showparam)
 
 
     def dlifetime(self, x = 'time', m = 2, wavelength = 510, film_thickness = 500, fluence = 5e-9, ni = 8.05e4):  
