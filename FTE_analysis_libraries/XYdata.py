@@ -121,6 +121,12 @@ class xy_data:
         #The index is taken as
         #y_col can be either an integer to denote the y_colth column or a column name
     
+        if not isinstance(df, pd.core.frame.DataFrame):
+            if isinstance(df, pd.core.series.Series):
+                df = df.to_frame()
+            else:
+                print(f'Attention df has to be a DataFrame or a Series! However, it is of type {type(df)}')
+                return
         x = df.index.values
     
         if isinstance(y_col, int):
@@ -145,8 +151,10 @@ class xy_data:
                 uy = qy_uy[1].split(')')[0]
             else:
                 uy = None
-                 
-        return cls(x, y, quants= [qx, qy], units= [ux, uy], **kwargs)
+            return cls(x, y, quants= [qx, qy], units= [ux, uy], **kwargs)
+            
+        else:
+            return cls(x, y, **kwargs)
                 
     def to_df(self):
         col_name = self.qy

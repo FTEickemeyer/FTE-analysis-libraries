@@ -488,34 +488,95 @@ class IV_data(xy_data):
         return (Jsc + (Rs*Jsc-Voc)/Rsh) * math.exp(-q*Voc / (nid * k * T)) / (1 - math.exp(q * (Rs * Jsc - Voc) / (nid * k * T)))
       
         
-    def det_Voc(self):
-        JVinterp = interp1d(self.x, self.y, kind='cubic', bounds_error=False, fill_value='extrapolate')
-        Voc = fsolve(JVinterp,.95*max(self.x))[0]
-        self.Voc = Voc
-        return Voc
+    def det_Voc(self, use_interpolate_extrapolate_method= True):
+        """
+        use_interpolate_extrapolate_method: Use interpolation/extrapolation method to determine Jsc
+        """
         
-    def det_Jsc(self, fit_to = None, show_fit = False):
+        if use_interpolate_extrapolate_method:
+            def linear_extrapolate(x_target, x_data, y_data):
+                """Estimate y at x_target by linear interpolation or extrapolation."""
+                # Sort by x to avoid issues
+                order = np.argsort(x_data)
+                x_data, y_data = x_data[order], y_data[order]
+
+                # Find two closest points around x_target
+                if x_target <= x_data[0]:  # x_target is left of data
+                    i1, i2 = 0, 1
+                elif x_target >= x_data[-1]:  # x_target is right of data
+                    i1, i2 = -2, -1
+                else:  # inside the data range
+                    i2 = np.searchsorted(x_data, x_target)
+                    i1 = i2 - 1
+            
+                # Linear interpolation or extrapolation
+                x1, x2 = x_data[i1], x_data[i2]
+                y1, y2 = y_data[i1], y_data[i2]
+                slope = (y2 - y1) / (x2 - x1)
+                return y1 + slope * (x_target - x1)
+             
+            def linear_extrapolate_inverse(y_target, x_data, y_data):
+                """Estimate x at y_target by linear interpolation or extrapolation."""
+                # Same logic but swap roles
+                return linear_extrapolate(y_target, y_data, x_data)
+            
+            # Compute Voc (at J = 0)
+            self.Voc = linear_extrapolate_inverse(0.0, self.x, self.y)
+            
+        else:
+            JVinterp = interp1d(self.x, self.y, kind='cubic', bounds_error=False, fill_value='extrapolate')
+            Voc = fsolve(JVinterp,.95*max(self.x))[0]
+            self.Voc = Voc
+        return self.Voc
+        
+    def det_Jsc(self, fit_to= None, show_fit= False, use_interpolate_extrapolate_method= True):
         """
         Returns the short circuit current. Also stores the value in self.Jsc.
         fit_to: specifies the voltage up to which the IV curve is fitted. If None then the maximum V / 10 is taken.
         show_fit: if True the IV curve and the fit from which Jsc is taken is plotted.
+        use_interpolate_extrapolate_method: Use interpolation/extrapolation method to determine Jsc
         """
-
-        if fit_to == None:
-            fit_to = max(self.x)/10
-        m, b = linfit(self.x, self.y, 0, fit_to)
-        self.Jsc = -b
         
-        if show_fit:
-            plt.figure(figsize=(7,5))
-            plt.title('Fit for determination of Jsc')
-            plt.plot(self.x, self.y, 'o', label = 'IV curve')
-            plt.plot(self.x, self.x * m - self.Jsc, '-', label = f'fit (Jsc = {self.Jsc:.1f} mA/cm2)')
-            plt.ylim(-self.Jsc*1.2, -self.Jsc*0.8)
-            plt.legend()
-            plt.show()
+        if use_interpolate_extrapolate_method:
+            def linear_extrapolate(x_target, x_data, y_data):
+                """Estimate y at x_target by linear interpolation or extrapolation."""
+                # Sort by x to avoid issues
+                order = np.argsort(x_data)
+                x_data, y_data = x_data[order], y_data[order]
             
-        return -b
+                # Find two closest points around x_target
+                if x_target <= x_data[0]:  # x_target is left of data
+                    i1, i2 = 0, 1
+                elif x_target >= x_data[-1]:  # x_target is right of data
+                    i1, i2 = -2, -1
+                else:  # inside the data range
+                    i2 = np.searchsorted(x_data, x_target)
+                    i1 = i2 - 1
+            
+                # Linear interpolation or extrapolation
+                x1, x2 = x_data[i1], x_data[i2]
+                y1, y2 = y_data[i1], y_data[i2]
+                slope = (y2 - y1) / (x2 - x1)
+                return y1 + slope * (x_target - x1)
+
+            # Compute Jsc (at V = 0)
+            self.Jsc = -linear_extrapolate(0.0, self.x, self.y)
+        else:
+            if fit_to == None:
+                fit_to = max(self.x)/10
+            m, b = linfit(self.x, self.y, 0, fit_to)
+            self.Jsc = -b
+            
+            if show_fit:
+                plt.figure(figsize=(7,5))
+                plt.title('Fit for determination of Jsc')
+                plt.plot(self.x, self.y, 'o', label = 'IV curve')
+                plt.plot(self.x, self.x * m - self.Jsc, '-', label = f'fit (Jsc = {self.Jsc:.1f} mA/cm2)')
+                plt.ylim(-self.Jsc*1.2, -self.Jsc*0.8)
+                plt.legend()
+                plt.show()
+            
+        return self.Jsc
     
     def ini_guess_Rsh(self, fit_to = None, show_fit = False):
         """
@@ -604,14 +665,16 @@ class IV_data(xy_data):
         self.check_assumption()
         
     
-    def det_perfparam(self, show = False, uA = False, uW = False, minimal = False):
+    def det_perfparam(self, show= False, uA= False, uW= False, minimal= False, simple_calc= False, use_interpolate_extrapolate_method= True):
         #uA: calculate currents in uA/cm2
         #uW: show light intensity in uW/cm2
         #If minimal: only Voc, Jsc, FF, Vmpp, Jmpp and PCE is determined
+        #minimal: only determine Vmpp, Jmpp, Pmpp, PCE, FF
+        #simple_calc: calculate Jsc and Voc in the simplest way , can be done later
         if self.Voc == None:
-            self.det_Voc()
+            self.det_Voc(use_interpolate_extrapolate_method=use_interpolate_extrapolate_method)
         if self.Jsc == None:
-            self.det_Jsc()
+            self.det_Jsc(use_interpolate_extrapolate_method=use_interpolate_extrapolate_method)
         JVinterp = interp1d(self.x, self.y, kind='cubic', bounds_error=False, fill_value='extrapolate')
         Vmpp = fmin(lambda x: x*JVinterp(x),.8*self.Voc,disp=False, maxiter = 100)[0]
         Jmpp = abs(JVinterp(Vmpp))
@@ -665,22 +728,21 @@ class IV_data(xy_data):
             return J
         #IV_data.I_of_V(V, Isc, Voc, n, Rs, Rsh, T = T_RT)
             
-        if p0 == None:
+        if p0 is None:
             if not(hasattr(self, 'nid')) or not(hasattr(self, 'Rs')) or not(hasattr(self, 'Rsh')):
                 self.det_ini_5param()
             p0 = [self.nid, self.Rs, self.Rsh]
             bounds = ([1, 0, 0], [10, np.inf, np.inf])
-    
+            
         popt, pcov = curve_fit(func, self.x, self.y, p0 = p0, bounds = bounds, verbose = verbose, xtol = xtol)
         #popt, pcov = curve_fit(func, self.x, self.y, p0 = p0, bounds = bounds)
     
         # store the initial 5 parameters in ini_fp
-        self.ini_fp = fivep(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)
-    
         self.nid = popt[0]
         self.Rs = popt[1]
         self.Rsh = popt[2]
-    
+        self.ini_fp = fivep(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)
+        
         return popt
 
 
@@ -871,7 +933,7 @@ class IV_data(xy_data):
             df.to_csv(join(save_dir, FN), header = True, index = True)
      
     @staticmethod
-    def save_loss_param(sa, row_labels, col_labels, save_dir, FN):
+    def save_perf_data(sa, row_labels, col_labels, save_dir, FN):
             
         cell_text = []
 
@@ -896,7 +958,7 @@ class IV_data(xy_data):
             #x_max = max(self.x)
             x_max = fp_sq.Voc + 0.01
         new_x = np.arange(0, x_max, step = 0.001, dtype = np.float64)
-        IVsq = IV_data.from_fp(new_x, fp_sq, name = f'Shockely-Queisser limit ($E_g = {bg:.3f} \ eV): \ V_{{oc,SQ}} = {fp_sq.Voc:.3f} \ V, \ J_{{sc,SQ}} = {fp_sq.Jsc:.2f} \ mA/cm^2, \ n_{{id}} = 1,\ R_s = 0,\ R_{{sh}} = \infty$')
+        IVsq = IV_data.from_fp(new_x, fp_sq, name = f'SQ limit ($E_g = {bg:.3f} \ eV): \ V_{{oc,SQ}} = {fp_sq.Voc:.3f} \ V, \ J_{{sc,SQ}} = {fp_sq.Jsc:.2f} \ mA/cm^2, \ n_{{id}} = 1,\ R_s = 0,\ R_{{sh}} = \infty$')
         IVsq.det_perfparam()
         return IVsq
     
@@ -921,7 +983,7 @@ class IV_data(xy_data):
         
     def loss_plot(self, bg = None, Vocrad = None, nid_rec = None, x_max = None, IVsq = None, IVrad = None, IVtrans = None, IVfit = None, title = None, xscale = 'linear', yscale = 'linear', 
                   left = None, right = None, bottom = None, top = None, what_to_show = ['measurement', 'fit', 'SQ limit', 'rad. limit', 'transp. limit'],
-                  plot_table = False, figsize=(12,8), save = False, save_dir = '', bbox = [0.15, 0.25, 0.5, 0.3], **kwargs):
+                  show_legend_details= False, plot_table = False, figsize=(12,8), save = False, save_dir = '', bbox = [0.15, 0.25, 0.5, 0.3], **kwargs):
         """
         Plot the IV curve, the fit with the internal 5 parameters and the fit with the ini_fp parameters.
         """
@@ -932,16 +994,16 @@ class IV_data(xy_data):
         
         #fp_sq = IV_data.SQ_limit(bg)
 
-        if x_max == None:
+        if x_max is None:
             x_max = max(self.x)
             
         new_x = np.arange(0, x_max, step = 0.001, dtype = np.float64)
 
-        linewidth = 2
+        linewidth = 5
         if 'linewidth' in kwargs:
             linewidth = kwargs['linewidth']
 
-        if IVsq == None:
+        if IVsq is None:
             if self.light_int == 100:
                 IVsq = IV_data.IVsq(bg, x_max = x_max)
             else:
@@ -949,19 +1011,19 @@ class IV_data(xy_data):
                 print(f'Attention: light intensity {self.light_int:.1e} mW/cm2 is used to calculate Shockley-Queisser limit!')
         IVsq.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'black')
         
-        if IVrad == None:
+        if IVrad is None:
             IVrad = IV_data.IVrad(Vocrad, self.Jsc, self.light_int, x_max = Vocrad + 0.01)
         IVrad.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'green')
         
-        if IVtrans == None:
+        if IVtrans is None:
             IVtrans = IV_data.IVtrans(self.x, self.Voc, self.Jsc, nid_rec, light_int = self.light_int)
         IVtrans.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'cyan')
         
-        if IVfit == None:
+        if IVfit is None and 'fit' in what_to_show:
             Jfit = np.array([IV_data.I_of_V(new_x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(new_x))])
             IVfit = IV_data(new_x, Jfit, light_int = self.light_int, name = 'Fit: ' + print5param(self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh))
             IVfit.det_perfparam()
-        IVfit.plotstyle = dict(linestyle = '-', linewidth = 1, color = 'red')
+            IVfit.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'red')
         
         #IVsq.det_perfparam()
         #IVrad.det_perfparam()
@@ -974,16 +1036,28 @@ class IV_data(xy_data):
             lab.append('Measurement')
         if 'fit' in what_to_show:
             show_this.append(IVfit)
-            lab.append(IVfit.name)
+            if show_legend_details:
+                lab.append(IVfit.name)
+            else:
+                lab.append('fit')
         if 'SQ limit' in what_to_show:
             show_this.append(IVsq)
-            lab.append(IVsq.name)
+            if show_legend_details:
+                lab.append(IVsq.name)
+            else:
+                lab.append('SQ limit')
         if 'rad. limit' in what_to_show:
             show_this.append(IVrad)
-            lab.append(IVrad.name)
+            if show_legend_details:
+                lab.append(IVrad.name)
+            else:
+                lab.append('Radiative limit')
         if 'transp. limit' in what_to_show:
             show_this.append(IVtrans)
-            lab.append(IVtrans.name)            
+            if show_legend_details:
+                lab.append(IVtrans.name)
+            else:
+                lab.append('Transport limit')
 
         mIV = mIV_data(show_this)
         #mIV.names_to_label()
@@ -998,7 +1072,7 @@ class IV_data(xy_data):
         
         if save:
             
-            FN = f'{title} - losses.csv'
+            FN = f'{title} - performance_data.csv'
 
             row_labels = []
             if 'measurement' in what_to_show:
@@ -1012,7 +1086,7 @@ class IV_data(xy_data):
             if 'transp. limit' in what_to_show:
                 row_labels.append('Transp. lim.')
                 
-            IV_data.save_loss_param(mIV.sa, row_labels, col_labels, save_dir, FN)
+            IV_data.save_perf_data(mIV.sa, row_labels, col_labels, save_dir, FN)
             mIV.save(save_dir, title, row_labels)
         
         if plot_table:
@@ -1039,7 +1113,7 @@ class IV_data(xy_data):
             row_labels = None
             col_labels = None
             
-        if title == None:
+        if title is None:
             title = self.name
                 
         mIV.plot(plotstyle = 'individual', xscale = xscale, yscale = yscale, bottom = bottom, left = left, right = right, top = top,
@@ -1198,10 +1272,22 @@ class IV_data(xy_data):
             IV.cell_area = fp.cell_area
         return IV
     
+    
     @staticmethod
     def I_of_V(V, Isc, Voc, nid, Rs, Rsh, T = T_RT):
         """
+        Computes the I-V curve using an analytical LambertW-based model.
         See: Zhang et al., J. of Appl. Phys. 110, 064504 (2011) --> Eq. 8
+
+            V   : terminal voltage  [V]
+            Isc : short‑circuit current density [mA/cm2 or mA if cell_area == None]
+            Voc : open‑circuit voltage [V]
+            nid : ideality factor   [–]
+            Rs  : series resistance [kΩcm2]
+            Rsh : shunt resistance  [kΩcm2]  (use np.inf if absent)
+            T   : temperature       [K]
+        Returns
+            I   : current [mA/cm2]  (NumPy array, same shape as V)
         """
         if Rs * Isc > 700:
             print(f'I_of_V error: The factor Rs * Isc is {Rs*Isc:.1e}, i.e. > 700, np.exp(Rs*Isc) is too large, decrease Rs (in kOhm cm2) to below {700/Isc:.0f}!')
@@ -1212,6 +1298,43 @@ class IV_data(xy_data):
         argW = q * Rs / (nid * k * T) * (Isc - Voc / (Rs + Rsh)) * math.exp(- q * Voc / (nid * k * T)) * math.exp(q / (nid * k * T) * (Rs * Isc +  Rsh * V / (Rsh + Rs)))
         I = nid * k * T / (q * Rs) * lambertw(argW) + V / Rs - Isc - Rsh * V / (Rs * (Rsh + Rs))
         return I.real
+    
+
+    @staticmethod
+    def I_of_V_safe(V, Isc, Voc, nid, Rs, Rsh, T=T_RT):
+        """
+        Computes the I-V curve using an analytical LambertW-based model.
+        See: Zhang et al., J. Appl. Phys. 110, 064504 (2011), Eq. 8
+        This is a safer version to the previous one but much slower (factor ~8!).
+
+        """
+        V = np.asarray(V, dtype=np.float64)        # vector‑safe
+    
+        EPS = 1e-12                                # numerical floor
+        Rs  = np.clip(Rs,  EPS,  np.inf)           # avoid 0
+        Rsh = np.clip(Rsh, EPS, 1e20)              # ∞ ↦ big number
+    
+        # ===== helper factors =====================================================
+        beta = q / (nid * k * T)                   # q/(n k T)
+        exp1 = np.exp(np.clip(-beta * Voc, -700, 700))
+    
+        exp2_arg = beta * (Rs * Isc + Rsh * V / (Rsh + Rs))
+        exp2      = np.exp(np.clip(exp2_arg, -700, 700))
+    
+        # ===== Lambert‑W argument (clip to real domain) ===========================
+        argW = (q * Rs / (nid * k * T)) * (Isc - Voc / (Rs + Rsh)) * exp1 * exp2
+        argW = np.maximum(argW, -1/np.e)           # keep inside real branch
+    
+        W = lambertw(argW)                         # SciPy’s vectorised version
+    
+        # ===== final current ======================================================
+        I = (nid * k * T / (q * Rs)) * W + V / Rs - Isc \
+            - Rsh * V / (Rs * (Rsh + Rs))
+    
+        # replace NaN / ±Inf by large finite numbers so least_squares stays happy
+        return np.nan_to_num(I.real, nan=1e10, posinf=1e10, neginf=-1e10)
+
+
     
     @staticmethod
     def SQ_limit_Voc(bg, illumspec_PF_eV = None, light_int = None, from_file = True):

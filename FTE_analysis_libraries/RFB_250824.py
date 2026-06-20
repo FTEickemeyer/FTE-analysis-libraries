@@ -721,16 +721,8 @@ def upload_potential_difference_measurement(potential_measurement_system,
 
     return raw_data.squeeze()
 
-def det_times_and_charge_SOC0_from_potential_difference(df_charge, Pdiff, delta_SOC_posneg='positive', avox_greater_3p5=None, xlim=None, threshold_divisor=3, show=False):
+def det_times_and_charge_SOC0_from_potential_difference(df_charge, Pdiff, avox_greater_3p5=True, xlim=None, threshold_divisor=3, show=False):
     #threshold_divisor: Only those peaks are detected that are >= peak_max/threshold_divisor
-    # delta_SOC = SOC(posolyte) - SOC(negolyte); this quantity characterizes the imbalance, can be zero, positive or negative
-    # This replaces the old avox_greater_3p5 used for the V-V electrolyte
-
-    if avox_greater_3p5 is not None:        
-        if avox_greater_3p5:
-            delta_SOC_posneg = 'positive'
-        else:
-            delta_SOC_posneg = 'negative'
 
     if xlim is None:
         xlim = (0, Pdiff.index[-1])
@@ -746,7 +738,7 @@ def det_times_and_charge_SOC0_from_potential_difference(df_charge, Pdiff, delta_
     peaks, _ = find_peaks(voltage, height=peak_max/threshold_divisor)  # Adjust height threshold as needed    
     # Get corresponding times of peaks
     peak_times = time[peaks]
-    if delta_SOC_posneg == 'positive':
+    if avox_greater_3p5:
         tV3_neg = max(peak_times)
         tV4_pos = min(peak_times)
     else:
@@ -2002,7 +1994,7 @@ def UVVIS_reduce_number_of_spectra(df_cuv_pos, df_cuv_neg, one_out_of):
     return df_cuv_pos_reduced, df_cuv_neg_reduced
 
 
-def UVVIS_fit(conc, df_cuv_pos, df_cuv_neg, ref_spec_negred, ref_spec_negox, ref_spec_posred, ref_spec_posox,
+def UVVIS_fit(conc, df_cuv_pos, df_cuv_neg, ref_spec_V2, ref_spec_V3, ref_spec_V4, ref_spec_V5,
               one_out_of=1, time_cuv_pos_limits=(0,-1), time_cuv_neg_limits=(0,-1), nm_lim_fit=(380, 1000),
               tV4_pos=None, tV3_neg=None):
 
@@ -2019,7 +2011,7 @@ def UVVIS_fit(conc, df_cuv_pos, df_cuv_neg, ref_spec_negred, ref_spec_negox, ref
         time_switch_fitspectra = tV4_pos
     else:
         time_switch_fitspectra = 0 
-    fit_spectra = [ref_spec_negox, ref_spec_posred, ref_spec_posred, ref_spec_posox]
+    fit_spectra = [ref_spec_V3, ref_spec_V4, ref_spec_V4, ref_spec_V5]
     data_cuv_pos = UVVIS_calculate_fit_for_all(df, conc, time_switch_fitspectra, fit_spectra, time_from, time_to, nm_lim_fit)
     
     df = df_cuv_neg_reduced
@@ -2029,7 +2021,7 @@ def UVVIS_fit(conc, df_cuv_pos, df_cuv_neg, ref_spec_negred, ref_spec_negox, ref
         time_switch_fitspectra = tV3_neg
     else:
         time_switch_fitspectra = 0
-    fit_spectra = [ref_spec_negox, ref_spec_posred, ref_spec_negred, ref_spec_negox]
+    fit_spectra = [ref_spec_V3, ref_spec_V4, ref_spec_V2, ref_spec_V3]
     data_cuv_neg = UVVIS_calculate_fit_for_all(df, conc, time_switch_fitspectra, fit_spectra, time_from, time_to, nm_lim_fit)
 
     return data_cuv_pos, data_cuv_neg
