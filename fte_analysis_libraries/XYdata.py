@@ -27,6 +27,47 @@ from . import General as gen
 
 system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data'))
 
+
+def _draw_hlines_vlines(ax, hline, hline_colors, vline, vline_colors):
+    """Render horizontal and vertical reference lines onto a matplotlib Axes."""
+    if hline is not None:
+        if isinstance(hline, list):
+            for idx, n in enumerate(hline):
+                color = hline_colors[idx] if hline_colors is not None else 'b'
+                ax.axhline(y=n, color=color, linestyle='-')
+        else:
+            color = hline_colors if hline_colors is not None else 'b'
+            ax.axhline(y=hline, color=color, linestyle='-')
+    if vline is not None:
+        if isinstance(vline, list):
+            for idx, n in enumerate(vline):
+                color = vline_colors[idx] if vline_colors is not None else 'r'
+                ax.axvline(x=n, color=color, linestyle='-')
+        else:
+            color = vline_colors if vline_colors is not None else 'r'
+            ax.axvline(x=vline, color=color, linestyle='-')
+
+
+def _bottom_top_for_plot(obj, left=None, right=None, yscale='log', divisor=None):
+    """Return (bottom, top) y-limits for plotting, handling log-scale edge cases."""
+    top = obj.max_within(left=left, right=right)
+    if yscale == 'log':
+        top *= 1.1
+        bottom = obj.min_within(left=left, right=right, absolute=True)
+        if bottom == 0:
+            if divisor is None:
+                print('Attention: bottom = 0, use a divisor to self-define the bottom = top/divisor, here divisor = 1e8 is used as standard!')
+                bottom = top / 1e8
+            else:
+                bottom = top / divisor
+    else:
+        bottom = obj.min_within(left=left, right=right)
+        delta = top - bottom
+        top = top + delta / 10
+        bottom = bottom - delta / 10
+    return bottom, top
+
+
 class XYData:
     
     def __init__(self, x, y, quants = {"x": "x", "y": "y"}, units = {"x": None, "y": None}, name = '', plotstyle = None, check_data = True):
@@ -62,59 +103,49 @@ class XYData:
                 print('To switch off this message use check_data = False')
 
         
-    def __mul__(self, other):        
-        s = self.copy()
+    def _align_with(self, other):
+        """Return grid-aligned copies of self and other over their overlapping x range."""
+        s, o = self.copy(), other.copy()
+        x_min = max(min(self.x), min(other.x))
+        x_max = min(max(self.x), max(other.x))
+        delta = min(self.x[1] - self.x[0], other.x[1] - other.x[0])
+        s.equidist(left=x_min, right=x_max, delta=delta, kind='cubic')
+        o.equidist(left=x_min, right=x_max, delta=delta, kind='cubic')
+        return s, o
+
+    def __mul__(self, other):
         if type(self).mro()[-2] == type(other).mro()[-2]:
-            o = other.copy()
-            x_min = max(min(self.x), min(other.x))
-            x_max = min(max(self.x), max(other.x))
-            delta = min(self.x[1]-self.x[0], other.x[1]-other.x[0])
-            s.equidist(left = x_min, right = x_max, delta = delta, kind = 'cubic')
-            o.equidist(left = x_min, right = x_max, delta = delta, kind = 'cubic')
+            s, o = self._align_with(other)
             s.y = s.y * o.y
         else:
+            s = self.copy()
             s.y = s.y * other
         return s
-    
-    def __add__(self, other):        
-        s = self.copy()
+
+    def __add__(self, other):
         if type(self).mro()[-2] == type(other).mro()[-2]:
-            o = other.copy()
-            x_min = max(min(self.x), min(other.x))
-            x_max = min(max(self.x), max(other.x))
-            delta = min(self.x[1]-self.x[0], other.x[1]-other.x[0])
-            s.equidist(left = x_min, right = x_max, delta = delta, kind = 'cubic')
-            o.equidist(left = x_min, right = x_max, delta = delta, kind = 'cubic')
+            s, o = self._align_with(other)
             s.y = s.y + o.y
         else:
+            s = self.copy()
             s.y = s.y + other
         return s
-    
-    def __sub__(self, other):        
-        s = self.copy()
+
+    def __sub__(self, other):
         if type(self).mro()[-2] == type(other).mro()[-2]:
-            o = other.copy()
-            x_min = max(min(self.x), min(other.x))
-            x_max = min(max(self.x), max(other.x))
-            delta = min(self.x[1]-self.x[0], other.x[1]-other.x[0])
-            s.equidist(left = x_min, right = x_max, delta = delta, kind = 'cubic')
-            o.equidist(left = x_min, right = x_max, delta = delta, kind = 'cubic')
+            s, o = self._align_with(other)
             s.y = s.y - o.y
         else:
+            s = self.copy()
             s.y = s.y - other
         return s
-    
+
     def __truediv__(self, other):
-        s = self.copy()
         if type(self).mro()[-2] == type(other).mro()[-2]:
-            o = other.copy()    
-            x_min = max(min(self.x), min(other.x))
-            x_max = min(max(self.x), max(other.x))
-            delta = min(self.x[1]-self.x[0], other.x[1]-other.x[0])
-            s.equidist(left = x_min, right = x_max, delta = delta, kind = 'cubic')
-            o.equidist(left = x_min, right = x_max, delta = delta, kind = 'cubic')
+            s, o = self._align_with(other)
             s.y = s.y / o.y
         else:
+            s = self.copy()
             s.y = s.y / other
         return s
             
@@ -377,35 +408,7 @@ class XYData:
             the_table.set_fontsize(12)
             the_table.scale(1, 5)
             
-        if hline is not None:
-            if type(hline) == list:
-                for idx, n in enumerate(hline):
-                    if hline_colors is not None:
-                        color = hline_colors[idx]
-                    else:
-                        color = 'b'
-                    ax.axhline(y = n, color=color, linestyle='-')
-            else:
-                if hline_colors is not None:
-                    color = hline_colors
-                else:
-                    color = 'b'
-                ax.axhline(y = hline, color=color, linestyle='-')
-
-        if vline is not None:
-            if type(vline) == list:
-                for idx, n in enumerate(vline):
-                    if vline_colors is not None:
-                        color = vline_colors[idx]
-                    else:
-                        color = 'r'
-                    ax.axvline(x = n, color=color, linestyle='-')    
-            else:
-                if vline_colors is not None:
-                    color = vline_colors
-                else:
-                    color = 'r'
-                ax.axvline(x = vline, color=color, linestyle='-')
+        _draw_hlines_vlines(ax, hline, hline_colors, vline, vline_colors)
             
         if create_image_stream:
             image_stream = io.BytesIO()
@@ -700,32 +703,14 @@ class XYData:
             return min(self.y[ra])
         
     
-    def bottom_top_for_plot(self, left = None, right = None, yscale = 'log', divisor = None):
+    def bottom_top_for_plot(self, left=None, right=None, yscale='log', divisor=None):
         """
         Returns the minimum and maximum y-value within left < x < right.
         This is important for plotting a graph.
         If yscale == 'log' then values <= 0 for bottom lead to an error, this is accounted for.
         divisor can be used to define the bottom as top/divisor.
         """
-        top = self.max_within(left = left, right = right)
-        
-        if yscale == 'log':
-            top *= 1.1
-            bottom = self.min_within(left = left, right = right, absolute = True)
-            if bottom == 0:
-                if divisor is None:
-                    print('Attention: bottom = 0, use a divisor to self-define the bottom = top/divisor, here divisor = 1e8 is used as standard!')
-                    bottom = top/1e8
-                else:
-                    bottom = top/divisor
-
-        else:
-            bottom = self.min_within(left = left, right = right)
-            delta = top - bottom
-            top = top + delta/10
-            bottom = bottom - delta/10
-        
-        return bottom, top
+        return _bottom_top_for_plot(self, left, right, yscale, divisor)
 
     
     def zero_data(self, left = None, right = None):
@@ -1339,35 +1324,7 @@ class MXYData:
                 if save_ok(TFN):
                     plt.savefig(TFN)
                     
-        if hline is not None:
-            if type(hline) == list:
-                for idx, n in enumerate(hline):
-                    if hline_colors is not None:
-                        color = hline_colors[idx]
-                    else:
-                        color = 'b'
-                    ax.axhline(y = n, color=color, linestyle='-')
-            else:
-                if hline_colors is not None:
-                    color = hline_colors
-                else:
-                    color = 'b'
-                ax.axhline(y = hline, color=color, linestyle='-')
-
-        if vline is not None:
-            if type(vline) == list:
-                for idx, n in enumerate(vline):
-                    if vline_colors is not None:
-                        color = vline_colors[idx]
-                    else:
-                        color = 'r'
-                    ax.axvline(x = n, color=color, linestyle='-')    
-            else:
-                if vline_colors is not None:
-                    color = vline_colors
-                else:
-                    color = 'r'
-                ax.axvline(x = vline, color=color, linestyle='-')
+        _draw_hlines_vlines(ax, hline, hline_colors, vline, vline_colors)
         
         if create_image_stream:
             image_stream = io.BytesIO()
