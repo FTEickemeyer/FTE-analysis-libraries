@@ -277,18 +277,15 @@ def upload_charging_protocol_Neware(fp):
         # Split the input string by the colon ':'
         try:
             hours, minutes, seconds = map(int, time_str.split('.')[0].split(':'))
-        except:
-            try:
-                hours, minutes, seconds = map(int, time_str.split('.')[0].split(':'))
-            except ValueError:
-                pass
+        except (ValueError, AttributeError):
+            pass
         # Convert time to total seconds
         total_seconds = hours * 3600 + minutes * 60 + seconds    
         return total_seconds    
 
     try:
         df_charging = pd.read_excel(fp, sheet_name='Detail_10_1_1', engine="openpyxl")
-    except:
+    except Exception:
         df_charging = pd.read_excel(fp, sheet_name='record', engine="openpyxl")
     #Rename important columns to be used with different csv files
     if 'Total Time' in df_charging.columns:
@@ -335,10 +332,10 @@ def split_dfcharging(df_charging, df_charging_step1, df_charging_step2):
     try:
         #Current in A
         df_current = df_charging['Current(mA)']*1000
-    except:
+    except (KeyError, TypeError):
         try:
             df_current = df_charging['Current(A)']
-        except ValueError:
+        except (KeyError, TypeError):
             pass
     #split df_charge into the two charging steps
     if 'Capacity(mAh)' in df_charging.columns:
@@ -505,9 +502,6 @@ def det_df_conc_from_charging(c_V, Vol, av_ox_state_initial, df_charge, show=Fal
     df_conc['charging_V3_neg'] = df_charge_avox['av_ox_state_neg'].apply(lambda x : 4 - x if (x >= 3 and x <= 4) else (x - 2 if (x < 3) else 0)) * c_V
     df_conc['charging_V2_neg'] = (3 - df_charge_avox['av_ox_state_neg']) * c_V
     
-    for col in df_conc.columns:
-        #df_conc[col] = df_conc[col].apply(lambda x : x if (x >= 0 and x <= c_V) else 0)
-        df_conc[col] = df_conc[col].apply(lambda x : x)
     #display(df_conc)
 
     if show:
@@ -600,7 +594,7 @@ def upload_potential_difference_measurement(potential_measurement_system,
             raw_data.index = pd.to_datetime(raw_data.index, format="%m/%d/%Y %H:%M:%S.%f")
             # Convert to seconds since the first timestamp (starting from 0)
             raw_data.index = (raw_data.index - raw_data.index[0]).total_seconds().astype(float)
-        except:
+        except (ValueError, TypeError):
             # Sometimes the time is already in seconds, then pd.to_datetime will give an error
             pass
         new_times_s = np.linspace(raw_data.index[0], raw_data.index[-1], no_times)
@@ -1181,7 +1175,6 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
     E0_V2X3 = redox_potential_guess_V_vs_SHE['E0_V2X3']
     E0_V3X4 = redox_potential_guess_V_vs_SHE['E0_V3X4']
     E0_V4X5 = redox_potential_guess_V_vs_SHE['E0_V4X5']
-    c_V = c_V #mol/L
     if show_details:
         print(f'Initial guess for c_V: {c_V:.2f} M')
     
@@ -1673,7 +1666,7 @@ def UVVIS_get_offset_and_scaling_factor_cuv_pos(first_spectra=None, show=False):
             #popt, _ = curve_fit(fit_model, wavelengths, absorbance, p0=initial_guess, bounds=bounds)
             try:
                 popt, _ = curve_fit(fit_model, wavelengths, target_spectrum, p0=initial_guess)
-            except:
+            except RuntimeError:
                 popt = initial_guess    
             # Extract fitted coefficients and offsets
             offset = popt[0]

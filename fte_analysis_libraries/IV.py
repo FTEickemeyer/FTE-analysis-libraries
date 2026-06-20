@@ -37,13 +37,13 @@ class FiveParam:
     Voc : FlOAT
         Voc in V.
     Jsc : FLOAT
-        Jsc in mA/cm2 (or mA if cell_area == None)
+        Jsc in mA/cm2 (or mA if cell_area is None)
     nid : dimensionless
         ideality factor
     Rs : FLOAT
-        Series resistance in kOhm * cm2 (or kOhm if cell_area == None)
+        Series resistance in kOhm * cm2 (or kOhm if cell_area is None)
     Rsh : FLOAT
-        Shunt resistnace in kOhm * cm2 (or kOhm if cell_area == None
+        Shunt resistnace in kOhm * cm2 (or kOhm if cell_area is None
     
     """
     
@@ -71,15 +71,15 @@ class PerfData:
 
     cell_area: float = None # cm2
     Vmpp: float = None # V
-    Jmpp: float = None # mA/cm2 (or mA if cell_area == None)
-    Pmpp: float = None # mW/cm2 (or mW if cell_area == None)
-    PCE: float = None # % (makes no sense if cell_area == None)
+    Jmpp: float = None # mA/cm2 (or mA if cell_area is None)
+    Pmpp: float = None # mW/cm2 (or mW if cell_area is None)
+    PCE: float = None # % (makes no sense if cell_area is None)
     FF: float = None # %
     Voc: float = None # V
-    Jsc: float = None # mA/cm2 (or mA if cell_area == None)
+    Jsc: float = None # mA/cm2 (or mA if cell_area is None)
     nid: float = None # dimension less
-    Rs: float = None # kOhm * cm2 (or kOhm if cell_area == None)
-    Rsh: float = None # kOhm * cm2 (or kOhm if cell_area == None)
+    Rs: float = None # kOhm * cm2 (or kOhm if cell_area is None)
+    Rsh: float = None # kOhm * cm2 (or kOhm if cell_area is None)
     light_int: float = 100 # mW/cm2
     
     def copy(self):
@@ -411,7 +411,7 @@ class IVData(XYData):
             # Compute Jsc (at V = 0)
             self.Jsc = -linear_extrapolate(0.0, self.x, self.y)
         else:
-            if fit_to == None:
+            if fit_to is None:
                 fit_to = max(self.x)/10
             m, b = linfit(self.x, self.y, 0, fit_to)
             self.Jsc = -b
@@ -434,7 +434,7 @@ class IVData(XYData):
         show_fit: if True the IV curve and the fit from which Rsh is taken is plotted.
         See: Zhang et al., J. of Appl. Phys. 110, 064504 (2011) --> Eq. 11
         """
-        if fit_to == None:
+        if fit_to is None:
             fit_to = max(self.x)/5
 
         m, b = linfit(self.x, self.y, 0, fit_to)
@@ -520,14 +520,13 @@ class IVData(XYData):
         #If minimal: only Voc, Jsc, FF, Vmpp, Jmpp and PCE is determined
         #minimal: only determine Vmpp, Jmpp, Pmpp, PCE, FF
         #simple_calc: calculate Jsc and Voc in the simplest way , can be done later
-        if self.Voc == None:
+        if self.Voc is None:
             self.det_voc(use_interpolate_extrapolate_method=use_interpolate_extrapolate_method)
-        if self.Jsc == None:
+        if self.Jsc is None:
             self.det_jsc(use_interpolate_extrapolate_method=use_interpolate_extrapolate_method)
         JVinterp = interp1d(self.x, self.y, kind='cubic', bounds_error=False, fill_value='extrapolate')
         Vmpp = fmin(lambda x: x*JVinterp(x),.8*self.Voc,disp=False, maxiter = 100)[0]
         Jmpp = abs(JVinterp(Vmpp))
-        #Pmpp = abs(Vmpp*Jmpp)
         Pmpp = abs(Vmpp*Jmpp)
         PCE = Pmpp / self.light_int * 100
         FF = abs(Pmpp/(self.Jsc*self.Voc) * 100)
@@ -620,7 +619,7 @@ class IVData(XYData):
             J = np.array([IVData.i_of_v(V[i], Jsc, Voc, nid, Rs, Rsh, T = T) for i in range(len(V))])
             return J
     
-        if p0 == None:
+        if p0 is None:
             if self.x[1] < self.x[0]:
                 print('Attention [IV-data.fit_fivep()]: Voltage array (self.x) is not strictly ascending!')
             p0 = [abs(self.y[0]), self.x[-1], 1.5, 0, 1e18]
@@ -670,7 +669,7 @@ class IVData(XYData):
             cell_text = None
             row_labels = None
         
-        if title == None:
+        if title is None:
             title = self.name
             
         fig = XYData.plot(self, title = title, xscale = xscale, yscale = yscale, left = left, right = right, 
@@ -699,7 +698,7 @@ class IVData(XYData):
             cell_text = None
             row_labels = None
             
-        if title == None:
+        if title is None:
             title = self.name
         
         mIV.plot(plotstyle = 'individual', xscale = xscale, yscale = yscale, left = left, right = right, bottom = bottom, top = top, 
@@ -742,11 +741,11 @@ class IVData(XYData):
 
     @staticmethod
     def iv_sq(bg, x_max = None, light_int = None):
-        if light_int == None:
+        if light_int is None:
             fp_sq = IVData.sq_limit(bg)
         else:
             fp_sq = IVData.sq_limit(bg, light_int = light_int)
-        if (x_max == None) or (x_max < (fp_sq.Voc+0.01)):
+        if (x_max is None) or (x_max < (fp_sq.Voc+0.01)):
             #x_max = max(self.x)
             x_max = fp_sq.Voc + 0.01
         new_x = np.arange(0, x_max, step = 0.001, dtype = np.float64)
@@ -756,7 +755,7 @@ class IVData(XYData):
     
     @staticmethod
     def iv_rad(Vocrad, Jsc, light_int = 100, x_max = None):
-        if (x_max == None) or (x_max < Vocrad):
+        if (x_max is None) or (x_max < Vocrad):
             x_max = Vocrad
         step = 0.001
         new_x = np.arange(0, x_max+2*step, step= step, dtype= np.float64)
@@ -1060,7 +1059,7 @@ class IVData(XYData):
         if perfparam:
             IV.det_ini_5param()
             IV.det_perfparam()
-        if fp.cell_area != None:
+        if fp.cell_area is not None:
             IV.cell_area = fp.cell_area
         return IV
     
@@ -1072,7 +1071,7 @@ class IVData(XYData):
         See: Zhang et al., J. of Appl. Phys. 110, 064504 (2011) --> Eq. 8
 
             V   : terminal voltage  [V]
-            Isc : short‑circuit current density [mA/cm2 or mA if cell_area == None]
+            Isc : short‑circuit current density [mA/cm2 or mA if cell_area is None]
             Voc : open‑circuit voltage [V]
             nid : ideality factor   [–]
             Rs  : series resistance [kΩcm2]
@@ -1136,9 +1135,9 @@ class IVData(XYData):
             d = XYData.load(system_dir, filepath, take_quants_and_units_from_file = True)
             Vocsq = d.y_of(bg, interpolate = True)
         else:
-            if illumspec_PF_eV == None:
+            if illumspec_PF_eV is None:
                 am15_ev = DiffSpectrum.am15_ev()
-                if light_int != None:
+                if light_int is not None:
                     am15_ev.y = am15_ev.y * light_int/100
                 illumspec_PF_eV = am15_ev
                 
@@ -1156,9 +1155,9 @@ class IVData(XYData):
     @staticmethod
     def sq_limit_jsc(bg, illumspec_PF_eV = None, light_int = None):
                 
-        if illumspec_PF_eV == None:
+        if illumspec_PF_eV is None:
             AM15 = DiffSpectrum.am15_ev()
-            if light_int != None:
+            if light_int is not None:
                 AM15.y = AM15.y * light_int/100
             illumspec_PF_eV = AM15
 
@@ -1190,9 +1189,9 @@ class IVData(XYData):
     
         """
             
-        if illumspec_PF_eV == None:
+        if illumspec_PF_eV is None:
             am15_ev = DiffSpectrum.am15_ev(left = 0.310, right = 4.428, delta = 0.001, y_unit = 'Spectral photon flux')
-            if light_int != None:
+            if light_int is not None:
                 am15_ev.y = am15_ev.y * light_int/100
             illumspec_PF_eV = am15_ev
         
@@ -1204,9 +1203,9 @@ class IVData(XYData):
         
     def calc_resistance_curve(self, left = None, right = None):
         #Calculates a resistance from the derivative of the J-V curve
-        if left == None:
+        if left is None:
             left = min(self.x)
-        if right == None:
+        if right is None:
             right = max(self.x)
         ra = range(self.x_idx_of(left), self.x_idx_of(right)+1)
         curve = self.copy()
@@ -1220,17 +1219,17 @@ class IVData(XYData):
     
     def resistance_plot(self, V_rel, left = None, right = None, bottom = None, top = None, vline = None, hline=None, yscale = 'linear', title = None, noshow=False):
     
-        if left == None:
+        if left is None:
             left = V_rel - 0.3
-        if right == None:
+        if right is None:
             right = V_rel+0.3
         R = self.calc_resistance_curve(left = left, right = right)
-        if bottom == None:
+        if bottom is None:
             bottom = R.min_within(left = left, right = right) * 0.9
-        if top == None:
+        if top is None:
             top = R.max_within(left = left, right = right) * 1.1
             #top = 10*self.Rs*1000
-        if vline == None:
+        if vline is None:
             vline = V_rel
             
         R_rel = R.y_of(V_rel)

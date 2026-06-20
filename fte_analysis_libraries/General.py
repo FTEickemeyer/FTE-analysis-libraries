@@ -172,9 +172,9 @@ def findind_exact(array, value):
     return np.where(array == value)[0][0]
 
 def linfit(array_x, array_y, von=None, bis=None):
-    if von == None:
+    if von is None:
         von = array_x[0]
-    if bis == None:
+    if bis is None:
         bis = array_x[-1]
     m, b = np.polyfit(array_x[findind(array_x,von):findind(array_x,bis)], array_y[findind(array_x,von):findind(array_x,bis)], 1)
     return m, b
@@ -244,7 +244,7 @@ def save_ok(TFN, quitted = None):
     Check if file exists. If yes, ask to override.
     Returns boolean indicating if it is ok to save (override) the file.
     TFN: Total filename including file path.
-    To be compatible with older code, if quitted == None then just return save_ok, otherwise also return the variable quitted.
+    To be compatible with older code, if quitted is None then just return save_ok, otherwise also return the variable quitted.
     Example how to use:
         quitted = False
         for i, sp in enumerate(self.sa):
@@ -255,14 +255,14 @@ def save_ok(TFN, quitted = None):
                 df.to_csv(join(save_dir, filepath), header = True, index = False)
     """
 
-    if (quitted == False) or (quitted == None):
+    if (quitted == False) or (quitted is None):
         my_file = Path(TFN)
         if my_file.is_file() or my_file.is_dir():
             print(f'Warning: "{my_file}" exists!')
             
             execute_loop = True
             while execute_loop:
-                if quitted == None:
+                if quitted is None:
                     input_var = input("Override? (yes: y, no: n): ")
                 else:
                     input_var = input("Override? (yes: y, no: n, quit: q): ")
@@ -286,13 +286,15 @@ def save_ok(TFN, quitted = None):
     else:
         ok = False
 
-    if quitted == None:
+    if quitted is None:
         return ok
     else:
         return ok, quitted
 
     
-def how_long(process, arr = np.arange(1, 2, 1)):
+def how_long(process, arr=None):
+    if arr is None:
+        arr = np.arange(1, 2, 1)
     """
     Calculates how long a process takes if it is repeated according to the values of arr.
     if no arr is provided, then the process is evaluated once.
@@ -366,9 +368,9 @@ def idx_range(arr, left = None, right = None):
     
     #Ascending array
     if arr[-1] > arr[0]:
-        if (l == None) or (l < min(arr)): 
+        if (l is None) or (l < min(arr)): 
             l = min(arr)
-        if (r == None) or (r > max(arr)):
+        if (r is None) or (r > max(arr)):
             r = max(arr)
 
         if l > r:
@@ -378,9 +380,9 @@ def idx_range(arr, left = None, right = None):
                         
     #Descending array
     else:
-        if (r == None) or (r < min(arr)): 
+        if (r is None) or (r < min(arr)): 
             r = min(arr)
-        if (l == None) or (l > max(arr)):
+        if (l is None) or (l > max(arr)):
             l = max(arr)
 
         if l < r:

@@ -123,7 +123,7 @@ def load_Biologic_CV(directory, filepath, cell_area, light_int = 100, J_1sun = N
             
             IV = IVData(V_array, J_array, cell_area = cell_area, light_int = light_int, sweep_dir = sweep_dir, name = filepath)
 
-            if light_int == None:
+            if light_int is None:
                 Jsc = IV.det_jsc(fit_to = None, show_fit = False)
                 light_int = Jsc/J_1sun*100
                 IV.light_int = light_int
@@ -187,12 +187,12 @@ def load_Biologic_CA(directory, filepath, uA = False, cell_area = None):
     raw_I = np.array(raw)[:,10]
     if uA:
         raw_I *= 1000
-        if cell_area == None:
+        if cell_area is None:
             I = XYData(raw_t, raw_I, quants = dict(x = 'Time', y = 'Current'), units = dict(x = 's', y = 'uA'), name = filepath.split('.mpt')[0])
         else:
             I = XYData(raw_t, raw_I/cell_area, quants = dict(x = 'Time', y = 'Current density'), units = dict(x = 's', y = 'uA/cm2'), name = filepath.split('.mpt')[0])            
     else:
-        if cell_area == None:
+        if cell_area is None:
             I = XYData(raw_t, raw_I, quants = dict(x = 'Time', y = 'Current'), units = dict(x = 's', y = 'mA'), name = filepath.split('.mpt')[0])
         else:
             I = XYData(raw_t, raw_I/cell_area, quants = dict(x = 'Time', y = 'Current density'), units = dict(x = 's', y = 'mA/cm2'), name = filepath.split('.mpt')[0])
@@ -575,7 +575,7 @@ def multiple_Nyquist_and_Bode_plot(f_list, Z_list, f_range = None, f_fit_list = 
     if not(Z_fit_list is None):
         if not(isinstance(Z_fit_list[0], np.ndarray)):
             Z_fit_list = [Z_fit_list]
-    if not(label_list == None):
+    if not(label_list is None):
         if not(isinstance(label_list, list)):
             label_list = [label_list]
             
@@ -751,7 +751,7 @@ def multiple_capacitance_plot(f_list, Z_list, f_range = None, f_fit_list = None,
     if not(Z_fit_list is None):
         if not(isinstance(Z_fit_list[0], np.ndarray)):
             Z_fit_list = [Z_fit_list]
-    if not(label_list == None):
+    if not(label_list is None):
         if not(isinstance(label_list, list)):
             label_list = [label_list]
 
