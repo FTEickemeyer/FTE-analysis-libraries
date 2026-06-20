@@ -206,9 +206,9 @@ def plx(text, size = 14):
              verticalalignment='center', wrap = True)
     plt.show()
     
-def Vsq(Eg):
+def v_sq(Eg):
     """
-    This is a simple approximation of the SQ Voc limit. The precise calculation can be found in IV.py, IV_data.SQ_limit_Voc.
+    This is a simple approximation of the SQ Voc limit. The precise calculation can be found in IV.py, IVData.sq_limit_voc.
 
     Parameters
     ----------
@@ -223,18 +223,18 @@ def Vsq(Eg):
     """
     return 0.932*Eg - 0.167
 
-def V_loss(PLQY, T = T_RT):
+def v_loss(PLQY, T = T_RT):
     return k * T / q * np.log(PLQY)
 
-def QFLS(Eg, PLQY):
-    return Vsq(Eg) + V_loss(PLQY)
+def qfls(Eg, PLQY):
+    return v_sq(Eg) + v_loss(PLQY)
 
-def Diff_coeff(mu):
+def diff_coeff(mu):
     # Calculates the diffusion coefficient from the mobility
     # If the mobility is given in cm2/(Vs) then the diffusion coefficient is in units cm2/s.
     return k * T_RT / q * mu
   
-def Mobility(D):
+def mobility(D):
     # Caluclates the mobility form the diffusion coefficient.
     # If the diff. coefficient is given in cm2/s then the mobility is in units cm2/(Vs).
     return (k * T_RT / q)**(-1) * D
@@ -248,11 +248,11 @@ def save_ok(TFN, quitted = None):
     Example how to use:
         quitted = False
         for i, sp in enumerate(self.sa):
-            TFN = join(save_dir, FN)
+            TFN = join(save_dir, filepath)
             ok_to_save, quitted = save_ok(TFN, quitted)
             if ok_to_save and not(quitted):
                 df = pd.DataFrame({x_col_name : sp.x, y_col_name : sp.y})
-                df.to_csv(join(save_dir, FN), header = True, index = False)
+                df.to_csv(join(save_dir, filepath), header = True, index = False)
     """
 
     if (quitted == False) or (quitted == None):
@@ -325,9 +325,9 @@ def beep(freq = 600, duration = 1000):
         winsound.beep( freq, duration )
     
 
-def plot_first_n_lines(dir, FN, n=20, encoding = "ISO-8859-1"):
+def plot_first_n_lines(directory, filepath, n=20, encoding = "ISO-8859-1"):
     
-    TFN = join(dir,FN)
+    TFN = join(directory,filepath)
         
     count = 0
     with open(TFN, encoding = encoding) as z:

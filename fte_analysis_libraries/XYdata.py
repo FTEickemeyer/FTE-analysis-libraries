@@ -27,7 +27,7 @@ from . import General as gen
 
 system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data'))
 
-class xy_data:
+class XYData:
     
     def __init__(self, x, y, quants = {"x": "x", "y": "y"}, units = {"x": None, "y": None}, name = '', plotstyle = None, check_data = True):
         """
@@ -431,9 +431,9 @@ class xy_data:
         m, b = linfit(self.x, self.y, von, bis)
         self.m = m
         self.b = b
-        fit = xy_data(self.x, m * self.x + b)
+        fit = XYData(self.x, m * self.x + b)
         if residue:
-            res = xy_data(self.x, (self.y - fit.y)/self.y * 100)
+            res = XYData(self.x, (self.y - fit.y)/self.y * 100)
             res.qx = self.qx
             res.qy = 'Delta'
             res.ux = self.ux
@@ -444,14 +444,14 @@ class xy_data:
             if return_data:
                 return res
         else:
-            both = mxy_data([self, fit])
+            both = MXYData([self, fit])
             both.label(['self.name', f'linear fit: m = {m:.2e}, b = {b:.2e}'])
             both.plot()
             if return_data:
                 return both
     
     @classmethod
-    def load(cls, filepath_or_directory, FN = '', delimiter = ',', columns=(0, 1), header = 'infer', 
+    def load(cls, filepath_or_directory, filepath = '', delimiter = ',', columns=(0, 1), header = 'infer', 
              quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False,  check_data = True, name=None):
 
         """
@@ -459,15 +459,15 @@ class xy_data:
         colunns: tuple which indicates which column is x and which is y.
         """
         
-        if (FN == '') and os.path.isdir(filepath_or_directory):
-            FN = os.listdir(filepath_or_directory)[0]
-            file = join(filepath_or_directory, FN)
-        elif (filepath_or_directory == '') and os.path.isfile(FN):
-            file = FN
+        if (filepath == '') and os.path.isdir(filepath_or_directory):
+            filepath = os.listdir(filepath_or_directory)[0]
+            file = join(filepath_or_directory, filepath)
+        elif (filepath_or_directory == '') and os.path.isfile(filepath):
+            file = filepath
         elif os.path.isfile(filepath_or_directory):
             file = filepath_or_directory
-        elif os.path.isfile(join(filepath_or_directory, FN)):
-            file = join(filepath_or_directory, FN)
+        elif os.path.isfile(join(filepath_or_directory, filepath)):
+            file = join(filepath_or_directory, filepath)
         else:
             warnings.warn("Attention: Not a valid file or directory!")
             return
@@ -509,11 +509,11 @@ class xy_data:
                 uy = col1.split(' (')[1].split(')')[0]
                 
         if name is None:
-            name = FN
+            name = filepath
         
         return cls(x, y, quants = dict(x = qx, y = qy), units = dict(x = ux, y = uy), name = name,  check_data = check_data)
     
-    def save(self, save_dir, FN, check_existing = True):
+    def save(self, save_dir, filepath, check_existing = True):
         
         x_col_name = self.qx
         y_col_name = self.qy
@@ -525,7 +525,7 @@ class xy_data:
             y_col_name = y_col_name + f' ({self.uy})'
 
         df = pd.DataFrame({x_col_name : self.x, y_col_name : self.y})
-        TFN = join(save_dir, FN)
+        TFN = join(save_dir, filepath)
         if check_existing:
             if save_ok(TFN):
                 df.to_csv(TFN, header = True, index = False)
@@ -562,7 +562,7 @@ class xy_data:
         if test == True:
             xy_filt = self.copy()
             xy_filt.y = y
-            mxy = mxy_data([self, xy_filt])
+            mxy = MXYData([self, xy_filt])
             mxy.label = ['original', 'filtered']
             if left != None and right != None:
                 m_max = mxy.max_within(left = left, right = right)
@@ -800,7 +800,7 @@ class xy_data:
         self.x = x_raw[logic_list]
         self.y = y_raw[logic_list]
         #if len(self.x) != len(self.y):
-        #    print('Attention: xy_data.remove_nan() gave an x-array and a y-array with different sizes. The reason could be that, e.g. x[i] = nan but y[i] = number')
+        #    print('Attention: XYData.remove_nan() gave an x-array and a y-array with different sizes. The reason could be that, e.g. x[i] = nan but y[i] = number')
         
     def idfac_fit(self, left = None, right = None, plot = False, plotrange = [None, None], return_fit = True):
         
@@ -814,7 +814,7 @@ class xy_data:
         m, b = np.polyfit(np.log10(self.x[ra]), self.y[ra], 1)
         nid = q/(k * T_RT * math.log(10)) * m
         
-        fit = xy_data(self.x, m*np.log10(self.x) + b, quants = {"x": "Light intensity", "y": "Voc"}, units = {"x": "mW/cm2", "y": "V"}, name = 'fit')
+        fit = XYData(self.x, m*np.log10(self.x) + b, quants = {"x": "Light intensity", "y": "Voc"}, units = {"x": "mW/cm2", "y": "V"}, name = 'fit')
         fit.nid = nid
         
         if plot:
@@ -830,7 +830,7 @@ class xy_data:
                 
             self.plotstyle = dict(linestyle = 'None', marker = 'o', color = 'green', markersize = 20)
             fit.plotstyle = dict(linestyle = '-', color = 'green', linewidth = 5)
-            da = mxy_data([self, fit])
+            da = MXYData([self, fit])
             da.label([self.name, f'm = ln(10) $\cdot$ kT/q $\cdot$ {fit.nid:.2f}'])
             da.plot(xscale = 'log', left = plot_left, right = plot_right, bottom = 0.9 * self.min_within(left=plot_left, right=plot_right), top = 1.1 * self.max_within(left=plot_left, right=plot_right), plotstyle = 'individual')
         
@@ -932,7 +932,7 @@ class xy_data:
 
     def rm_cosray(self, m = 3, threshold = 5):
         """
-        Removes cosmic rays from the spectrum.
+        Removes cosmic rays from the Spectrum.
         m: 2 m + 1 points around the spike are selected
         threshold: The threshold value from which on a spike is detected as such
         """
@@ -991,7 +991,7 @@ class xy_data:
                     self.y = np.delete(self.y, idx+1)
     
     
-class mxy_data:
+class MXYData:
     
     def __init__(self, sa):
         self.sa = sa
@@ -1042,7 +1042,7 @@ class mxy_data:
         Returns an instance new_mxy of type(mxy1) with new_mxy.sa = mxy1.sa + mxy2.sa.
         """
         if type(mxy1) != type(mxy2):
-            print('mxy_data.combine(mxy1, mxy2): mxy1 and mxy2 are of different type!')
+            print('MXYData.combine(mxy1, mxy2): mxy1 and mxy2 are of different type!')
         #Make sure that there are no dependencies of new_mxy on mxy1 and mxy2 
         mxy1_ = mxy1.copy()
         mxy2_ = mxy2.copy()
@@ -1078,7 +1078,7 @@ class mxy_data:
         
     def remain(self, idx_list):
         """
-        Return all spectra with indices in list idx_list.
+        Return all Spectra with indices in list idx_list.
         """
         sa = []
         lab = []
@@ -1087,7 +1087,7 @@ class mxy_data:
             sa.append(new)
             if self.label_defined:
                 lab.append(self.lab[idx])
-        #rem_sa = mxy_data(sa)
+        #rem_sa = MXYData(sa)
         rem_sa = type(self)(sa)
         rem_sa.label(lab)
         return rem_sa
@@ -1162,11 +1162,11 @@ class mxy_data:
              return_fig = False, generate_image_stream=False, show_plot = True, ylabel=None, xlabel=None, create_image_stream= False, **kwargs):
 
         """
-        Plots multiple xy-data of type xy_data. The axis title are taken from the first spectrum.
+        Plots multiple xy-data of type XYData. The axis title are taken from the first Spectrum.
         showindex: If True then the index of the sa list will be shown before the regular label. 
         This is helpful when certain curves have to be selected e.g. for PLQY. 
         in_name: e.g ['laser'], List with strings that have to be in the name to be plotted. If [] then everything is plotted.
-        If individual xy_data has the attribute plotrange (list of begin and end value), than only this plotrange is plotted.
+        If individual XYData has the attribute plotrange (list of begin and end value), than only this plotrange is plotted.
         return_fig: if True than the figure is returned as an object of type matplotlib.figure.Figure. This figure can be then saved with matplotlib.figure.Figure.savefig(filename).
                     To show this returned figure one can use the function matplotlib.figure.Figure.show(); this works however only if a GUI backend is chosen, 
                     e.g. by %matplotlib qt in jupyterlab (%matplotlib inline doesn't work').
@@ -1334,8 +1334,8 @@ class mxy_data:
         if 'save_plot' in kwargs:
             if kwargs['save_plot']:
                 save_dir = kwargs['plot_save_dir']
-                FN = kwargs['plot_FN']
-                TFN = join(save_dir, FN)
+                filepath = kwargs['plot_FN']
+                TFN = join(save_dir, filepath)
                 if save_ok(TFN):
                     plt.savefig(TFN)
                     
@@ -1388,8 +1388,8 @@ class mxy_data:
         if label == None:
             label = self.lab
         for i, xy_dat in enumerate(self.sa):
-            FN = title + ' - ' + label[i] + '.csv'
-            xy_dat.save(save_dir, FN)
+            filepath = title + ' - ' + label[i] + '.csv'
+            xy_dat.save(save_dir, filepath)
             
     def save_in_one_file(self, fp):
         #check if all files have the same wavelengths
@@ -1411,7 +1411,7 @@ class mxy_data:
             df.drop(df.columns[0], axis=1, inplace=True)
             df.to_csv(fp)
         else:
-            print('Not saved: Not all xy_data have the same x!')
+            print('Not saved: Not all XYData have the same x!')
             
     def save_individual(self, save_dir = None, FNs = None, check_existing = True, check_FN_extension = True):
         
@@ -1428,27 +1428,27 @@ class mxy_data:
                 y_col_name = y_col_name + f' ({sp.uy})'
                                     
             if FNs == None:
-                FN = sp.name
+                filepath = sp.name
             else:
-                FN = FNs[i]
+                filepath = FNs[i]
                 
-            TFN = join(save_dir, FN)
+            TFN = join(save_dir, filepath)
             df = pd.DataFrame({x_col_name : sp.x, y_col_name : sp.y})
-            #FN = FN.split('.'+FN.split('.')[-1])[0] + '.csv'
+            #filepath = filepath.split('.'+filepath.split('.')[-1])[0] + '.csv'
             if check_FN_extension:
-                FN = os.path.splitext(FN)[0] + '.csv'
+                filepath = os.path.splitext(filepath)[0] + '.csv'
             else:
-                FN = FN + '.csv'
+                filepath = filepath + '.csv'
 
             if check_existing:
             
                 ok_to_save, quitted = save_ok(TFN, quitted)
                 if ok_to_save and not(quitted):
 
-                    df.to_csv(join(save_dir, FN), header = True, index = False)
+                    df.to_csv(join(save_dir, filepath), header = True, index = False)
                     
             else:
-                    df.to_csv(join(save_dir, FN), header = True, index = False)
+                    df.to_csv(join(save_dir, filepath), header = True, index = False)
             
     @classmethod
     def load_individual(cls, directory, delimiter = ',', header = 'infer', quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False):
@@ -1459,15 +1459,15 @@ class mxy_data:
         FNs = os.listdir(directory)
         sa = []
         
-        for i, FN in enumerate(FNs):
+        for i, filepath in enumerate(FNs):
             
-            dat = pd.read_csv(join(directory, FN), delimiter = delimiter, header = header)
+            dat = pd.read_csv(join(directory, filepath), delimiter = delimiter, header = header)
                         
             x = np.array(dat)[:,0].astype(np.float64)
             y = np.array(dat)[:,1].astype(np.float64)
 
-            if cls.__name__ == 'mxy_data':
-                sp = xy_data(x, y, quants, units, FN)
+            if cls.__name__ == 'MXYData':
+                sp = XYData(x, y, quants, units, filepath)
        
             if take_quants_and_units_from_file:
 
@@ -1483,9 +1483,9 @@ class mxy_data:
 
             sa.append(sp)    
             
-        spectra = cls(sa)
+        result = cls(sa)
     
-        return spectra
+        return result
             
     def max_within(self, left = None, right = None):
         """
@@ -1614,8 +1614,8 @@ class mxy_data:
     
     def reverse(self):
         """
-        Reverse the x values in all spectra.
-        Returns the reversed spectra.
+        Reverse the x values in all Spectra.
+        Returns the reversed Spectra.
         """
         new = self.copy()
         for idx, sp in enumerate(new.sa):
@@ -1659,7 +1659,7 @@ class mxy_data:
             all_data_label.append(f'm = ln(10) $\cdot$ kT/q $\cdot$ {all_data[-1].nid:.2f}')
             save_names.append(label+'_fit')
     
-        da = mxy_data(all_data)
+        da = MXYData(all_data)
         #da.label([FNs[0], FNs[1], f'm = ln(10) $\cdot$ kT/q $\cdot$ {fit[0].nid:.2f}', f'm = ln(10) $\cdot$ kT/q $\cdot$ {fit[1].nid:.2f}'])
     
         da.label(all_data_label)
@@ -1683,7 +1683,7 @@ class mxy_data:
             sp.shift_y(y)
             
     def average(self):
-        # Averages over all spectra and returns the averaged spectrum
+        # Averages over all Spectra and returns the averaged Spectrum
         av = self.sa[0].copy()
         av.y *= 0
         for sp in self.sa:
@@ -1708,7 +1708,7 @@ class mxy_data:
             sp.strictly_ascending()
 
                 
-class xyz_data:
+class XYZData:
     
     def __init__(self, x, y, z , quants = {"x": "x", "y": "y", "z": "z"}, units = {"x": "", "y": "", "z": ""}, name = '', plotstyle = None):
         """
@@ -1734,16 +1734,16 @@ class xyz_data:
         self.plotstyle = plotstyle
 
     @classmethod
-    def load(cls, directory, FN = '', delimiter = ',', header = 'infer',
+    def load(cls, directory, filepath = '', delimiter = ',', header = 'infer',
               quants = {"x": "x", "y": "y", "z": "z"}, units = {"x": "", "y": "", "z": ""}, take_quants_and_units_from_file = False):
 
         """
         Loads a single xyz data. If a filename is given it will be used, if not the first file in the directory will be used.
         """
         
-        if FN == '':
-            FN = os.listdir(directory)[0]
-        dat = pd.read_csv(join(directory, FN), delimiter = delimiter, header = header)
+        if filepath == '':
+            filepath = os.listdir(directory)[0]
+        dat = pd.read_csv(join(directory, filepath), delimiter = delimiter, header = header)
         
         x = np.array(dat)[:,0].astype(np.float64)
         y = np.array(dat)[:,1].astype(np.float64)
@@ -1773,4 +1773,4 @@ class xyz_data:
             if ' (' in col2:
                 uz = col2.split(' (')[1].split(')')[0]
         
-        return cls(x, y, z, quants = dict(x = qx, y = qy, z = qz), units = dict(x = ux, y = uy, z = uz), name = FN)
+        return cls(x, y, z, quants = dict(x = qx, y = qy, z = qz), units = dict(x = ux, y = uy, z = uz), name = filepath)

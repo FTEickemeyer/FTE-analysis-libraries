@@ -26,7 +26,7 @@ def getFilenames(title, types=[], initialdir=None):
     if not filePaths:
         return None, []
     cell_directory = os.path.dirname(filePaths[0])
-    cell_filenames = [os.path.basename(FN) for FN in filePaths]
+    cell_filenames = [os.path.basename(filepath) for filepath in filePaths]
     return cell_directory, cell_filenames
 
 def getFilename(title, types=[], initialdir=None):

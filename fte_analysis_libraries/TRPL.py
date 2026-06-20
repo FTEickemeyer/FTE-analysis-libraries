@@ -13,7 +13,7 @@ from importlib.resources import files as _resource_files
 system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data'))
 
 from .General import h, c, pi, k, q, T_RT, f1240, findind, interpolated_array
-from .XYdata import xy_data, mxy_data
+from .XYdata import XYData, MXYData
 from .Spectrum import above_bg_photon_flux
 
 def lambeer(alpha, x, P):
@@ -320,7 +320,7 @@ def plot_animation_QFLS(pset1, pset2, interval = 1, ylim=(1e-2,1.2)):
 
     ax.set_title('Quasi-Fermi level splitting', color = 'black')
     ax.set_xlabel('nm')
-    ax.set_ylabel('QFLS (eV)')
+    ax.set_ylabel('qfls (eV)')
 
     N = 2
     lines = []
@@ -385,7 +385,7 @@ def plot_animation_QFLS(pset1, pset2, interval = 1, ylim=(1e-2,1.2)):
 
 
 
-class TRPL_param:
+class TRPLParam:
 
     def __init__(self, dt = 2e-12, finaltime = 200e-9, thickness = 350, N_points = 50, alpha = 1e5, P_exc = 1e10, pulse_len = 60e-12, mu = 1, k1 = 0, k2 = 1e-10, k3 = 8.8e-29, SL = 0, SR = 0):
 
@@ -411,7 +411,7 @@ class TRPL_param:
         
     def copy(self):
         
-        return TRPL_param(dt = self.dt, finaltime = self.finaltime, thickness = self.thickness, N_points = self.N_points, alpha = self.alpha, P_exc = self.P_exc, pulse_len = self.pulse_len, mu = self.mu, k1 = self.k1, k2 = self.k2, k3 = self.k3, SL = self.SL, SR = self.SR)
+        return TRPLParam(dt = self.dt, finaltime = self.finaltime, thickness = self.thickness, N_points = self.N_points, alpha = self.alpha, P_exc = self.P_exc, pulse_len = self.pulse_len, mu = self.mu, k1 = self.k1, k2 = self.k2, k3 = self.k3, SL = self.SL, SR = self.SR)
 
     @staticmethod
     def D_from_mu(mu, T = T_RT):
@@ -451,11 +451,11 @@ class TRPL_param:
             self.unit = 'cm/s'
 
     
-class TRPL_data(xy_data):
+class TRPLData(XYData):
     
-    def __init__(self, ns, cts, quants = dict(x = "Time", y = "Intensity"), units = dict(x = "ns", y = "cts"),  name = '', FN = '', plotstyle = dict(linestyle = '-', color = 'black', linewidth = 3), check_data = True):
+    def __init__(self, ns, cts, quants = dict(x = "Time", y = "Intensity"), units = dict(x = "ns", y = "cts"),  name = '', filepath = '', plotstyle = dict(linestyle = '-', color = 'black', linewidth = 3), check_data = True):
         super().__init__(ns, cts, quants = quants, units = units, name = name, plotstyle = plotstyle, check_data = check_data)
-        self.FN = FN
+        self.filepath = filepath
         self.mexp_exist = False
         self.savgol_exist = False
         self.plotrange_left = 0
@@ -463,7 +463,7 @@ class TRPL_data(xy_data):
         
     def copy(self):
         dat = super().copy()
-        dat.FN = self.FN
+        dat.filepath = self.filepath
         dat.mexp_exist = self.mexp_exist
         dat.savgol_exist = self.savgol_exist
         dat.plotrange_left = self.plotrange_left
@@ -471,23 +471,23 @@ class TRPL_data(xy_data):
         return dat
         
     @staticmethod
-    def load(directory, FN = '', name = '', delimiter = ',', header = 'infer', time_unit = 'ns'):
+    def load(directory, filepath = '', name = '', delimiter = ',', header = 'infer', time_unit = 'ns'):
 
         """
         Loads a sinlge TRPL data.
         """
 
-        if FN == '':
+        if filepath == '':
             print('Warning: No filename chosen')
 
-        dat = pd.read_csv(join(directory, FN), delimiter = delimiter, header = header)
+        dat = pd.read_csv(join(directory, filepath), delimiter = delimiter, header = header)
 
         ns = np.array(dat)[:,0]
         if time_unit == 'us':
             ns = ns * 1000
         cts = np.array(dat)[:,1]
 
-        return TRPL_data(ns, cts, name = name, FN = FN)
+        return TRPLData(ns, cts, name = name, filepath = filepath)
     
     
     def mono_expfit(self, start = 400, stop = None, p0 = (1, 500), showparam = False):
@@ -536,20 +536,20 @@ class TRPL_data(xy_data):
 
         Returns
         -------
-        mexpfit : TRPL_data
+        mexpfit : TRPLData
             Fit curve. In addition the optimized fit parameters popt, start, and stop are returned as parameters.
             
         Example (taken from mul3_expfit, not yet tested)
         -------
-        #param = TRPL_param(finaltime = 500e-9, mu = 0.1, k1 = 1e7)
-        #example = TRPL_data.from_param(param, show_progress = True)
+        #param = TRPLParam(finaltime = 500e-9, mu = 0.1, k1 = 1e7)
+        #example = TRPLData.from_param(param, show_progress = True)
         #example.equidist(right = 50, delta = 1)
         p0 = (0.8, 0.2, 10, 100)
         ns = np.arange(501)
-        example = TRPL_data.gen_m3ed(ns, p0)
+        example = TRPLData.gen_m3ed(ns, p0)
         #example.plot(yscale = 'log', left = 2, right = 500, divisor = 1e3, figsize = (7, 5))
         ex_fit = example.mult2_expfit(start = 0, stop = 500)
-        both = mTRPL_data([example, ex_fit])
+        both = MTRPLData([example, ex_fit])
         both.label(['orig', 'fit'])
         both.plot(yscale = 'log', left = 2, right = 500, divisor = 1e3, figsize = (7, 5))
         d = example.delta(ex_fit, left = 2, right = 400)
@@ -599,20 +599,20 @@ class TRPL_data(xy_data):
 
         Returns
         -------
-        mexpfit : TRPL_data
+        mexpfit : TRPLData
             Fit curve. In addition the optimized fit parameters popt, start, and stop are returned as parameters.
             
         Example
         -------
-        #param = TRPL_param(finaltime = 500e-9, mu = 0.1, k1 = 1e7)
-        #example = TRPL_data.from_param(param, show_progress = True)
+        #param = TRPLParam(finaltime = 500e-9, mu = 0.1, k1 = 1e7)
+        #example = TRPLData.from_param(param, show_progress = True)
         #example.equidist(right = 50, delta = 1)
         p0 = (0.4, 0.4, 0.1, 10, 30, 100)
         ns = np.arange(501)
-        example = TRPL_data.gen_m3ed(ns, p0)
+        example = TRPLData.gen_m3ed(ns, p0)
         #example.plot(yscale = 'log', left = 2, right = 500, divisor = 1e3, figsize = (7, 5))
         ex_fit = example.mult3_expfit(start = 0, stop = 500)
-        both = mTRPL_data([example, ex_fit])
+        both = MTRPLData([example, ex_fit])
         both.label(['orig', 'fit'])
         both.plot(yscale = 'log', left = 2, right = 500, divisor = 1e3, figsize = (7, 5))
         d = example.delta(ex_fit, left = 2, right = 400)
@@ -663,21 +663,21 @@ class TRPL_data(xy_data):
 
         Returns
         -------
-        mexpfit : TRPL_data
+        mexpfit : TRPLData
             Fit curve. In addition the optimized fit parameters popt, start, and stop are returned as parameters.
             
         Example
         -------
-        #param = TRPL_param(finaltime = 500e-9, mu = 0.1, k1 = 1e7)
-        #example = TRPL_data.from_param(param, show_progress = True)
+        #param = TRPLParam(finaltime = 500e-9, mu = 0.1, k1 = 1e7)
+        #example = TRPLData.from_param(param, show_progress = True)
         #example.equidist(right = 50, delta = 1)
         p0 = (0.4, 0.4, 0.1, 10, 30, 100)
         ns = np.arange(501)
-        example = TRPL_data.gen_m3ed(ns, p0)
+        example = TRPLData.gen_m3ed(ns, p0)
         #example.plot(yscale = 'log', left = 2, right = 500, divisor = 1e3, figsize = (7, 5))
         p0 = (0.1, 0.01, 0.01, 0.8, 20, 30, 50, 50)
         ex_fit = example.mult4_expfit(start = 2, stop = 500, p0 = p0)
-        both = mTRPL_data([example, ex_fit])
+        both = MTRPLData([example, ex_fit])
         both.label(['orig', 'fit'])
         both.plot(yscale = 'log', left = 2, right = 500, divisor = 1e3, figsize = (7, 5))
         d = example.delta(ex_fit, left = 2, right = 400)
@@ -724,7 +724,7 @@ class TRPL_data(xy_data):
         a: exponential prefactor
         tau: time in ns
         """
-        d = TRPL_data(ns, a * np.e**(-ns/tau), name = f'a = {a:.1e}, tau = {tau:.0f}')
+        d = TRPLData(ns, a * np.e**(-ns/tau), name = f'a = {a:.1e}, tau = {tau:.0f}')
         d.popt = [a, tau]
         d.start = 0
         d.stop = ns[-1]
@@ -742,7 +742,7 @@ class TRPL_data(xy_data):
         a2 = p0[1]
         tau1 = p0[2]
         tau2 = p0[3]
-        d = TRPL_data(ns, a1 * np.e**(-ns/tau1) + a2 * np.e**(-ns/tau2))
+        d = TRPLData(ns, a1 * np.e**(-ns/tau1) + a2 * np.e**(-ns/tau2))
         d.popt = p0
         d.start = 0
         d.stop = ns[-1]
@@ -763,7 +763,7 @@ class TRPL_data(xy_data):
         tau1 = p0[3]
         tau2 = p0[4]
         tau3 = p0[5]
-        d = TRPL_data(ns, a1 * np.e**(-ns/tau1) + a2 * np.e**(-ns/tau2) + a3 * np.e**(-ns/tau3))
+        d = TRPLData(ns, a1 * np.e**(-ns/tau1) + a2 * np.e**(-ns/tau2) + a3 * np.e**(-ns/tau3))
         d.popt = p0
         d.start = 0
         d.stop = ns[-1]
@@ -785,7 +785,7 @@ class TRPL_data(xy_data):
         tau2 = p0[5]
         tau3 = p0[6]
         tau4 = p0[7]
-        d = TRPL_data(ns, a1 * np.e**(-ns/tau1) + a2 * np.e**(-ns/tau2) + a3 * np.e**(-ns/tau3) + a4 * np.e**(-ns/tau4))
+        d = TRPLData(ns, a1 * np.e**(-ns/tau1) + a2 * np.e**(-ns/tau2) + a3 * np.e**(-ns/tau3) + a4 * np.e**(-ns/tau4))
         d.popt = p0
         d.start = 0
         d.stop = ns[-1]
@@ -804,8 +804,8 @@ class TRPL_data(xy_data):
         #diff_tau.name = 'Differential lifetime'
         diff_tau.qy = 'Decay time'
         diff_tau.uy = 's'
-        if x == 'QFLS':
-            # QFLS in eV
+        if x == 'qfls':
+            # qfls in eV
             QFLS_0 = k * T_RT / q * np.log(initial_carrier_conc(wavelength = wavelength, film_thickness = film_thickness, fluence = fluence)**2/ni**2)
             #print(QFLS_0)
             diff_tau.x = QFLS_0 + k * T_RT / q * np.log(self.y/self.y[0])
@@ -885,7 +885,7 @@ class TRPL_data(xy_data):
         cts = np.array(TRPL_list)
         ns= np.array(ns_list)
     
-        data = TRPL_data(ns, cts, name = name)
+        data = TRPLData(ns, cts, name = name)
     
         if normalize_ns != None:
             data.y = data.y * normalize_cts / data.y_of(normalize_ns)
@@ -905,7 +905,7 @@ class TRPL_data(xy_data):
         #Parameters p have to be duplicated because finaltime is changed
         p = param.copy()
         #Necessary to redefine finaltime, because this is the time until the TRPL curve will be calculated
-        #in the function TRPL_data.from_param
+        #in the function TRPLData.from_param
         p.finaltime = fit_range_ns[1]*1e-9
     
         # Time array in ns 
@@ -935,7 +935,7 @@ class TRPL_data(xy_data):
             if what == 'SL':
                 p.SL = args
                 
-            d = TRPL_data.from_param(p, time_delta = 0.01e-9)
+            d = TRPLData.from_param(p, time_delta = 0.01e-9)
             t_ns, TRPL = d.x, d.y
     
             fitd = interpolated_array(t_ns, TRPL, ns)
@@ -993,10 +993,10 @@ class TRPL_data(xy_data):
         k1 = popt[1]
         k2 = popt[2]
 
-        fit = TRPL_data(dat.x[r], n_of_t(dat.x[r], *popt))
+        fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))
 
         if show_all:
-            dta = mTRPL_data([self, dat, fit])
+            dta = MTRPLData([self, dat, fit])
             dta.label([self.name, 'savgol', 'fit'])
             dta.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
             dta.sa[1].plotstyle = dict(linestyle = '-', color = 'orange', linewidth = 3)
@@ -1004,7 +1004,7 @@ class TRPL_data(xy_data):
             m = dta.max_within(left = start, right = stop)
             dta.plot(yscale = 'log', left = 0, right = stop, bottom = m/100, top = m*1.1, plotstyle = 'individual')
 
-        da_new = mTRPL_data([self, fit])
+        da_new = MTRPLData([self, fit])
         da_new.label([self.name, f'fit, k1 = {k1:.2e} s-1, k2 = {k2:.2e} cm3 s-1'])
         da_new.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
         da_new.sa[1].plotstyle = dict(linestyle = '-', color = 'red', linewidth = 3)
@@ -1051,10 +1051,10 @@ class TRPL_data(xy_data):
         n0 = popt[0]
         k1 = popt[1]
 
-        fit = TRPL_data(dat.x[r], n_of_t(dat.x[r], *popt))
+        fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))
 
         if show_all:
-            dta = mTRPL_data([self, dat, fit])
+            dta = MTRPLData([self, dat, fit])
             dta.label([self.name, 'savgol', 'fit'])
             dta.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
             dta.sa[1].plotstyle = dict(linestyle = '-', color = 'orange', linewidth = 3)
@@ -1062,7 +1062,7 @@ class TRPL_data(xy_data):
             m = dta.max_within(left = start, right = stop)
             dta.plot(yscale = 'log', left = 0, right = stop, bottom = m/100, top = m*1.1, plotstyle = 'individual')
 
-        da_new = mTRPL_data([self, fit])
+        da_new = MTRPLData([self, fit])
         da_new.label([self.name, f'fit, k1 = {k1:.2e} s-1, k2 = {k2:.2e} cm3 s-1'])
         da_new.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
         da_new.sa[1].plotstyle = dict(linestyle = '-', color = 'red', linewidth = 3)
@@ -1106,10 +1106,10 @@ class TRPL_data(xy_data):
         n0 = popt[0]
         k2 = popt[1]
 
-        fit = TRPL_data(dat.x[r], n_of_t(dat.x[r], *popt))
+        fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))
 
         if show_all:
-            dta = mTRPL_data([self, dat, fit])
+            dta = MTRPLData([self, dat, fit])
             dta.label([self.name, 'savgol', 'fit'])
             dta.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
             dta.sa[1].plotstyle = dict(linestyle = '-', color = 'orange', linewidth = 3)
@@ -1117,7 +1117,7 @@ class TRPL_data(xy_data):
             m = dta.max_within(left = start, right = stop)
             dta.plot(yscale = 'log', left = 0, right = stop, bottom = m/100, top = m*1.1, plotstyle = 'individual')
 
-        da_new = mTRPL_data([self, fit])
+        da_new = MTRPLData([self, fit])
         da_new.label([self.name, f'fit, k1 = {k1:.2e} s-1, k2 = {k2:.2e} cm3 s-1'])
         da_new.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
         da_new.sa[1].plotstyle = dict(linestyle = '-', color = 'red', linewidth = 3)
@@ -1161,10 +1161,10 @@ class TRPL_data(xy_data):
 
         n0 = popt[0]
 
-        fit = TRPL_data(dat.x[r], n_of_t(dat.x[r], *popt))
+        fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))
 
         if show_all:
-            dta = mTRPL_data([self, dat, fit])
+            dta = MTRPLData([self, dat, fit])
             dta.label([self.name, 'savgol', 'fit'])
             dta.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
             dta.sa[1].plotstyle = dict(linestyle = '-', color = 'orange', linewidth = 3)
@@ -1172,7 +1172,7 @@ class TRPL_data(xy_data):
             m = dta.max_within(left = start, right = stop)
             dta.plot(yscale = 'log', left = 0, right = stop, bottom = m/100, top = m*1.1, plotstyle = 'individual')
 
-        da_new = mTRPL_data([self, fit])
+        da_new = MTRPLData([self, fit])
         da_new.label([self.name, f'fit, k1 = {k1:.2e} s-1, k2 = {k2:.2e} cm3 s-1'])
         da_new.sa[0].plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 1)
         da_new.sa[1].plotstyle = dict(linestyle = '-', color = 'red', linewidth = 3)
@@ -1292,7 +1292,7 @@ class TRPL_data(xy_data):
         else:
             stop = self.x_idx_of(stop)
         if stop < start:
-            print('Attention [TRPL_data.del_bg()]: stop < start, hence the alternative routine is chosen!')
+            print('Attention [TRPLData.del_bg()]: stop < start, hence the alternative routine is chosen!')
             #This can happen, if there is very little noise data points are selected. In this case take the first value > 0 as start and the maximum - 1 as stop
             start = 0
             while self.y[start] == 0:
@@ -1311,7 +1311,7 @@ class TRPL_data(xy_data):
             print(f'______{self.name}________')
             self.plot(yscale = 'linear', left = self.x[start]*0, right = self.x[stop]*1.2, bottom = 0, top = m*2, vline = [self.x[start], self.x[stop]], title = 'noise')
             #Show original and bg subtracted data
-            dat_all = mTRPL_data([self, dat])
+            dat_all = MTRPLData([self, dat])
             if not (norm_val is None):
                 dat_all = dat_all.copy()
                 dat_all.normalize()
@@ -1355,9 +1355,9 @@ class TRPL_data(xy_data):
 
 
 
-class mTRPL_data(mxy_data):
+class MTRPLData(MXYData):
     """
-    sa is a list of TRPL_data.
+    sa is a list of TRPLData.
     """
     
     def __init__(self, sa):
@@ -1374,16 +1374,16 @@ class mTRPL_data(mxy_data):
 
         sa = []
         
-        for i, FN in enumerate(FNs):
+        for i, filepath in enumerate(FNs):
             
-            dat = pd.read_csv(join(directory, FN), delimiter = delimiter, header = header)
+            dat = pd.read_csv(join(directory, filepath), delimiter = delimiter, header = header)
             
             npdat = np.array(dat, dtype = np.float64)
             x = npdat[:,0]
             y = npdat[:,1]
 
-            if cls.__name__ == 'mTRPL_data':
-                sp = TRPL_data(x, y, quants, units, FN)
+            if cls.__name__ == 'MTRPLData':
+                sp = TRPLData(x, y, quants, units, filepath)
        
             if take_quants_and_units_from_file:
 
@@ -1398,9 +1398,9 @@ class mTRPL_data(mxy_data):
                     sp.uy = col1.split(' (')[1].split(')')[0]
 
             sa.append(sp)    
-        spectra = cls(sa)
+        result = cls(sa)
     
-        return spectra
+        return result
         
     def mono_expfit(self, start = 400, stop = None, p0 = (1, 500), showparam = False):
         dafit_sa = []
@@ -1413,11 +1413,11 @@ class mTRPL_data(mxy_data):
             if showparam:
                 dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
                 delta = d.residual(dfit, relative=True)
-                print(f'chi**2 = {xy_data.chisquare(d, dfit, right = stop):.2e}')
+                print(f'chi**2 = {XYData.chisquare(d, dfit, right = stop):.2e}')
                 delta.plot(right = stop, hline = 0, title = 'Residual plot')
-                md = mTRPL_data([d, dfit])
+                md = MTRPLData([d, dfit])
                 md.label(['original', 'fit'])
-        dafit = mTRPL_data(dafit_sa)  
+        dafit = MTRPLData(dafit_sa)  
         dafit.names_to_label(split_ch = '.csv')
         return dafit   
         
@@ -1432,11 +1432,11 @@ class mTRPL_data(mxy_data):
             if showparam:
                 dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
                 delta = d.residual(dfit, relative=True)
-                print(f'chi**2 = {xy_data.chisquare(d, dfit, right = stop):.2e}')
+                print(f'chi**2 = {XYData.chisquare(d, dfit, right = stop):.2e}')
                 delta.plot(right = stop, hline = 0, title = 'Residual plot')
-                md = mTRPL_data([d, dfit])
+                md = MTRPLData([d, dfit])
                 md.label(['original', 'fit'])
-        dafit = mTRPL_data(dafit_sa)  
+        dafit = MTRPLData(dafit_sa)  
         dafit.names_to_label(split_ch = '.csv')
         return dafit
     
@@ -1451,12 +1451,12 @@ class mTRPL_data(mxy_data):
             if showparam:
                 dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
                 delta = d.residual(dfit, relative=True)
-                print(f'chi**2 = {xy_data.chisquare(d, dfit, right = stop):.2e}')
+                print(f'chi**2 = {XYData.chisquare(d, dfit, right = stop):.2e}')
                 delta.plot(right = stop, hline = 0, title = 'Residual plot')
-                md = mTRPL_data([d, dfit])
+                md = MTRPLData([d, dfit])
                 md.label(['original', 'fit'])
     
-        dafit = mTRPL_data(dafit_sa)  
+        dafit = MTRPLData(dafit_sa)  
         dafit.names_to_label(split_ch = '.csv')
         return dafit
 
@@ -1471,11 +1471,11 @@ class mTRPL_data(mxy_data):
             if showparam:
                 dfit.plotstyle = dict(linestyle = '--', color = 'tab:red', linewidth = 2)
                 delta = d.residual(dfit, relative=True)
-                print(f'chi**2 = {xy_data.chisquare(d, dfit, right = stop):.2e}')
+                print(f'chi**2 = {XYData.chisquare(d, dfit, right = stop):.2e}')
                 delta.plot(right = stop, hline = 0, title = 'Residual plot')
-                md = mTRPL_data([d, dfit])
+                md = MTRPLData([d, dfit])
                 md.label(['original', 'fit'])
-        dafit = mTRPL_data(dafit_sa)  
+        dafit = MTRPLData(dafit_sa)  
         dafit.names_to_label(split_ch = '.csv')
         return dafit
 
@@ -1485,4 +1485,4 @@ class mTRPL_data(mxy_data):
         for idx, sp in enumerate(self.sa):
             diff_tau = sp.dlifetime(x = x, m = m, wavelength = wavelength, film_thickness = film_thickness, fluence = fluence, ni = ni)
             diff_tau_sa.append(diff_tau)
-        return mTRPL_data(diff_tau_sa)
+        return MTRPLData(diff_tau_sa)

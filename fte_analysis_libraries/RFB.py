@@ -588,8 +588,8 @@ def upload_potential_difference_measurement(potential_measurement_system,
     #no_times: Reduce the size to n_times time steps
     
     if potential_measurement_system == 'biologic':
-        FN = FN_potential_difference
-        fp = os.path.join(data_dir, FN)
+        filepath = FN_potential_difference
+        fp = os.path.join(data_dir, filepath)
         #extension = os.path.splitext(FN_neg)[1]
         
         raw_data = ech.import_biologic_mpt_data(fp, ['time/s', '<Ewe/V>'])
@@ -709,14 +709,14 @@ def det_times_and_charge_SOC0_from_potential_difference(df_charge, Pdiff, delta_
 
 #%% Potential measurement vs. reference cell
 
-def determine_end_time_s(potential_measurement_system, FN, data_dir):
+def determine_end_time_s(potential_measurement_system, filepath, data_dir):
     #Load measurement
     if potential_measurement_system == 'biologic':
-        fp = os.path.join(data_dir, FN)
+        fp = os.path.join(data_dir, filepath)
         exp = ech.import_biologic_mpt_data(fp, ['time/s', '<Ewe/V>'])
         return exp['time/s'].iloc[-1]    
     elif potential_measurement_system == 'NI':
-        fp = os.path.join(data_dir, FN)
+        fp = os.path.join(data_dir, filepath)
         P = pd.read_csv(fp)
         return P['Time (s)'].iloc[-1]
 
@@ -1119,8 +1119,8 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
     
     # Reverse axes and create single function
     def swap_charge_potential(Ppos_charge, Pneg_charge):
-        exppos = xyd.xy_data.from_df(Ppos_charge).swap_axes()
-        expneg = xyd.xy_data.from_df(Pneg_charge).swap_axes()
+        exppos = xyd.XYData.from_df(Ppos_charge).swap_axes()
+        expneg = xyd.XYData.from_df(Pneg_charge).swap_axes()
         exp = exppos.copy()
         exp.x = np.concatenate((expneg.x[::-1], exppos.x))
         exp.y = np.concatenate((expneg.y[::-1], exppos.y))
@@ -1133,7 +1133,7 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
     
     exp, exp_equidist = swap_charge_potential(Ppos_charge, Pneg_charge)
     if show_details:
-        both = xyd.mxy_data([exp, exp_equidist])
+        both = xyd.MXYData([exp, exp_equidist])
         both.label(['original', 'equidistance'])
         both.plot()
     exp = exp_equidist
@@ -1158,9 +1158,9 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
             return Qboth_Earr_(Earr, c_V, E0_V2X3, E0_V3X4, E0_V4X5)
         
     def plot_fit_vs_potential(p0, popt):
-        #fit0 = xyd.xy_data(exp.x, Qboth_Earr(exp.x, *p0)) 
-        fit = xyd.xy_data(exp.x, Qboth_Earr(exp.x, *popt))
-        both = xyd.mxy_data([exp, fit])
+        #fit0 = xyd.XYData(exp.x, Qboth_Earr(exp.x, *p0)) 
+        fit = xyd.XYData(exp.x, Qboth_Earr(exp.x, *popt))
+        both = xyd.MXYData([exp, fit])
         both.label(['exp', 'fit'])
         exp.plotstyle = dict(color='tab:blue', linewidth=5, linestyle='--')
         fit.plotstyle = dict(color='tab:orange', linewidth=3)
@@ -1281,15 +1281,15 @@ def fit_potentials(c_V, c_SO4, Ppos, Pneg, df_charge, Ppos_charge, Pneg_charge, 
     for time in df_fit_neg.index.values:
         conc_append(df_fit_neg['Potential (V vs. SHE)'], time, c_V, conc_V2_neg_list, conc_V3_neg_list, conc_V4_neg_list, conc_V5_neg_list)
     
-    #conc_V2_pos = xyd.xy_data(df_fit_pos.index.values, np.asarray(conc_V2_pos_list), name='V2 (posolyte)', check_data=False)
-    conc_V3_pos = xyd.xy_data(df_fit_pos.index.values, np.asarray(conc_V3_pos_list), name='V3 (posolyte)', check_data=False)
-    conc_V4_pos = xyd.xy_data(df_fit_pos.index.values, np.asarray(conc_V4_pos_list), name='V4 (posolyte)', check_data=False)
-    conc_V5_pos = xyd.xy_data(df_fit_pos.index.values, np.asarray(conc_V5_pos_list), name='V5 (posolyte)', check_data=False)
+    #conc_V2_pos = xyd.XYData(df_fit_pos.index.values, np.asarray(conc_V2_pos_list), name='V2 (posolyte)', check_data=False)
+    conc_V3_pos = xyd.XYData(df_fit_pos.index.values, np.asarray(conc_V3_pos_list), name='V3 (posolyte)', check_data=False)
+    conc_V4_pos = xyd.XYData(df_fit_pos.index.values, np.asarray(conc_V4_pos_list), name='V4 (posolyte)', check_data=False)
+    conc_V5_pos = xyd.XYData(df_fit_pos.index.values, np.asarray(conc_V5_pos_list), name='V5 (posolyte)', check_data=False)
     
-    conc_V2_neg = xyd.xy_data(df_fit_neg.index.values, np.asarray(conc_V2_neg_list), name='V2 (negolyte)', check_data=False)
-    conc_V3_neg = xyd.xy_data(df_fit_neg.index.values, np.asarray(conc_V3_neg_list), name='V3 (negolyte)', check_data=False)
-    conc_V4_neg = xyd.xy_data(df_fit_neg.index.values, np.asarray(conc_V4_neg_list), name='V4 (negolyte)', check_data=False)
-    #conc_V5_neg = xyd.xy_data(df_fit_neg.index.values, np.asarray(conc_V5_neg_list), name='V5 (negolyte)', check_data=False)
+    conc_V2_neg = xyd.XYData(df_fit_neg.index.values, np.asarray(conc_V2_neg_list), name='V2 (negolyte)', check_data=False)
+    conc_V3_neg = xyd.XYData(df_fit_neg.index.values, np.asarray(conc_V3_neg_list), name='V3 (negolyte)', check_data=False)
+    conc_V4_neg = xyd.XYData(df_fit_neg.index.values, np.asarray(conc_V4_neg_list), name='V4 (negolyte)', check_data=False)
+    #conc_V5_neg = xyd.XYData(df_fit_neg.index.values, np.asarray(conc_V5_neg_list), name='V5 (negolyte)', check_data=False)
 
     return c_V, (E0_V2X3, E0_V3X4, E0_V4X5), (df_fit_pos, df_fit_neg), (conc_V3_pos, conc_V4_pos, conc_V5_pos), (conc_V4_neg, conc_V3_neg, conc_V2_neg)
 
@@ -1363,7 +1363,7 @@ def plot_complete_dataset(fit_data, Ppos, Pneg,
     conc_V3_neg.plotstyle = {'linewidth': 5, 'linestyle': '-.', 'color': 'tab:orange'}
     conc_V2_neg.plotstyle = {'linewidth': 5, 'linestyle': '-', 'color': 'tab:orange'}
     
-    all_cV = xyd.mxy_data([conc_V3_pos, conc_V4_pos, conc_V5_pos, conc_V4_neg, conc_V3_neg, conc_V2_neg])
+    all_cV = xyd.MXYData([conc_V3_pos, conc_V4_pos, conc_V5_pos, conc_V4_neg, conc_V3_neg, conc_V2_neg])
     all_cV.names_to_label()
     all_cV.plot(ax=ax, bottom=0, top=c_V, plotstyle='individual')
     
@@ -1528,7 +1528,7 @@ def plot_ref_spectra(ref_spec_negred, ref_spec_negox, ref_spec_posred, ref_spec_
     ax.set_xlabel('Wavelength (nm)')
     ax.set_ylabel('Molar extinction coefficient (1/[M cm])')
     ax.legend()
-    ax.set_title('Reference spectra')
+    ax.set_title('Reference Spectra')
     
     plt.show()
 
@@ -1553,13 +1553,13 @@ def load_absorbance_data(fp_cuv_pos, fp_cuv_neg, xlim=None):
 
 def load_UVVIS_raw_data(data_dir, nm_array, xlim=None):
     
-    def read_file(data_dir, FN, xlim):
-        if FN in os.listdir(data_dir):
+    def read_file(data_dir, filepath, xlim):
+        if filepath in os.listdir(data_dir):
             pass
         else:
-            FN = FN.split('.csv')[0]+'_before.csv'
+            filepath = filepath.split('.csv')[0]+'_before.csv'
 
-        fp = os.path.join(data_dir, FN)
+        fp = os.path.join(data_dir, filepath)
         df = pd.read_csv(fp)
         if df.columns.values[0] == 'nm':
             df.rename(columns={'nm': 'Wavelength (nm)'}, inplace=True)
@@ -1663,7 +1663,7 @@ def UVVIS_get_offset_and_scaling_factor_cuv_pos(first_spectra=None, show=False):
                 #offset, scaling_factor = p[0], p[1]
                 return (spec + offset) * scaling_factor
         
-            # Extract wavelength and absorbance data from target spectrum
+            # Extract wavelength and absorbance data from target Spectrum
             wavelengths = target_spectrum.index
         
             # Initial guess for coefficients and offsets [c1, c2, offset1, offset2]
@@ -1679,7 +1679,7 @@ def UVVIS_get_offset_and_scaling_factor_cuv_pos(first_spectra=None, show=False):
             offset = popt[0]
             scaling_factor = popt[1]
         
-            # Compute the fitted spectrum
+            # Compute the fitted Spectrum
             fitted_spectrum = fit_model(wavelengths, offset, scaling_factor)
             #df_fit = pd.Series(fitted_spectrum, index=target_spectrum.index)
         
@@ -1744,7 +1744,7 @@ def UVVIS_plot_fitted_single(target_spectrum, df_fit, popt, spec_Vr, spec_Vo, xl
     
     plot_df(ax, spec_Vr, linewidth=0.1, color='violet', label='Vx')
     plot_df(ax, spec_Vo, linewidth=0.1, color='green', label='Vy')
-    plot_df(ax, target_spectrum, linewidth=1, color='black', label='target spectrum')
+    plot_df(ax, target_spectrum, linewidth=1, color='black', label='target Spectrum')
     plot_df(ax, df_fit, linewidth=1, color='red', label=f'fitted (ar = {popt[0]:.2f}, ao = {popt[1]:.2f})')
     
     #ax.plot(sp.index, sp.values, label='Original Spectrum (sp)')
@@ -1809,7 +1809,7 @@ def UVVIS_fit_spectrum(target_spectrum, spec_Vr, spec_Vo):
         #return (ar * (spec_Vr.values + offset_r) + ao * (spec_Vo.values + offset_o))
         return (ar * spec_Vr.values + ao * spec_Vo.values)
 
-    # Extract wavelength and absorbance data from target spectrum
+    # Extract wavelength and absorbance data from target Spectrum
     wavelengths = target_spectrum.index
     absorbance = target_spectrum.values
 
@@ -1828,7 +1828,7 @@ def UVVIS_fit_spectrum(target_spectrum, spec_Vr, spec_Vo):
     #offset_r = popt[2]
     #offset_o = popt[3]
 
-    # Compute the fitted spectrum
+    # Compute the fitted Spectrum
     #fitted_spectrum = fit_model(wavelengths, ar, ao, offset_r, offset_o)
     fitted_spectrum = fit_model(wavelengths, ar, ao)
     df_fit = pd.Series(fitted_spectrum, index=target_spectrum.index)
