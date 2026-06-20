@@ -477,7 +477,7 @@ class PLQYDataset:
         left = self.PL_peak + self.param.corr_offs_left
         right = self.PL_peak + self.param.corr_offs_right
 
-        if adj_factor == None:
+        if adj_factor is None:
             factor = guess_factor(left = left, right = right)
         else:
             factor = adj_factor

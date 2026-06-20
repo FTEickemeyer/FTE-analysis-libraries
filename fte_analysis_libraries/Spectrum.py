@@ -152,9 +152,9 @@ class EQESpectrum(Spectrum):
 
         """
             
-        if left == None:
+        if left is None:
             left = min(self.x)
-        if right == None:
+        if right is None:
             right = max(self.x)
             
         dEQE = self.diff(left = left, right = right)
@@ -184,9 +184,9 @@ class EQESpectrum(Spectrum):
             if delta==None:
                 delta = 0.5
             EQE_nm = self.copy()
-            if left == None:
+            if left is None:
                 left = min(EQE_nm.x)
-            if right == None:
+            if right is None:
                 right = max(EQE_nm.x)
             EQE_nm.equidist(left = left, right = right, delta = delta)
             if sp == 'AM15GT':
@@ -208,12 +208,12 @@ class EQESpectrum(Spectrum):
                 return np.trapz(EQE_nm.y * sp.y * q * 1e3/1e4, dx = delta)
         
         if self.ux == 'eV':
-            if delta == None:
+            if delta is None:
                 delta = 0.001
             EQE_eV = self.copy()
-            if left == None:
+            if left is None:
                 left = min(EQE_eV.x)
-            if right == None:
+            if right is None:
                 right = max(EQE_eV.x)
             EQE_eV.equidist(left = left, right = right, delta = delta)
             
@@ -399,16 +399,16 @@ class AbsSpectrum(Spectrum):
         None.
 
         """
-        if illumspec_eV == None:
+        if illumspec_eV is None:
             illumspec_eV = DiffSpectrum.am15_ev(left = min(self.x), right = max(self.x))
             
         # New absorption Spectrum with the same x-values as illumspec_eV (necessary for integration)
         asp = DiffSpectrum(illumspec_eV.x, int_arr(self.x, self.y, illumspec_eV.x))
                 
-        if handover_eV != None:
+        if handover_eV is not None:
             asp.y[asp.x_idx_of(handover_eV):] = asp.y[asp.x_idx_of(handover_eV)]
             
-        if start_eV != None:
+        if start_eV is not None:
             start_idx = asp.x_idx_of(start_eV)
         
         else:
@@ -820,12 +820,12 @@ class DiffSpectrum(Spectrum):
         Calculates photon flux from self.x=start to self.x=stop. self.x values have to be equidistant. Standard is from min(self.x) to max(self.x).
         """
 
-        if start == None:
+        if start is None:
             start_x = min(self.x)
         else:
             start_x = start
         
-        if stop == None:
+        if stop is None:
             stop_x = max(self.x)
         else:
             stop_x = stop
@@ -845,12 +845,12 @@ class DiffSpectrum(Spectrum):
         Calculates photon flux from self.x=start to self.x=stop. self.x values have to be equidistant. Standard is from min(self.x) to max(self.x).
         """
 
-        if start == None:
+        if start is None:
             start_x = min(self.x)
         else:
             start_x = start
         
-        if stop == None:
+        if stop is None:
             stop_x = max(self.x)
         else:
             stop_x = stop
@@ -1013,7 +1013,7 @@ class PELSpectrum(DiffSpectrum):
         p0 = (Tguess, A0) 
         try:
             popt, pcov = curve_fit(f, self.x[r], self.y[r], p0)
-        except:
+        except RuntimeError:
             popt = p0
             print("Fit didn't converge, Tguess taken!")
         
@@ -1054,7 +1054,7 @@ class Spectra(MXYData):
     def names_to_label(self, split_ch = None):
         lab = []
         for i, sp in enumerate(self.sa):
-            if split_ch == None:
+            if split_ch is None:
                 lab.append(sp.name)
             else:
                 lab.append(sp.name.split(split_ch)[0])
@@ -1240,7 +1240,7 @@ class Spectra(MXYData):
     
         FNs = listdir(directory)
         
-        if sel_list != None:
+        if sel_list is not None:
             FNs = [FNs[idx] for idx in sel_list]
         
         sa = []
@@ -1535,7 +1535,7 @@ def above_bg_photon_flux(bg, illumspec_eV = None):
 
     """
         
-    if illumspec_eV == None:
+    if illumspec_eV is None:
         illumspec_eV = DiffSpectrum.am15_ev()
         
     return illumspec_eV.photonflux(start = bg, stop = illumspec_eV.x[-1])
@@ -1553,11 +1553,11 @@ def calc_laser_power(laser_nm, bg_eV = None, pf = None, A = None, Nsun = None, o
         """
         if (A is None) and (not(laser_nm in [405, 420, 660])):
             print('Attention (calc_laser_power(): laser_nm has to be either 405, 420 or 660.')
-        if Nsun == None:
+        if Nsun is None:
             Nsun = 1
-        if bg_eV != None:
+        if bg_eV is not None:
             pf = above_bg_photon_flux(bg_eV)
-        if A == None:            
+        if A is None:            
             #FWHM laser beam diameters
             if laser_nm == 405:
                 A = pi/4 * 533.5e-6 * 715.0e-6 #m2 for 403 nm laser
@@ -1588,7 +1588,7 @@ def calc_laser_power(laser_nm, bg_eV = None, pf = None, A = None, Nsun = None, o
         LP = pf * PE * A / factor
 
         if details:
-            if bg_eV != None:
+            if bg_eV is not None:
                 print(f'For {Nsun} sun conditions with a bandgap of {bg_eV:.3f} eV (= {f1240/bg_eV:.0f} nm) the laser power at {laser_nm} nm has to be {LP * 1000:.2e} mW (90° sample geometry).')
                 if not(only90deg):
                     print(f'... at 45°: {LP * math.sqrt(2) * 1000:.2e} mW')

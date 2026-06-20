@@ -194,14 +194,14 @@ def plot_animation(pset1, pset2, interval = 1, ylim=(1e-2,1.2), normalize_to_end
     #pset2.n0 = 0 #no laser excitation
 
     #u1 = pset1.n0
-    if pset1.pulse_len == None:
+    if pset1.pulse_len is None:
         u1 = pset1.n0
     else:
         u1 = np.zeros(len(pset1.x))
     time1 = 0
 
     #u2 = pset2.n0
-    if pset2.pulse_len == None:
+    if pset2.pulse_len is None:
         u2 = pset2.n0
     else:
         u2 = np.zeros(len(pset2.x))
@@ -273,7 +273,7 @@ def plot_animation(pset1, pset2, interval = 1, ylim=(1e-2,1.2), normalize_to_end
 
         return lines[0], lines[1], time_label #return everything that must be updated
 
-    print#(int(finaltime/pset1.dt/nr_times))
+    print(int(finaltime/pset1.dt/nr_times))
     anim = animation.FuncAnimation(fig, animate, frames=int(finaltime/pset1.dt/nr_times), interval=interval, init_func=init, blit=True, repeat=False)
 
     plt.legend()
@@ -296,14 +296,14 @@ def plot_animation_QFLS(pset1, pset2, interval = 1, ylim=(1e-2,1.2)):
     #pset2.n0 = 0 #no laser excitation
 
     #u1 = pset1.n0
-    if pset1.pulse_len == None:
+    if pset1.pulse_len is None:
         u1 = pset1.n0
     else:
         u1 = np.zeros(len(pset1.x))
     time1 = 0
 
     #u2 = pset2.n0
-    if pset2.pulse_len == None:
+    if pset2.pulse_len is None:
         u2 = pset2.n0
     else:
         u2 = np.zeros(len(pset2.x))
@@ -495,7 +495,7 @@ class TRPLData(XYData):
         f = lambda t, a, tau : a * np.e**(-t/tau)
         
         ind_min = findind(self.x, start)
-        if stop == None:
+        if stop is None:
             ind_max = len(self.x) - 1
         else:
             ind_max = findind(self.x, stop)
@@ -510,7 +510,7 @@ class TRPLData(XYData):
         #popt[0]: a, popt[1]: tau
         mexpfit.popt = popt
         mexpfit.start = start
-        if stop == None:
+        if stop is None:
             mexpfit.stop = self.x[-1]
         else:
             mexpfit.stop = stop
@@ -558,7 +558,7 @@ class TRPLData(XYData):
         f = lambda t, a1, a2, tau1, tau2 : a1 * np.e**(-t/tau1) + a2 * np.e**(-t/tau2)
         
         ind_min = findind(self.x, start)
-        if stop == None:
+        if stop is None:
             ind_max = len(self.x)-1
         else:
             ind_max = findind(self.x, stop)
@@ -572,7 +572,7 @@ class TRPLData(XYData):
         mexpfit.name = '2-exp. fit'        
         mexpfit.popt = popt
         mexpfit.start = start
-        if stop == None:
+        if stop is None:
             mexpfit.stop = self.x[-1]
         else:
             mexpfit.stop = stop
@@ -580,7 +580,7 @@ class TRPLData(XYData):
         if showparam:
             print('Fit function f = a1 * e**(-t/tau1) + a2 * e**(-t/tau2)')
             print(f'a1 = {popt[0]:.2f}, tau1 = {popt[2]:.0f} ns')
-            print(f'a2 = {popt[1]:.2f}, tau1 = {popt[3]:.0f} ns')
+            print(f'a2 = {popt[1]:.2f}, tau2 = {popt[3]:.0f} ns')
             
         return mexpfit
     
@@ -621,7 +621,7 @@ class TRPLData(XYData):
         f = lambda t, a1, a2, a3, tau1, tau2, tau3 : a1 * np.e**(-t/tau1) + a2 * np.e**(-t/tau2) + a3 * np.e**(-t/tau3)
         
         ind_min = findind(self.x, start)
-        if stop == None:
+        if stop is None:
             ind_max = len(self.x)-1
         else:
             ind_max = findind(self.x, stop)
@@ -635,7 +635,7 @@ class TRPLData(XYData):
         mexpfit.name = '3-exp. fit'        
         mexpfit.popt = popt
         mexpfit.start = start
-        if stop == None:
+        if stop is None:
             mexpfit.stop = self.x[-1]
         else:
             mexpfit.stop = stop
@@ -643,8 +643,8 @@ class TRPLData(XYData):
         if showparam:
             print('Fit function f = a1 * e**(-t/tau1) + a2 * e**(-t/tau2) + a3 * e**(-t/tau3)')
             print(f'a1 = {popt[0]:.2f}, tau1 = {popt[3]:.1f} ns')
-            print(f'a2 = {popt[1]:.2f}, tau1 = {popt[4]:.0f} ns')
-            print(f'a3 = {popt[2]:.2f}, tau1 = {popt[5]:.0f} ns')
+            print(f'a2 = {popt[1]:.2f}, tau2 = {popt[4]:.0f} ns')
+            print(f'a3 = {popt[2]:.2f}, tau3 = {popt[5]:.0f} ns')
             
         return mexpfit
     
@@ -687,7 +687,7 @@ class TRPLData(XYData):
         f = lambda t, a1, a2, a3, a4, tau1, tau2, tau3, tau4 : a1 * np.e**(-t/tau1) + a2 * np.e**(-t/tau2) + a3 * np.e**(-t/tau3) + a4 * np.e**(-t/tau4)
         
         ind_min = findind(self.x, start)
-        if stop == None:
+        if stop is None:
             ind_max = len(self.x)-1
         else:
             ind_max = findind(self.x, stop)
@@ -702,7 +702,7 @@ class TRPLData(XYData):
         mexpfit.popt = popt
         mexpfit.start = start
 
-        if stop == None:
+        if stop is None:
             mexpfit.stop = self.x[-1]
         else:
             mexpfit.stop = stop
@@ -710,9 +710,9 @@ class TRPLData(XYData):
         if showparam:
             print('Fit function f = a1 * e**(-t/tau1) + a2 * e**(-t/tau2) + a3 * e**(-t/tau3) + a4 * e**(-t/tau4)')
             print(f'a1 = {popt[0]:.2f}, tau1 = {popt[4]:.1f} ns')
-            print(f'a2 = {popt[1]:.2f}, tau1 = {popt[5]:.1f} ns')
-            print(f'a3 = {popt[2]:.2f}, tau1 = {popt[6]:.0f} ns')
-            print(f'a3 = {popt[3]:.2f}, tau1 = {popt[7]:.0f} ns')
+            print(f'a2 = {popt[1]:.2f}, tau2 = {popt[5]:.1f} ns')
+            print(f'a3 = {popt[2]:.2f}, tau3 = {popt[6]:.0f} ns')
+            print(f'a4 = {popt[3]:.2f}, tau4 = {popt[7]:.0f} ns')
 
         return mexpfit
     
@@ -835,7 +835,7 @@ class TRPLData(XYData):
         """
     
         t=0
-        if p.pulse_len == None:
+        if p.pulse_len is None:
             n = p.n0
         else:
             n = np.zeros(len(p.x))
@@ -846,7 +846,7 @@ class TRPLData(XYData):
         TRPL_list.append(PLsignal(n, p.dx, p.k2))   
         ns_list.append(0)
             
-        if p.pulse_len != None:
+        if p.pulse_len is not None:
     
             # Start the calculation over the pulse length * 3 in 1ps steps
             #dt = 1e-12
@@ -865,7 +865,7 @@ class TRPLData(XYData):
     
             # Now the rest of the time 
         
-        time_delta = time_delta #s # origianlly 0.1 ns, display PL intensity every time_delta s
+        # time_delta in s; originally 0.1 ns, display PL intensity every time_delta s
         nr_times = int(time_delta / p.dt)
         
         for i in range(int(p.finaltime/(p.dt*nr_times))):
@@ -887,7 +887,7 @@ class TRPLData(XYData):
     
         data = TRPLData(ns, cts, name = name)
     
-        if normalize_ns != None:
+        if normalize_ns is not None:
             data.y = data.y * normalize_cts / data.y_of(normalize_ns)
             
         else:
@@ -962,13 +962,13 @@ class TRPLData(XYData):
         Rate equation: dn/dt = -k1*n - k2*n**2
         """
 
-        if start == None:
+        if start is None:
             start = 0
-        if stop == None:
+        if stop is None:
             stop = self.x[-1]
 
         if used_for_fit == 'savgol':
-            if savgol_param == None:
+            if savgol_param is None:
                 savgol_param = dict(n1 = 51, n2 = 1, name = 'Savgol')
             dat = self.savgol(**savgol_param)
         else:
@@ -1018,13 +1018,13 @@ class TRPLData(XYData):
         Rate equation: dn/dt = -k1*n - k2*n**2
         """
 
-        if start == None:
+        if start is None:
             start = 0
-        if stop == None:
+        if stop is None:
             stop = self.x[-1]
 
         if used_for_fit == 'savgol':
-            if savgol_param == None:
+            if savgol_param is None:
                 savgol_param = dict(n1 = 51, n2 = 1, name = 'Savgol')
             dat = self.savgol(**savgol_param)
         else:
@@ -1076,13 +1076,13 @@ class TRPLData(XYData):
         Rate equation: dn/dt = -k1*n - k2*n**2
         """
 
-        if start == None:
+        if start is None:
             start = 0
-        if stop == None:
+        if stop is None:
             stop = self.x[-1]
 
         if used_for_fit == 'savgol':
-            if savgol_param == None:
+            if savgol_param is None:
                 savgol_param = dict(n1 = 51, n2 = 1, name = 'Savgol')
             dat = self.savgol(**savgol_param)
         else:
@@ -1132,13 +1132,13 @@ class TRPLData(XYData):
         Rate equation: dn/dt = -k1*n - k2*n**2
         """
 
-        if start == None:
+        if start is None:
             start = 0
-        if stop == None:
+        if stop is None:
             stop = self.x[-1]
 
         if used_for_fit == 'savgol':
-            if savgol_param == None:
+            if savgol_param is None:
                 savgol_param = dict(n1 = 51, n2 = 1, name = 'Savgol')
             dat = self.savgol(**savgol_param)
         else:
@@ -1181,9 +1181,9 @@ class TRPLData(XYData):
     
     def k1_k2_model_fit(self, what_to_fit = ['k1', 'k2'], start = None, stop = None, n0 = 1e-15, k1 = 1e6, k2 = 1e-7, show = None):
     
-        if start == None:
+        if start is None:
             start = 0
-        if stop == None:
+        if stop is None:
             stop = self.x[-1]
             
         #n00 will be used for the transformations from PL intensity into carrier concentration and back
@@ -1196,7 +1196,7 @@ class TRPLData(XYData):
         cc.qy = 'Carrier concentration'
         cc.uy = '1/cm3'
         
-        if show != None:
+        if show is not None:
             if (show == 'all') or ('step 1' in show):
                 #m_max = cc.max_within(left = start, right = stop)
                 #m_min = cc.min_within(left = start, right = stop)
@@ -1210,7 +1210,7 @@ class TRPLData(XYData):
         else:
             show_all = False
                 
-        if what_to_fit == None:
+        if what_to_fit is None:
             # no fit, i.e. only n0        
             dta, [n0] = cc.n0_fit(start, stop, n0 = n0, k1 = k1, k2 = k2, show_all = show_all)
     
@@ -1230,7 +1230,7 @@ class TRPLData(XYData):
                 # fit k2 only
                 dta, [n0, k2] = cc.k2_fit(start, stop, x0 = [k2], k1 = k1, show_all = show_all, used_for_fit = 'savgol', **kwargs)
     
-        if show != None:
+        if show is not None:
             if (show == 'all') or ('step 3' in show):
                 print('Step 3: Show fit.')
                 m_max = dta.sa[0].y[0]
@@ -1247,7 +1247,7 @@ class TRPLData(XYData):
             sp.qy = 'PL intensity'
             sp.uy = 'cts.'
     
-        if show != None:
+        if show is not None:
             if (show == 'all') or ('step 4' in show):
                 print('Step 4: Back-transformation from carrier concentration into PL intensity.')
                 PL_dta.plot(yscale = 'log', right = stop)
@@ -1283,11 +1283,11 @@ class TRPLData(XYData):
                     stop = True
             return idx
 
-        if start == None:
+        if start is None:
             start = bg_idx_start()
         else:
             start = self.x_idx_of(start)
-        if stop == None:
+        if stop is None:
             stop = bg_idx_stop()
         else:
             stop = self.x_idx_of(stop)
@@ -1340,9 +1340,9 @@ class TRPLData(XYData):
         
 
         if plot_details:
-            if left == None:
+            if left is None:
                 left = 0
-            if right == None:
+            if right is None:
                 right = max(dat.x)
             dat.plotstyle = dict(linestyle='-', linewidth=5, markersize=5)
             #dat_max = dat.max_within(left = left, right = right)

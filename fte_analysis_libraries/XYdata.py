@@ -237,7 +237,7 @@ class XYData:
         Find the first x_value > start  where self.y = y_value
         """
 
-        if start == None:
+        if start is None:
             idx_start = 0
         else:
             idx_start = findind(self.x, start)
@@ -262,7 +262,7 @@ class XYData:
 
     
     def normalize(self, x_lim = None, norm_val = 1):
-        if x_lim == None:
+        if x_lim is None:
             r = range(0, len(self.x))
         else:
             idx_min = self.x_idx_of(x_lim[0])
@@ -278,12 +278,12 @@ class XYData:
         If left (right) = None then the new left (right) value is the old one.
         """
         
-        if left == None:
+        if left is None:
             #min_x = math.ceil(min(self.x))
             min_x = min(self.x)
         else:
             min_x = left
-        if right == None:
+        if right is None:
             max_x = max(self.x)
         else: 
             max_x = right
@@ -332,24 +332,24 @@ class XYData:
         ax.set_xscale(xscale)
         ax.set_yscale(yscale)
 
-        if left != None:
+        if left is not None:
             ax.set_xlim(left = left)
-        if right != None:
+        if right is not None:
             ax.set_xlim(right = right)
             
-        if bottom != None:
-            if top == None:
+        if bottom is not None:
+            if top is None:
                 bottom_, top = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
                 #top = max(self.y) + 0.1 * abs(max(self.y))
             ax.set_ylim(bottom = bottom, top = top)
             
-        if top != None:
-            if bottom == None:
+        if top is not None:
+            if bottom is None:
                 bottom, top_ = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
                 #bottom = min(self.y) - 0.1 * abs(min(self.y))
             ax.set_ylim(bottom = bottom, top = top)
             
-        if (bottom == None) and (top == None):
+        if (bottom is None) and (top is None):
             bottom, top = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
             ax.set_ylim(bottom = bottom, top = top)   
 
@@ -377,7 +377,7 @@ class XYData:
             the_table.set_fontsize(12)
             the_table.scale(1, 5)
             
-        if hline != None:
+        if hline is not None:
             if type(hline) == list:
                 for idx, n in enumerate(hline):
                     if hline_colors is not None:
@@ -392,7 +392,7 @@ class XYData:
                     color = 'b'
                 ax.axhline(y = hline, color=color, linestyle='-')
 
-        if vline != None:
+        if vline is not None:
             if type(vline) == list:
                 for idx, n in enumerate(vline):
                     if vline_colors is not None:
@@ -424,9 +424,9 @@ class XYData:
         
     def plot_linfit(self, von = None, bis = None, residue = False, return_data = False):
         
-        if von == None:
+        if von is None:
             von = min(self.x)
-        if bis == None:
+        if bis is None:
             bis = max(self.x)
         m, b = linfit(self.x, self.y, von, bis)
         self.m = m
@@ -564,7 +564,7 @@ class XYData:
             xy_filt.y = y
             mxy = MXYData([self, xy_filt])
             mxy.label = ['original', 'filtered']
-            if left != None and right != None:
+            if left is not None and right is not None:
                 m_max = mxy.max_within(left = left, right = right)
                 m_min = mxy.min_within(left = left, right = right)
                 if m_min < 0:
@@ -580,7 +580,7 @@ class XYData:
         sgf = self.copy()
         sgf.y = savgol_filter(self.y, n1, n2)
 
-        if name != None:
+        if name is not None:
             sgf.name = name
                 
         return sgf 
@@ -590,9 +590,9 @@ class XYData:
         
         d = self.copy()
         
-        if left == None:
+        if left is None:
             left = min(self.x)
-        if right == None:
+        if right is None:
             right = max(self.x)
     
         le = findind(self.x, left)
@@ -617,9 +617,9 @@ class XYData:
     @staticmethod
     def chisquare(data, fit, left = None, right = None):
         # data and fit must have the same x values
-        if left == None:
+        if left is None:
             left = min(data.x)
-        if right == None:
+        if right is None:
             right = max(data.x)
     
         le = findind(data.x, left)
@@ -636,9 +636,9 @@ class XYData:
         self_asc = self.copy()
         self_asc.strictly_ascending()
         
-        if left == None:
+        if left is None:
             left = min(self_asc.x)
-        if right == None:
+        if right is None:
             right = max(self_asc.x)
 
         le = findind(self_asc.x, left)
@@ -666,9 +666,9 @@ class XYData:
         l = left
         r = right
 
-        if (left == None) or (left < min(self.x)): 
+        if (left is None) or (left < min(self.x)): 
             l = min(self.x)
-        if (right == None) or (right > max(self.x)):
+        if (right is None) or (right > max(self.x)):
             r = max(self.x)
 
         ra = range(findind(self.x, l), findind(self.x, r)+1)
@@ -687,9 +687,9 @@ class XYData:
         l = left
         r = right
 
-        if (left == None) or (left < min(self.x)): 
+        if (left is None) or (left < min(self.x)): 
             l = min(self.x)
-        if (right == None) or (right > max(self.x)):
+        if (right is None) or (right > max(self.x)):
             r = max(self.x)
 
         ra = range(findind(self.x, l), findind(self.x, r)+1)
@@ -713,7 +713,7 @@ class XYData:
             top *= 1.1
             bottom = self.min_within(left = left, right = right, absolute = True)
             if bottom == 0:
-                if divisor == None:
+                if divisor is None:
                     print('Attention: bottom = 0, use a divisor to self-define the bottom = top/divisor, here divisor = 1e8 is used as standard!')
                     bottom = top/1e8
                 else:
@@ -736,9 +736,9 @@ class XYData:
         l = left
         r = right
     
-        if (left == None) or (left < min(self.x)): 
+        if (left is None) or (left < min(self.x)): 
             l = min(self.x)
-        if (right == None) or (right > max(self.x)):
+        if (right is None) or (right > max(self.x)):
             r = max(self.x)
     
         ra = range(findind(self.x, l), findind(self.x, r)+1)
@@ -755,9 +755,9 @@ class XYData:
         l = left
         r = right
     
-        if (left == None) or (left < min(self.x)): 
+        if (left is None) or (left < min(self.x)): 
             l = min(self.x)
-        if (right == None) or (right > max(self.x)):
+        if (right is None) or (right > max(self.x)):
             r = max(self.x)
     
         ra = range(findind(self.x, l), findind(self.x, r)+1)
@@ -804,9 +804,9 @@ class XYData:
         
     def idfac_fit(self, left = None, right = None, plot = False, plotrange = [None, None], return_fit = True):
         
-        if (left == None) or (left < min(self.x)):
+        if (left is None) or (left < min(self.x)):
             left = min(self.x)
-        if (right == None) or (right > max(self.x)):
+        if (right is None) or (right > max(self.x)):
             right = max(self.x)
         
         ra = range(findind(self.x, left), findind(self.x, right)+1)
@@ -818,12 +818,12 @@ class XYData:
         fit.nid = nid
         
         if plot:
-            if (plotrange[0] == None) or (plotrange[0] < min(self.x)):
+            if (plotrange[0] is None) or (plotrange[0] < min(self.x)):
                 plot_left = min(self.x) * 0.5
             else:
                 plot_left = plotrange[0]
                 
-            if (plotrange[1] == None) or (plotrange[1] > max(self.x)):
+            if (plotrange[1] is None) or (plotrange[1] > max(self.x)):
                 plot_right = max(self.x) * 1.1
             else:
                 plot_right = plotrange[1]
@@ -866,18 +866,18 @@ class XYData:
         result = d1.copy()
         result.y = d1.y * d2.y
         
-        if qy != None:
+        if qy is not None:
             result.qy = qy
-        if uy != None:
+        if uy is not None:
             result.uy = uy
         
         return result
     
-    def all_values_greater_min(self, min = None):
+    def all_values_greater_min(self, min_val=None):
         """
-        Looks for values < min and sets them to min.
+        Looks for values < min_val and sets them to min_val.
         """
-        self.y = np.array([self.y[i] if (self.y[i] > min) else min for i in range(len(self.y))], dtype = np.float64)
+        self.y = np.array([self.y[i] if (self.y[i] > min_val) else min_val for i in range(len(self.y))], dtype = np.float64)
     
     def shift_x(self, x):
         """
@@ -903,7 +903,7 @@ class XYData:
         ra = self.idx_range(left = left, right = right)
         p = np.poly1d(np.polyfit(self.x[ra], self.y[ra], order))
         fit = self.copy()
-        if new_x_arr == None:
+        if new_x_arr is None:
             if new_meshsize != 0:
                 fit.x = np.linspace(self.x[ra[0]], self.x[ra[-1]], new_meshsize)
             else:
@@ -1095,25 +1095,25 @@ class MXYData:
     def set_plotstyle(self, linestyle = None, marker = None, color = None, markersize = None, linewidth = None):
         for idx, sp in enumerate(self.sa):
             
-            if linestyle != None:
+            if linestyle is not None:
                 sp.plotstyle['linestyle'] = linestyle
             
-            if marker != None:
+            if marker is not None:
                 sp.plotstyle['marker'] = marker
             
-            if color != None:
+            if color is not None:
                 sp.plotstyle['color'] = color
             
-            if markersize != None:
+            if markersize is not None:
                 sp.plotstyle['markersize'] = markersize
             
-            if linewidth != None:
+            if linewidth is not None:
                 sp.plotstyle['linewidth'] = linewidth
 
     def names_to_label(self, split_ch = None):
         lab = []
         for i, sp in enumerate(self.sa):
-            if split_ch == None:
+            if split_ch is None:
                 lab.append(sp.name)
             else:
                 lab.append(sp.name.split(split_ch)[0])
@@ -1125,7 +1125,7 @@ class MXYData:
         all_names = []
         idx = 0
         for i, sp in enumerate(self.sa):
-            if split_ch == None:
+            if split_ch is None:
                 next_name = sp.name
             else:
                 next_name = sp.name.split(split_ch)[0]
@@ -1254,19 +1254,19 @@ class MXYData:
                     right = sp.x[-1]
         ax.set_xlim(left, right)
         
-        if bottom != None:
-            if top == None:
+        if bottom is not None:
+            if top is None:
                 bottom_, top = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
                 #top = max(self.sa[0].y) + 0.1 * abs(max(self.sa[0].y))
             ax.set_ylim(bottom = bottom, top = top)
             
-        if top != None:
-            if bottom == None:
+        if top is not None:
+            if bottom is None:
                 bottom, top_ = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
                 #bottom = min(self.sa[0].y) - 0.1 * abs(min(self.sa[0].y))
             ax.set_ylim(bottom = bottom, top = top)
             
-        if (bottom == None) and (top == None):
+        if (bottom is None) and (top is None):
             bottom, top = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
             ax.set_ylim(bottom = bottom, top = top)        
             
@@ -1339,7 +1339,7 @@ class MXYData:
                 if save_ok(TFN):
                     plt.savefig(TFN)
                     
-        if hline != None:
+        if hline is not None:
             if type(hline) == list:
                 for idx, n in enumerate(hline):
                     if hline_colors is not None:
@@ -1354,7 +1354,7 @@ class MXYData:
                     color = 'b'
                 ax.axhline(y = hline, color=color, linestyle='-')
 
-        if vline != None:
+        if vline is not None:
             if type(vline) == list:
                 for idx, n in enumerate(vline):
                     if vline_colors is not None:
@@ -1385,7 +1385,7 @@ class MXYData:
 
     
     def save(self, save_dir, title, label = None):
-        if label == None:
+        if label is None:
             label = self.lab
         for i, xy_dat in enumerate(self.sa):
             filepath = title + ' - ' + label[i] + '.csv'
@@ -1416,7 +1416,7 @@ class MXYData:
     def save_individual(self, save_dir = None, FNs = None, check_existing = True, check_FN_extension = True):
         
         quitted = False
-        if save_dir == None:
+        if save_dir is None:
             save_dir = os.getcwd()
         for i, sp in enumerate(self.sa):
                     
@@ -1427,7 +1427,7 @@ class MXYData:
             if sp.uy != "":
                 y_col_name = y_col_name + f' ({sp.uy})'
                                     
-            if FNs == None:
+            if FNs is None:
                 filepath = sp.name
             else:
                 filepath = FNs[i]
@@ -1502,9 +1502,9 @@ class MXYData:
             l = left
             r = right
                 
-            if (left == None) or (left < min(sp.x)): 
+            if (left is None) or (left < min(sp.x)): 
                 l = min(sp.x)
-            if (right == None) or (right > max(sp.x)):
+            if (right is None) or (right > max(sp.x)):
                 r = max(sp.x)
 
             ra = range(findind(sp.x, l), findind(sp.x, r)+1)
@@ -1533,9 +1533,9 @@ class MXYData:
             r = right
 
                 
-            if (left == None) or (left < min(sp.x)): 
+            if (left is None) or (left < min(sp.x)): 
                 l = min(sp.x)
-            if (right == None) or (right > max(sp.x)):
+            if (right is None) or (right > max(sp.x)):
                 r = max(sp.x)
 
             ra = range(findind(sp.x, l), findind(sp.x, r)+1)
@@ -1565,7 +1565,7 @@ class MXYData:
             top *= 1.1
             bottom = self.min_within(left = left, right = right, absolute = True)
             if bottom == 0:
-                if divisor == None:
+                if divisor is None:
                     print('Attention: bottom = 0, use a divisor to self-define the bottom = top/divisor, here divisor = 1e8 is used as standard!')
                     bottom = top/1e8
                 else:
@@ -1591,12 +1591,12 @@ class MXYData:
             sp.equidist(left = left, right = right, delta = delta, kind = kind)
         
             
-    def all_values_greater_min(self, min = None):
+    def all_values_greater_min(self, min_val=None):
         """
-        Looks for values < min and sets them to min.
+        Looks for values < min_val and sets them to min_val.
         """
         for idx, sp in enumerate(self.sa):
-            sp.all_values_greater_min(min = min)
+            sp.all_values_greater_min(min_val = min_val)
             
     def cut_data_outside(self, left = None, right = None):
         """
