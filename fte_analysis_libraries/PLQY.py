@@ -22,6 +22,7 @@ except ImportError:
 
 from . import Spectrum as spc
 from .XYdata import XYData, MXYData
+from typing import Any
 from .General import (
     linfit,
     save_ok,
@@ -40,13 +41,13 @@ from .General import (
 
 system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data'))
 
-def get_Andor_metadata(f, showall = False):
+def get_Andor_metadata(f: float, showall: bool = False) -> Any:
     """
     Extracts all metadata from the filename f for measurements with the Andor spectrometer.
     """
 
     # name
-    name = f.split('--')[0]
+    name = f.split('--')[0]  # type: ignore
     metadata = dict(name = name)
     if showall:
         print(name)
@@ -54,7 +55,7 @@ def get_Andor_metadata(f, showall = False):
     # add original filename
     metadata['orig_fn'] = f
 
-    mdat = f.split(name+'--')[1]
+    mdat = f.split(name+'--')[1]  # type: ignore
 
     # fs or ip
     fsip = mdat.split('--')[0].split('_')[0]
@@ -109,7 +110,7 @@ def get_Andor_metadata(f, showall = False):
     # accumulations
     acc_pattern = '(\d+)acc'
     acc_match = re.search(acc_pattern, mdat.lower())
-    acc = int(acc_match.group(1))
+    acc = int(acc_match.group(1))  # type: ignore
     metadata['acc'] = acc
     if showall:
         print(acc)
@@ -117,14 +118,14 @@ def get_Andor_metadata(f, showall = False):
     # grating
     lmm_pattern = '(\d+)lmm'
     lmm_match = re.search(lmm_pattern, mdat.lower())
-    lmm = int(lmm_match.group(1))
+    lmm = int(lmm_match.group(1))  # type: ignore
     metadata['grating'] = lmm
     if showall:
         print(lmm)
 
     center_pattern = 'center(\d+)'
     center_match = re.search(center_pattern, mdat.lower())
-    center = int(center_match.group(1))
+    center = int(center_match.group(1))  # type: ignore
     metadata['grating_center_nm'] = center
     if showall:
         print(center)
@@ -133,7 +134,7 @@ def get_Andor_metadata(f, showall = False):
     if 'slit' in mdat.lower():
         slit_pattern = '(\d+)'+ 'umslit'
         slit_match = re.search(slit_pattern, mdat.lower())
-        sl = int(slit_match.group(1))
+        sl = int(slit_match.group(1))  # type: ignore
         metadata['slit_um'] = sl
         if showall:
             print(f'slit size = {sl} um')
@@ -147,7 +148,7 @@ def get_Andor_metadata(f, showall = False):
         
     return metadata
 
-def raw_to_asset_with_metadata(container, asset_type, db, show_FN = False, show_new_asset = False):
+def raw_to_asset_with_metadata(container: Any, asset_type: Any, db: Any, show_FN: str = False, show_new_asset: bool = False) -> Any:  # type: ignore
     # Generate new asset with metadata from raw measurements
     
     raw = db.find_assets( { 'parent' : container._id, 'type': asset_type } )
@@ -175,7 +176,7 @@ def raw_to_asset_with_metadata(container, asset_type, db, show_FN = False, show_
         if show_new_asset:
             print(asset)    
 
-def add_graph(db, fn, graph):
+def add_graph(db: Any, fn: str, graph: Any) -> Any:
     """
     Adds a graph as an asset and saves it
 
@@ -199,7 +200,7 @@ def add_graph(db, fn, graph):
     graph.savefig(asset_filepath, dpi=300, bbox_inches = "tight")
 
 
-def find(dic, assets, show_details = False):
+def find(dic: Any, assets: Any, show_details: bool = False) -> Any:
     asts = thot.filter(dic, assets)
     if len(asts) == 0:
         raise RuntimeError(f'{dic} in assets not found!')
@@ -217,7 +218,7 @@ def find(dic, assets, show_details = False):
     
 class ExpParam:
     
-    def __init__(self, which_sample = None, excitation_laser = None, PL_left = None, PL_right = None, PL_peak = None, corr_offs_left = 40, corr_offs_right = 50, PL_peak_auto = False, eval_Pb = False):
+    def __init__(self, which_sample: Any | None = None, excitation_laser: Any | None = None, PL_left: Any | None = None, PL_right: Any | None = None, PL_peak: Any | None = None, corr_offs_left: Any = 40, corr_offs_right: Any = 50, PL_peak_auto: Any = False, eval_Pb: Any = False) -> None:
 
         # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right 
 
@@ -392,12 +393,12 @@ class ExpParam:
 
 class PLQYDataset:
     
-    def __init__(self, db, La, Lb, Lc, Pa, Pb, Pc, fs, sample_name, param):
+    def __init__(self, db: Any, La: Any, Lb: Any, Lc: Any, Pa: Any, Pb: Any, Pc: float, fs: Any, sample_name: str, param: Any) -> None:
         
-        def load_spectrum(LP):
+        def load_spectrum(LP: Any) -> Any:
             return spc.PELSpectrum.load(os.path.dirname(LP.file), filepath = os.path.basename(LP.file), take_quants_and_units_from_file = True)
         
-        def create_PELspectra_obj(sa):
+        def create_PELspectra_obj(sa: Any) -> Any:
             PEL = spc.PELSpectra(sa)
             PEL.label([])
         
@@ -428,14 +429,14 @@ class PLQYDataset:
         self.L = spc.PELSpectra([self.La, self.Lb, self.Lc])
         self.L.label(['La', 'Lb', 'Lc'])
 
-    def plot(self, *args, **kwargs):
+    def plot(self, *args, **kwargs) -> None:
         self.all.plot(*args, **kwargs)
-        all_graph = self.all.plot(*args, return_fig = True, show_plot = False, hline=0, hline_colors='black', **kwargs)
+        all_graph = self.all.plot(*args, return_fig = True, show_plot = False, hline=0, hline_colors='black', **kwargs)  # type: ignore
         add_graph(self.db, self.sample_name+'_all.png', all_graph)
         plt.close( all_graph )
         
 
-    def find_PL_peak(self):
+    def find_PL_peak(self) -> Any:
         if self.param.PL_peak_auto:
             if self.PL_peak is None:
                 ra = self.fs.idx_range(left = self.param.PL_left, right = self.param.PL_right)
@@ -444,7 +445,7 @@ class PLQYDataset:
         self.v_sq = v_sq(self.Eg) #V
     
         
-    def inb_oob_adjust(self, what = 'inb', adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = True, show_inbeam_correction=False, divisor = 1e3):
+    def inb_oob_adjust(self, what: Any = 'inb', adj_factor: Any | None = None, show_adjust_factor: bool = False, save_plots: bool = False, show_plots: bool = True, show_inbeam_correction: bool=False, divisor: float = 1e3) -> Any:
         # adj_factor: manual adjustment factor. It is advisable to run this routine first with show_adjust_factor = True and then take this as a basis for the adj_factor
         # automatically calculate the factor
 
@@ -454,7 +455,7 @@ class PLQYDataset:
         elif what == 'oob':
             sp = self.Pb
             
-        def guess_factor(left, right):
+        def guess_factor(left: float, right: float) -> Any:
             """
             Returns the inbeam or outofbeam-free space adjustment factor.
             """
@@ -466,7 +467,7 @@ class PLQYDataset:
             fs_.equidist(left = left, right = right, delta = delta)
             sp_.equidist(left = left, right = right, delta = delta)
 
-            def f(fac): 
+            def f(fac: float) -> Any: 
                 diff = sp_.y - fac * fs_.y
                 return math.sqrt(1/len(diff) * np.dot(diff, diff))
 
@@ -502,22 +503,22 @@ class PLQYDataset:
         fssp = spc.PELSpectra([sp_orig, sp])
         fssp.label([what, 'adjusted'])
         
-        fssp_lin_graph = fssp.plot(yscale = 'linear', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, hline=0, hline_colors='black', title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = show_plots or show_inbeam_correction)
+        fssp_lin_graph = fssp.plot(yscale = 'linear', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, hline=0, hline_colors='black', title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = show_plots or show_inbeam_correction)  # type: ignore
         if save_plots:
             add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(linear).png', fssp_lin_graph)
         plt.close( fssp_lin_graph )
         
-        fssp_log_graph = fssp.plot(yscale = 'log', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = show_plots)
+        fssp_log_graph = fssp.plot(yscale = 'log', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = show_plots)  # type: ignore
         if save_plots:
             add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(semilog).png', fssp_log_graph)
         plt.close( fssp_log_graph )
         
-    def inb_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = False, show_inbeam_correction=True, divisor = 1e3):
+    def inb_adjust(self, adj_factor: Any | None = None, show_adjust_factor: bool = False, save_plots: bool = False, show_plots: bool = False, show_inbeam_correction: bool=True, divisor: float = 1e3) -> Any:
             self.inb_oob_adjust(what = 'inb', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, show_plots = show_plots, show_inbeam_correction=show_inbeam_correction, divisor = divisor)
-    def oob_adjust(self, adj_factor = None, show_adjust_factor = False, save_plots = False, show_plots = False, divisor = 1e3):
+    def oob_adjust(self, adj_factor: Any | None = None, show_adjust_factor: bool = False, save_plots: bool = False, show_plots: bool = False, divisor: float = 1e3) -> Any:
             self.inb_oob_adjust(what = 'oob', adj_factor = adj_factor, show_adjust_factor = show_adjust_factor, save_plots = save_plots, show_plots = show_plots, divisor = divisor)
 
-    def calc_abs(self, what = 'inb', save_plots = False, show_plot = False, return_A = False):
+    def calc_abs(self, what: Any = 'inb', save_plots: bool = False, show_plot: bool = False, return_A: bool = False) -> Any:
         #Calculates the absorptance Spectrum from the fs and inbeam or outofbeam PL Spectrum
         if what == 'inb':
             sp_orig = self.Pc_orig
@@ -537,7 +538,7 @@ class PLQYDataset:
         A = 1-y_ib[zero_mask]/y_fs[zero_mask]
         s = spc.AbsSpectrum(x[zero_mask], A)
         s.qy = 'A'
-        abs_graph = s.plot(title = 'Absorptance Spectrum', hline = 0, hline_colors='black', bottom = -0.2, top = 1, figsize = (8,5), return_fig = True, show_plot = show_plot)
+        abs_graph = s.plot(title = 'Absorptance Spectrum', hline = 0, hline_colors='black', bottom = -0.2, top = 1, figsize = (8,5), return_fig = True, show_plot = show_plot)  # type: ignore
 
         if save_plots:
             add_graph(self.db, f'{self.sample_name}_absorptance_with_{what}.png', abs_graph)
@@ -550,7 +551,7 @@ class PLQYDataset:
 
         
         
-    def calc_PLQY(self, eval_Pa = False, show = False, show_plots = False, save_plots = False, show_lum = 'log'):
+    def calc_PLQY(self, eval_Pa: Any = False, show: bool = False, show_plots: bool = False, save_plots: bool = False, show_lum: bool = 'log') -> Any:  # type: ignore
         
         La = self.La.calc_integrated_photonflux(start = self.param.laser_left, stop = self.param.laser_right)
         Lb = self.Lb.calc_integrated_photonflux(start = self.param.laser_left, stop = self.param.laser_right)
@@ -575,8 +576,8 @@ class PLQYDataset:
 
         #laser_graph = self.L.plot(yscale = 'linear', left = self.param.laser_left, right = self.param.laser_right, title = 'Laser signal', showindex = False, in_name = self.param.laser_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = show_plots)
         #PL_graph = self.P.plot(yscale = show_lum, left = self.param.PL_left, right = self.param.PL_right, divisor = 1e7, title = 'Luminescence signal', showindex = False, in_name = self.param.PL_marker, figsize = (7,5), hline = 0, return_fig = True, show_plot = show_plots)
-        laser_graph = self.L.plot(yscale = 'linear', left = self.param.laser_left, right = self.param.laser_right, title = 'Laser signal', showindex = False, figsize = (7,5), hline=0, hline_colors='black', return_fig = True, show_plot = show_plots)
-        PL_graph = self.P.plot(yscale = show_lum, left = self.param.PL_left, right = self.param.PL_right, divisor = 1e7, title = 'Luminescence signal', showindex = False, figsize = (7,5), hline=0, hline_colors='black', return_fig = True, show_plot = show_plots)
+        laser_graph = self.L.plot(yscale = 'linear', left = self.param.laser_left, right = self.param.laser_right, title = 'Laser signal', showindex = False, figsize = (7,5), hline=0, hline_colors='black', return_fig = True, show_plot = show_plots)  # type: ignore
+        PL_graph = self.P.plot(yscale = show_lum, left = self.param.PL_left, right = self.param.PL_right, divisor = 1e7, title = 'Luminescence signal', showindex = False, figsize = (7,5), hline=0, hline_colors='black', return_fig = True, show_plot = show_plots)  # type: ignore
 
         if save_plots:
             add_graph(self.db, f'{self.sample_name}_L.png', laser_graph)
@@ -610,7 +611,7 @@ class PLQYDataset:
         self.qfls = qfls(self.Eg, PLQY)
 
         
-    def abs_pf_spec(self, nsuns = 1):
+    def abs_pf_spec(self, nsuns: Any = 1) -> Any:
         """
         Calculates the absolute photon flux Spectrum for nsuns excitation and saves it as self.absPFspec
         :param nsuns: number of suns
@@ -635,7 +636,7 @@ class PLQYDataset:
         #print(f'sun_PF = {sun_PF:.1e}, Eg = {Eg:.2f} eV, PL peak = {self.PL_peak:.0f} nm')
         self.absolutePFspec = sp
         
-    def save_asset(self):
+    def save_asset(self) -> Any:
         
         metadata = dict(A = self.A, PLQY = self.PLQY, Peak = self.PL_peak, Eg = self.Eg, v_sq = self.v_sq, dV = self.v_loss, qfls = self.qfls, adj_fac = self.adj_factor, fs_absint_factor = self.fs_absint_factor)
         #print(metadata)

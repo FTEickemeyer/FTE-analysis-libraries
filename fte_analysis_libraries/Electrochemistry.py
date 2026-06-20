@@ -27,17 +27,18 @@ from . import General as gen
 from .General import linfit, findind, save_ok, plx, q, k, T_RT, str_round_sig, colors, idx_range
 from .XYdata import XYData, MXYData
 from .IV import IVData
+from typing import Any
 
 
-def _read_mpt_header_lines(filepath, encoding='ISO-8859-1'):
+def _read_mpt_header_lines(filepath: str, encoding: str='ISO-8859-1') -> None:
     """Return the number of header lines declared in a Biologic .mpt file."""
     with open(filepath, encoding=encoding) as f:
         for line in f:
             if 'Nb header lines' in line:
-                return int(line[17:].strip())
+                return int(line[17:].strip())  # type: ignore
 
 
-def load_Biologic_CV(directory, filepath, cell_area, light_int = 100, J_1sun = None, raw_data = False, both_scans = False, reverse_scan = True, warning = True, encoding = "ISO-8859-1"):
+def load_Biologic_CV(directory: str, filepath: str, cell_area: float, light_int: float = 100, J_1sun: Any | None = None, raw_data: np.ndarray = False, both_scans: bool = False, reverse_scan: bool = True, warning: bool = True, encoding: str = "ISO-8859-1") -> Any:  # type: ignore
     """
     Loads CV data measured with a Biologic potentiostat. It works if the CV was measured first forward and then backward.
 
@@ -74,7 +75,7 @@ def load_Biologic_CV(directory, filepath, cell_area, light_int = 100, J_1sun = N
 
     TFN = join(directory,filepath)
 
-    raw = pd.read_csv(TFN, delimiter='\t', header=_read_mpt_header_lines(TFN, encoding), encoding=encoding)
+    raw = pd.read_csv(TFN, delimiter='\t', header=_read_mpt_header_lines(TFN, encoding), encoding=encoding)  # type: ignore
     raw_V = np.array(raw)[:,7]
     raw_J = np.array(raw)[:,8] / cell_area    
 
@@ -82,12 +83,12 @@ def load_Biologic_CV(directory, filepath, cell_area, light_int = 100, J_1sun = N
         V_array = raw_V
         J_array = raw_J
         sweep_dir = None
-        IV = IVData(V_array, J_array, cell_area = cell_area, light_int = light_int, sweep_dir = sweep_dir, name = filepath, check_data = False)
+        IV = IVData(V_array, J_array, cell_area = cell_area, light_int = light_int, sweep_dir = sweep_dir, name = filepath, check_data = False)  # type: ignore
 
     else:
         
 
-        def IV_from_raw(data, sweep_dir, cell_area, light_int, J_1sun):
+        def IV_from_raw(data: Any, sweep_dir: str, cell_area: float, light_int: float, J_1sun: Any) -> Any:
         
             # Sort data by ascending V (important to find the mpp voltage and Voc)
             data2 = data[data[:,0].argsort()]
@@ -100,14 +101,14 @@ def load_Biologic_CV(directory, filepath, cell_area, light_int = 100, J_1sun = N
                 if data2[i+1,0] > data2[i,0]:
                     data3.append(data2[i,:])
                     
-            data3 = np.array(data3)
+            data3 = np.array(data3)  # type: ignore
             
             # V data as an array in 0.001 V steps
-            begin_V = round(min(data3[:,0]) * 1000) / 1000
-            end_V = round(max(data3[:,0]) * 1000) / 1000
+            begin_V = round(min(data3[:,0]) * 1000) / 1000  # type: ignore
+            end_V = round(max(data3[:,0]) * 1000) / 1000  # type: ignore
             V_array = np.arange(begin_V, end_V, 0.001)
          
-            JVinterp = interp1d(data3[:, 0], data3[:, 1], kind='cubic', bounds_error=False, fill_value='extrapolate')
+            JVinterp = interp1d(data3[:, 0], data3[:, 1], kind='cubic', bounds_error=False, fill_value='extrapolate')  # type: ignore
             #J_array = np.zeros(len(V_array))
             #for i in range(len(V_array)):
             #    J_array[i] = JVinterp(V_array[i])[0]
@@ -139,7 +140,7 @@ def load_Biologic_CV(directory, filepath, cell_area, light_int = 100, J_1sun = N
             IV_rev = IV_from_raw(data_rev, 'rev', cell_area, light_int, J_1sun)        
 
         if both_scans:
-            IV = (IV_fwd, IV_rev)
+            IV = (IV_fwd, IV_rev)  # type: ignore
         else:
             if reverse_scan:
                 IV = IV_rev
@@ -150,14 +151,14 @@ def load_Biologic_CV(directory, filepath, cell_area, light_int = 100, J_1sun = N
 
 
 
-def load_Biologic_CA(directory, filepath, uA = False, cell_area = None):
+def load_Biologic_CA(directory: str, filepath: str, uA: Any = False, cell_area: float | None = None) -> Any:
     """
     Load chrono-amperometry files
     """
 
     TFN = join(directory,filepath)
 
-    raw = pd.read_csv(TFN, delimiter='\t', header=_read_mpt_header_lines(TFN))
+    raw = pd.read_csv(TFN, delimiter='\t', header=_read_mpt_header_lines(TFN))  # type: ignore
     raw_t = np.array(raw)[:,7]
     raw_t -= raw_t[0]
     raw_I = np.array(raw)[:,10]
@@ -180,14 +181,14 @@ def load_Biologic_CA(directory, filepath, uA = False, cell_area = None):
     
     
     
-def load_Biologic_CstC(directory, filepath):
+def load_Biologic_CstC(directory: str, filepath: str) -> Any:
     """
 
     """
 
     TFN = join(directory,filepath)
 
-    raw = pd.read_csv(TFN, delimiter='\t', header=_read_mpt_header_lines(TFN))
+    raw = pd.read_csv(TFN, delimiter='\t', header=_read_mpt_header_lines(TFN))  # type: ignore
     raw_t = np.array(raw)[:,6]
     raw_t -= raw_t[0]
     raw_V = np.array(raw)[:,8]    
@@ -199,7 +200,7 @@ def load_Biologic_CstC(directory, filepath):
     return V, I
 
 
-def EIS_convert_mpt_to_csv(data_dir, save_dir, V_in_name = True, tolerance = 0.005, show_details = True):
+def EIS_convert_mpt_to_csv(data_dir: str, save_dir: str, V_in_name: str = True, tolerance: Any = 0.005, show_details: bool = True) -> Any:  # type: ignore
     # Converts EIS data as a Biologic mpt file into csv
     # tolerance: Voltage tolerance for the evaluation
     # Get filenames of all *.mpt files
@@ -215,7 +216,7 @@ def EIS_convert_mpt_to_csv(data_dir, save_dir, V_in_name = True, tolerance = 0.0
         if ('.mpt' in filenames[i]) and (in_filename in filenames[i]):
             i += 1
         else:
-            filenames = np.delete(filenames,i)
+            filenames = np.delete(filenames,i)  # type: ignore
 
     if show_details:
         print(filenames)
@@ -226,7 +227,7 @@ def EIS_convert_mpt_to_csv(data_dir, save_dir, V_in_name = True, tolerance = 0.0
 
     # Note: The number of voltages is N + 1
 
-    def readfile(filepath):
+    def readfile(filepath: str) -> Any:
 
         data = []
         count = 0
@@ -253,11 +254,11 @@ def EIS_convert_mpt_to_csv(data_dir, save_dir, V_in_name = True, tolerance = 0.0
                     header_lines = int(line[17:].strip())
 
                 if 'Ei (V)' in line:
-                    Ei = float(line[6:].strip())
+                    Ei = float(line[6:].strip())  # type: ignore
                     #print(line)
 
                 if 'Ef (V)' in line:
-                    Ef = float(line[6:].strip())
+                    Ef = float(line[6:].strip())  # type: ignore
                     #print((line[6:].strip()))
 
                 if line[0:2] == 'N ':
@@ -271,7 +272,7 @@ def EIS_convert_mpt_to_csv(data_dir, save_dir, V_in_name = True, tolerance = 0.0
     
     # Split the data into numpy arrays, for each voltage one column, delete 0 frequency entries
 
-    def get_data(fn):
+    def get_data(fn: str) -> Any:
 
         data, header_lines, Ei, Ef, number_of_voltages = readfile(join(data_dir, fn))
         #print(header_lines)
@@ -337,7 +338,7 @@ def EIS_convert_mpt_to_csv(data_dir, save_dir, V_in_name = True, tolerance = 0.0
     
     # Save the data in csv format
 
-    def save_data(voltages, data_freq, data_Re, data_Im, fn):
+    def save_data(voltages: Any, data_freq: Any, data_Re: Any, data_Im: Any, fn: str) -> Any:
         if show_details:
             print(fn[:-4])
 
@@ -355,7 +356,7 @@ def EIS_convert_mpt_to_csv(data_dir, save_dir, V_in_name = True, tolerance = 0.0
         voltages, data_freq, data_Re, data_Im = get_data(fn)
         save_data(voltages, data_freq, data_Re, data_Im, fn)
 
-def Z_in_4th_quadrant(frequencies, Z):
+def Z_in_4th_quadrant(frequencies: Any, Z: np.ndarray) -> Any:
     """
     Trim out all data points outside 4th quadrant
 
@@ -384,7 +385,7 @@ def Z_in_4th_quadrant(frequencies, Z):
     return frequencies, Z
 
 
-def EIS_get_data(TFNs, f_range = None, Z_4th_quadrant = True, cell_area = 1, V_idx_list = None, show_details = True, title = '', show_title = True):
+def EIS_get_data(TFNs: str, f_range: Any | None = None, Z_4th_quadrant: Any = True, cell_area: float = 1, V_idx_list: Any | None = None, show_details: bool = True, title: str = '', show_title: bool = True) -> Any:
     #Get EIS data of one sample for all voltages given in V_idx_list
     #TFNs: list of file names (including directory) with each element corresponding to one voltage according to V_idx_list. If only one voltage used then use [TFN]
     #Attention: in a previous version title was the first argument, now it is changed to a keyword argument
@@ -485,7 +486,7 @@ def EIS_get_data(TFNs, f_range = None, Z_4th_quadrant = True, cell_area = 1, V_i
     return fs, Zs, Vs
 
 
-def EIS_predict(f, circuit_str, params):
+def EIS_predict(f: float, circuit_str: Any, params: Any) -> Any:
     
     circuit = CustomCircuit(circuit_str, initial_guess = params)
 
@@ -493,14 +494,14 @@ def EIS_predict(f, circuit_str, params):
     
     return Z_pred
 
-def EIS_fit(f, Z, circuit_str, initial_guess, f_range = None, bounds = None, show_details = True, data_label = '', simulation = False):
+def EIS_fit(f: float, Z: np.ndarray, circuit_str: Any, initial_guess: Any, f_range: Any | None = None, bounds: Any | None = None, show_details: bool = True, data_label: Any = '', simulation: Any = False) -> Any:
 
 
     circuit = CustomCircuit(circuit_str, initial_guess=initial_guess)
     
     if not f_range is None:
         ra = idx_range(f, left = f_range[0], right = f_range[1])
-        f = f[ra]
+        f = f[ra]  # type: ignore
         Z = Z[ra]
 
     if simulation:
@@ -519,7 +520,7 @@ def EIS_fit(f, Z, circuit_str, initial_guess, f_range = None, bounds = None, sho
     return f, Z_fit, circuit
 
     
-def multiple_Nyquist_and_Bode_plot(f_list, Z_list, f_range = None, f_fit_list = None, Z_fit_list = None, label_list = None, what_to_show = ['nyquist', 'bode'], show_label = True, figsize = (10, 10), textsize = 16, colors = colors, fmts = None):
+def multiple_Nyquist_and_Bode_plot(f_list: Any, Z_list: Any, f_range: Any | None = None, f_fit_list: Any | None = None, Z_fit_list: Any | None = None, label_list: Any | None = None, what_to_show: Any = ['nyquist', 'bode'], show_label: bool = True, figsize: Any = (10, 10), textsize: Any = 16, colors: Any = colors, fmts: Any | None = None) -> Any:
 
     if isinstance(figsize, int):
         figsize = (figsize, figsize)
@@ -567,7 +568,7 @@ def multiple_Nyquist_and_Bode_plot(f_list, Z_list, f_range = None, f_fit_list = 
                     plot_nyquist(Z, ax=ax, fmt=fmt, color = color, label = label)
 
         else:
-            for f, Z, f_fit, Z_fit, label, color, fmt in zip(f_list, Z_list, f_fit_list, Z_fit_list, label_list, colors, fmts):
+            for f, Z, f_fit, Z_fit, label, color, fmt in zip(f_list, Z_list, f_fit_list, Z_fit_list, label_list, colors, fmts):  # type: ignore
                 if not f_range is None:
                     ra = idx_range(f, left = f_range[0], right = f_range[1])
                     ra_fit = idx_range(f_fit, left = f_range[0], right = f_range[1])
@@ -595,7 +596,7 @@ def multiple_Nyquist_and_Bode_plot(f_list, Z_list, f_range = None, f_fit_list = 
         fig, ax = plt.subplots(nrows = 2, figsize=figsize)
         
         if Z_fit_list is None:
-            for f, Z, label, color, fmt in zip(f_list, Z_list, label_list, colors, fmts):
+            for f, Z, label, color, fmt in zip(f_list, Z_list, label_list, colors, fmts):  # type: ignore
                 if not f_range is None:
                     ra = idx_range(f, left = f_range[0], right = f_range[1])
                     plot_bode(f[ra], Z[ra], axes=[ax[0], ax[1]], fmt=fmt, color = color, label = label)
@@ -603,7 +604,7 @@ def multiple_Nyquist_and_Bode_plot(f_list, Z_list, f_range = None, f_fit_list = 
                     plot_bode(f, Z, axes=[ax[0], ax[1]], fmt=fmt, color = color, label = label)
     
         else:
-            for f, Z, f_fit, Z_fit, label, color, fmt in zip(f_list, Z_list, f_fit_list, Z_fit_list, label_list, colors, fmts):
+            for f, Z, f_fit, Z_fit, label, color, fmt in zip(f_list, Z_list, f_fit_list, Z_fit_list, label_list, colors, fmts):  # type: ignore
                 if not f_range is None:
                     ra = idx_range(f, left = f_range[0], right = f_range[1])
                     ra_fit = idx_range(f_fit, left = f_range[0], right = f_range[1])
@@ -628,7 +629,7 @@ def multiple_Nyquist_and_Bode_plot(f_list, Z_list, f_range = None, f_fit_list = 
         fig.tight_layout()
         plt.show()
         
-def plot_capacitance(axes, f, Z, scale=1, units='F cm^{-2}', fmt='.-', **kwargs):
+def plot_capacitance(axes: Any, f: float, Z: np.ndarray, scale: Any=1, units: Any='F cm^{-2}', fmt: str='.-', **kwargs) -> Any:
     """ Plots impedance as a Bode plot using matplotlib
 
         Parameters
@@ -695,7 +696,7 @@ def plot_capacitance(axes, f, Z, scale=1, units='F cm^{-2}', fmt='.-', **kwargs)
 
     return axes
     
-def multiple_capacitance_plot(f_list, Z_list, f_range = None, f_fit_list = None, Z_fit_list = None, label_list = None, show_label = True, figsize = (10, 10), textsize = 16, colors = gen.colors, fmts = None):
+def multiple_capacitance_plot(f_list: Any, Z_list: Any, f_range: Any | None = None, f_fit_list: Any | None = None, Z_fit_list: Any | None = None, label_list: Any | None = None, show_label: bool = True, figsize: Any = (10, 10), textsize: Any = 16, colors: Any = gen.colors, fmts: Any | None = None) -> Any:
 
     if isinstance(figsize, int):
         figsize = (figsize, figsize)
@@ -724,7 +725,7 @@ def multiple_capacitance_plot(f_list, Z_list, f_range = None, f_fit_list = None,
     fig, ax = plt.subplots(nrows = 2, figsize=figsize)
 
     if Z_fit_list is None:
-        for f, Z, label, color, fmt in zip(f_list, Z_list, label_list, colors, fmts):
+        for f, Z, label, color, fmt in zip(f_list, Z_list, label_list, colors, fmts):  # type: ignore
             if not f_range is None:
                 ra = gen.idx_range(f, left = f_range[0], right = f_range[1])
                 plot_capacitance([ax[0], ax[1]], f[ra], Z[ra], fmt=fmt, color = color, label = label)
@@ -732,7 +733,7 @@ def multiple_capacitance_plot(f_list, Z_list, f_range = None, f_fit_list = None,
                 plot_capacitance([ax[0], ax[1]], f, Z, fmt=fmt, color = color, label = label)
 
     else:
-        for f, Z, f_fit, Z_fit, label, color, fmt in zip(f_list, Z_list, f_fit_list, Z_fit_list, label_list, colors, fmts):
+        for f, Z, f_fit, Z_fit, label, color, fmt in zip(f_list, Z_list, f_fit_list, Z_fit_list, label_list, colors, fmts):  # type: ignore
             if not f_range is None:
                 ra = idx_range(f, left = f_range[0], right = f_range[1])
                 ra_fit = idx_range(f_fit, left = f_range[0], right = f_range[1])
@@ -787,14 +788,14 @@ def multiple_capacitance_plot(f_list, Z_list, f_range = None, f_fit_list = None,
         for TFN in TFNs:
             title = TFN
             #print(title)
-            fs, Zs, Vs = EIS_get_data(title, [TFN], f_range = None, Z_4th_quadrant = True, V_idx_list = [0], cell_area = cell_area, show_details = False, show_title = True)
+            fs, Zs, Vs = EIS_get_data(title, [TFN], f_range = None, Z_4th_quadrant = True, V_idx_list = [0], cell_area = cell_area, show_details = False, show_title = True)  # type: ignore
             fs_list.append(fs[0])
             Zs_list.append(Zs[0])
             
         f_range = [1e5, 1e6]
         f_range = None
 
-def import_biologic_mpt_data(file, use_cols):
+def import_biologic_mpt_data(file: Any, use_cols: bool) -> Any:
     """
     Imports measurement data from a biologic .mpt or nova .txt file.    
     :param file: The file name holding the data.
@@ -816,7 +817,7 @@ def import_biologic_mpt_data(file, use_cols):
                     # found header line
                     header_lines = int( match.group( 1 ) )
                     break
-        df = pd.read_csv(file, sep = '\t', skiprows = header_lines-1, usecols = use_cols, encoding=encoding)
+        df = pd.read_csv(file, sep = '\t', skiprows = header_lines-1, usecols = use_cols, encoding=encoding)  # type: ignore
     elif ext == '.txt' or ext == '.csv':
         encoding = "UTF-8" #Autolab Nova
         df = pd.read_csv(file, sep = ',', usecols = use_cols, encoding=encoding)        

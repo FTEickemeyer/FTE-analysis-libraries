@@ -22,6 +22,7 @@ system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data
 from .General import linfit, findind, save_ok, plx, q, k, T_RT
 from .XYdata import XYData, MXYData
 from .Spectrum import DiffSpectrum, AbsSpectrum
+from typing import Any
 
 
 @dataclass
@@ -47,14 +48,14 @@ class FiveParam:
     
     """
     
-    cell_area: float = None
-    Voc: float = None
-    Jsc: float = None
-    nid: float = None
-    Rs: float = None
-    Rsh: float = None
+    cell_area: float | None = None  # type: ignore
+    Voc: float | None = None  # type: ignore
+    Jsc: float | None = None  # type: ignore
+    nid: float | None = None  # type: ignore
+    Rs: float | None = None  # type: ignore
+    Rsh: float | None = None  # type: ignore
     
-    def __init__(self, cell_area = 1, Voc = 1, Jsc = 20, nid = 1, Rs = 0, Rsh = np.inf):
+    def __init__(self, cell_area: float = 1, Voc: float = 1, Jsc: float = 20, nid: float = 1, Rs: float = 0, Rsh: float = np.inf) -> None:
 
         self.cell_area = cell_area
         self.Voc = Voc
@@ -63,82 +64,82 @@ class FiveParam:
         self.Rs = Rs
         self.Rsh = Rsh
         
-    def copy(self):
-        return FiveParam(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)
+    def copy(self) -> Any:
+        return FiveParam(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)  # type: ignore
     
 @dataclass
 class PerfData:
 
-    cell_area: float = None # cm2
-    Vmpp: float = None # V
-    Jmpp: float = None # mA/cm2 (or mA if cell_area is None)
-    Pmpp: float = None # mW/cm2 (or mW if cell_area is None)
-    PCE: float = None # % (makes no sense if cell_area is None)
-    FF: float = None # %
-    Voc: float = None # V
-    Jsc: float = None # mA/cm2 (or mA if cell_area is None)
-    nid: float = None # dimension less
-    Rs: float = None # kOhm * cm2 (or kOhm if cell_area is None)
-    Rsh: float = None # kOhm * cm2 (or kOhm if cell_area is None)
+    cell_area: float | None = None # cm2  # type: ignore
+    Vmpp: float | None = None # V  # type: ignore
+    Jmpp: float | None = None # mA/cm2 (or mA if cell_area is None)  # type: ignore
+    Pmpp: float | None = None # mW/cm2 (or mW if cell_area is None)  # type: ignore
+    PCE: float | None = None # % (makes no sense if cell_area is None)  # type: ignore
+    FF: float | None = None # %  # type: ignore
+    Voc: float | None = None # V  # type: ignore
+    Jsc: float | None = None # mA/cm2 (or mA if cell_area is None)  # type: ignore
+    nid: float | None = None # dimension less  # type: ignore
+    Rs: float | None = None # kOhm * cm2 (or kOhm if cell_area is None)  # type: ignore
+    Rsh: float | None = None # kOhm * cm2 (or kOhm if cell_area is None)  # type: ignore
     light_int: float = 100 # mW/cm2
     
-    def copy(self):
+    def copy(self) -> Any:
         return PerfData(cell_area = self.cell_area, Vmpp = self.Vmpp, Jmpp = self.Jmpp, Pmpp = self.Pmpp, 
                       PCE = self.PCE, FF = self.FF, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, 
                       Rs = self.Rs, Rsh = self.Rsh, light_int = self.light_int)
     
-    def jmpp_text(self, uA = False):
+    def jmpp_text(self, uA: Any = False) -> Any:
         if uA:
-            text = f'$J_{{mpp}} = {self.Jmpp*1000:.2f} \; \mu A/cm^2$'
+            text = f'$J_{{mpp}} = {self.Jmpp*1000:.2f} \; \mu A/cm^2$'  # type: ignore
         else:
             text = f'$J_{{mpp}} = {self.Jmpp:.2f} \; mA/cm^2$'
         return text        
     
-    def vmpp_text(self):
+    def vmpp_text(self) -> Any:
         return f'$V_{{mpp}} = {self.Vmpp:.3f} \; V$'
     
-    def pmpp_text(self):
+    def pmpp_text(self) -> Any:
         return f'$P_{{mpp}} = {self.Pmpp:.2f} \; mW/cm^2$'
     
-    def pce_text(self):
+    def pce_text(self) -> Any:
         return f'$PCE = {self.PCE:.1f}\%$'
     
-    def ff_text(self):
+    def ff_text(self) -> Any:
         return f'$FF = {self.FF:.1f}\%$'
     
-    def voc_text(self):
+    def voc_text(self) -> Any:
         return f'$V_{{oc}} = {self.Voc:.3f} \; V$'
 
-    def jsc_text(self, uA = False):
+    def jsc_text(self, uA: Any = False) -> Any:
         if uA:
-            text = f'$J_{{sc}} = {self.Jsc*1000:.2f} \; \mu A/cm^2$'
+            text = f'$J_{{sc}} = {self.Jsc*1000:.2f} \; \mu A/cm^2$'  # type: ignore
         else:
             text = f'$J_{{sc}} = {self.Jsc:.2f} \; mA/cm^2$'
         return text
 
-    def nid_text(self):
+    def nid_text(self) -> Any:
         return f'$n_{{id}} = {self.nid:.2f}$'
     
-    def rs_text(self):
-        return f'$R_{{s}} = {self.Rs*1e3:.2e} \; \Omega \cdot cm^2$'
+    def rs_text(self) -> Any:
+        return f'$R_{{s}} = {self.Rs*1e3:.2e} \; \Omega \cdot cm^2$'  # type: ignore
     
-    def rsh_text(self):
-        return f'$R_{{sh}} = {self.Rsh*1e3:.2e} \; \Omega \cdot cm^2$'
+    def rsh_text(self) -> Any:
+        return f'$R_{{sh}} = {self.Rsh*1e3:.2e} \; \Omega \cdot cm^2$'  # type: ignore
     
-    def cell_area_text(self):
+    def cell_area_text(self) -> Any:
         if not(self.cell_area is None):
             return f'Cell area $= {self.cell_area:.5f} \; cm^2$'
         else:
             return ''
     
-    def light_int_text(self, uW = False):
+    def light_int_text(self, uW: Any = False) -> Any:
         if uW:
             return f'Light intensity $= {self.light_int*1000:.2f} \; uW/cm^2$'
         else:
             return f'Light intensity $= {self.light_int:.2f} \; mW/cm^2$'
         
     @staticmethod
-    def sq_limit(bg, illumspec_PF_eV = None, light_int = 100, show = False):
+    def sq_limit(bg: float, illumspec_PF_eV: Any | None = None, light_int: float = 100, show: bool = False) -> Any:
         """
         Calculates the performance data of the Shockley-Queisser limit.
 
@@ -175,7 +176,7 @@ class PerfData:
 class IVData(XYData):
     
     
-    def __init__(self, x, y, cell_area = None, light_int = None, sweep_dir = 'rev', name = '', Voc = None, Jsc = None, quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, plotstyle = dict(linestyle = 'None', marker = 'o', color = 'blue', markersize = 5), check_data = True):
+    def __init__(self, x: np.ndarray, y: np.ndarray, cell_area: float | None = None, light_int: float | None = None, sweep_dir: str = 'rev', name: str = '', Voc: float | None = None, Jsc: float | None = None, quants: Any = {"x": "Voltage", "y": "Current density"}, units: Any = {"x": "V", "y": "mA/cm2"}, plotstyle: str = dict(linestyle = 'None', marker = 'o', color = 'blue', markersize = 5), check_data: bool = True) -> None:  # type: ignore
         """
         x is a numpy array for voltage in V
         y is a numpy array for current density in mA/cm2
@@ -192,7 +193,7 @@ class IVData(XYData):
         self.Voc = Voc
         self.plotstyle = plotstyle
     
-    def copy(self):
+    def copy(self) -> Any:
         dat = super().copy()
         if hasattr(self, 'nid'):
             dat.nid = self.nid
@@ -205,24 +206,24 @@ class IVData(XYData):
 
         return dat
     
-    def convert_from_mA_to_uA(self):
+    def convert_from_mA_to_uA(self) -> Any:
         self.y *= 1000
         self.uy = 'uA/cm2'
         
     @staticmethod
-    def from_j0(V, J0, Jph, nid, Rs, Rsh, cell_area = None, light_int = None, name = '', T = T_RT):
+    def from_j0(V: float, J0: Any, Jph: Any, nid: float, Rs: float, Rsh: float, cell_area: float | None = None, light_int: float | None = None, name: str = '', T: float = T_RT) -> Any:
         Gp = 1/Rsh
         Vth = k * T / q
         expW = (V + Rs * (J0 + Jph)) / (nid * Vth * (1 + Rs * Gp))
         argW = J0 * Rs / (nid * Vth * (1 + Rs * Gp)) * np.exp(expW)
         J = nid * Vth / Rs * lambertw(argW) + (V * Gp - (J0 + Jph)) / (1 + Rs * Gp)
         J = J.real
-        return IVData(V, J, cell_area = cell_area, light_int = light_int, sweep_dir = None, name = name, Voc = None, Jsc = None)
+        return IVData(V, J, cell_area = cell_area, light_int = light_int, sweep_dir = None, name = name, Voc = None, Jsc = None)  # type: ignore
         
-    def to_fp(self):
-        return FiveParam(self.cell_area, self.Voc, self.Jsc, self.nid, self.Rs, self.Rsh)
+    def to_fp(self) -> Any:
+        return FiveParam(self.cell_area, self.Voc, self.Jsc, self.nid, self.Rs, self.Rsh)  # type: ignore
     
-    def norm_to_onesun(self, mmf = 1):
+    def norm_to_onesun(self, mmf: Any = 1) -> Any:
         """
         Normalizes current density to one sun. Takes into account the mmf by dividing the current by mmf.
 
@@ -236,7 +237,7 @@ class IVData(XYData):
     
 
     @staticmethod
-    def load_igor_iv(directory, filepath, print_lines = False):
+    def load_igor_iv(directory: str, filepath: str, print_lines: Any = False) -> Any:
         """
         Function that opens an igor IV file and returns a 2-dim data array, column 1: Voltage (V), column 2: Current (A)
         """
@@ -310,35 +311,35 @@ class IVData(XYData):
         return IVData(x, y, cell_area = cell_area, light_int = light_int, sweep_dir = sweep_dir, name = filepath)
 
     @staticmethod
-    def load(filepath_or_directory, filepath = '', data_format = 'csv', cell_area = 1, light_int = 100, delimiter = ',', header = 'infer', quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, 
-         take_quants_and_units_from_file = False, J_1sun = None, reverse_scan = True, raw_data = False, print_lines = False, **kwargs):
+    def load(filepath_or_directory: str, filepath: str = '', data_format: Any = 'csv', cell_area: float = 1, light_int: float = 100, delimiter: str = ',', header: Any = 'infer', quants: Any = {"x": "Voltage", "y": "Current density"}, units: Any = {"x": "V", "y": "mA/cm2"},   # type: ignore
+         take_quants_and_units_from_file: bool = False, J_1sun: Any | None = None, reverse_scan: bool = True, raw_data: np.ndarray = False, print_lines: Any = False, **kwargs) -> Any:  # type: ignore
 
         fp = join(filepath_or_directory, filepath)
-        filepath = pathlib.Path(fp)
+        filepath = pathlib.Path(fp)  # type: ignore
         directory = dirname(fp)
         if data_format == 'Igor':
             IV = IVData.load_igor_iv(directory, filepath = filepath, print_lines = print_lines)
         elif data_format == 'csv':
             xy = XYData.load(filepath_or_directory, filepath = filepath, delimiter = delimiter, header = header, quants = quants, units = units, 
                                    take_quants_and_units_from_file = take_quants_and_units_from_file, **kwargs)
-            IV = IVData(xy.x, xy.y, cell_area = cell_area, light_int = light_int, sweep_dir = None, name = filepath.stem, Voc = None, Jsc = None, quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, **kwargs)
+            IV = IVData(xy.x, xy.y, cell_area = cell_area, light_int = light_int, sweep_dir = None, name = filepath.stem, Voc = None, Jsc = None, quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, **kwargs)  # type: ignore
             #IV.y = -IV.y
         elif data_format == 'Biologic-CV':
-            IV = IVData.load_Biologic_CV(directory, filepath = filepath, cell_area = cell_area, light_int = light_int, J_1sun = J_1sun, reverse_scan = reverse_scan, raw_data = raw_data)
+            IV = IVData.load_Biologic_CV(directory, filepath = filepath, cell_area = cell_area, light_int = light_int, J_1sun = J_1sun, reverse_scan = reverse_scan, raw_data = raw_data)  # type: ignore
     
         return IV
     
-    def det_j0(self, T = T_RT):
+    def det_j0(self, T: float = T_RT) -> Any:
         Jsc = self.Jsc
         Voc = self.Voc
         Rs = self.Rs
         Rsh = self.Rsh
         nid = self.nid
-        return (Jsc + (Rs*Jsc-Voc)/Rsh) * math.exp(-q*Voc / (nid * k * T)) / (1 - math.exp(q * (Rs * Jsc - Voc) / (nid * k * T)))
+        return (Jsc + (Rs*Jsc-Voc)/Rsh) * math.exp(-q*Voc / (nid * k * T)) / (1 - math.exp(q * (Rs * Jsc - Voc) / (nid * k * T)))  # type: ignore
       
         
     @staticmethod
-    def _linear_extrapolate(x_target, x_data, y_data):
+    def _linear_extrapolate(x_target: Any, x_data: np.ndarray, y_data: np.ndarray) -> None:
         """Estimate y at x_target by linear interpolation or extrapolation."""
         order = np.argsort(x_data)
         x_data, y_data = x_data[order], y_data[order]
@@ -354,10 +355,10 @@ class IVData(XYData):
         return y1 + (y2 - y1) / (x2 - x1) * (x_target - x1)
 
     @staticmethod
-    def _format_nid_rs_rsh_label(nid, Rs, Rsh):
-        return f'$n_{{id}} = {nid:.2f}, \ R_s = {Rs*1e3:.2e} \ \Omega \cdot cm^2, \ R_{{sh}} = {Rsh*1e3:.2e} \ \Omega \cdot cm^2$'
+    def _format_nid_rs_rsh_label(nid: float, Rs: float, Rsh: float) -> None:
+        return f'$n_{{id}} = {nid:.2f}, \ R_s = {Rs*1e3:.2e} \ \Omega \cdot cm^2, \ R_{{sh}} = {Rsh*1e3:.2e} \ \Omega \cdot cm^2$'  # type: ignore
 
-    def det_voc(self, use_interpolate_extrapolate_method=True):
+    def det_voc(self, use_interpolate_extrapolate_method: bool=True) -> Any:
         """
         use_interpolate_extrapolate_method: Use interpolation/extrapolation method to determine Jsc
         """
@@ -372,7 +373,7 @@ class IVData(XYData):
             self.Voc = Voc
         return self.Voc
         
-    def det_jsc(self, fit_to= None, show_fit= False, use_interpolate_extrapolate_method= True):
+    def det_jsc(self, fit_to: Any | None= None, show_fit: bool= False, use_interpolate_extrapolate_method: bool= True) -> Any:
         """
         Returns the short circuit current. Also stores the value in self.Jsc.
         fit_to: specifies the voltage up to which the IV curve is fitted. If None then the maximum V / 10 is taken.
@@ -382,7 +383,7 @@ class IVData(XYData):
         
         if use_interpolate_extrapolate_method:
             # Compute Jsc (at V = 0)
-            self.Jsc = -IVData._linear_extrapolate(0.0, self.x, self.y)
+            self.Jsc = -IVData._linear_extrapolate(0.0, self.x, self.y)  # type: ignore
         else:
             if fit_to is None:
                 fit_to = max(self.x)/10
@@ -400,7 +401,7 @@ class IVData(XYData):
             
         return self.Jsc
     
-    def ini_guess_rsh(self, fit_to = None, show_fit = False):
+    def ini_guess_rsh(self, fit_to: Any | None = None, show_fit: bool = False) -> None:
         """
         Returns an initial guess for the shunt resistance Rsh in Ohm * cm2. Also stores the value in self.Rsh.
         fit_to: specifies the voltage up to which the IV curve is fitted. If None then the maximum V / 5 is taken.
@@ -425,20 +426,20 @@ class IVData(XYData):
             plt.figure(figsize=(7,5))
             plt.title('Fit for determination of Rsh')
             plt.plot(self.x, self.y, 'o', label = 'IV curve')
-            plt.plot(self.x, self.x / self.Rsh - self.Jsc, '-', label = f'fit (Rsh = {self.Rsh*1e3:.2e} Ohm cm2)')
-            plt.ylim(-self.Jsc*1.2, -self.Jsc*0.8)
+            plt.plot(self.x, self.x / self.Rsh - self.Jsc, '-', label = f'fit (Rsh = {self.Rsh*1e3:.2e} Ohm cm2)')  # type: ignore
+            plt.ylim(-self.Jsc*1.2, -self.Jsc*0.8)  # type: ignore
             plt.legend()
             plt.show()
         
-        return Rsh
+        return Rsh  # type: ignore
     
-    def ini_guess_nid_and_rs(self, show_fit = False):
+    def ini_guess_nid_and_rs(self, show_fit: bool = False) -> Any:
         """
         See: Zhang et al., J. of Appl. Phys. 110, 064504 (2011) --> Eq. 12
         """
         dIdV = np.gradient(self.y, self.x)
                     
-        r = range(findind(self.x, self.Voc*0.95), findind(self.x, self.Voc*1.05)+1)
+        r = range(findind(self.x, self.Voc*0.95), findind(self.x, self.Voc*1.05)+1)  # type: ignore
         dVdI = 1 / dIdV[r]
         new_x = k * T_RT / (q * (self.Jsc + self.y[r] - self.x[r] / self.Rsh))
         
@@ -468,7 +469,7 @@ class IVData(XYData):
                         
         return n, Rs
     
-    def check_assumption(self, T = T_RT):
+    def check_assumption(self, T: float = T_RT) -> Any:
         """
         See: Zhang et al., J. of Appl. Phys. 110, 064504 (2011) --> Eq. 6
         """
@@ -479,7 +480,7 @@ class IVData(XYData):
             plx(text1+text2)
         return delta
     
-    def det_ini_5param(self, show_fit = False):
+    def det_ini_5param(self, show_fit: bool = False) -> Any:
         self.det_voc()
         self.det_jsc(fit_to = None, show_fit = show_fit)
         self.ini_guess_rsh(fit_to = None, show_fit = show_fit)
@@ -487,7 +488,7 @@ class IVData(XYData):
         self.check_assumption()
         
     
-    def det_perfparam(self, show= False, uA= False, uW= False, minimal= False, simple_calc= False, use_interpolate_extrapolate_method= True):
+    def det_perfparam(self, show: bool= False, uA: Any= False, uW: Any= False, minimal: Any= False, simple_calc: Any= False, use_interpolate_extrapolate_method: bool= True) -> None:
         #uA: calculate currents in uA/cm2
         #uW: show light intensity in uW/cm2
         #If minimal: only Voc, Jsc, FF, Vmpp, Jmpp and PCE is determined
@@ -498,24 +499,24 @@ class IVData(XYData):
         if self.Jsc is None:
             self.det_jsc(use_interpolate_extrapolate_method=use_interpolate_extrapolate_method)
         JVinterp = interp1d(self.x, self.y, kind='cubic', bounds_error=False, fill_value='extrapolate')
-        Vmpp = fmin(lambda x: x*JVinterp(x),.8*self.Voc,disp=False, maxiter = 100)[0]
+        Vmpp = fmin(lambda x: x*JVinterp(x),.8*self.Voc,disp=False, maxiter = 100)[0]  # type: ignore
         Jmpp = abs(JVinterp(Vmpp))
         Pmpp = abs(Vmpp*Jmpp)
         PCE = Pmpp / self.light_int * 100
-        FF = abs(Pmpp/(self.Jsc*self.Voc) * 100)
+        FF = abs(Pmpp/(self.Jsc*self.Voc) * 100)  # type: ignore
         if not(minimal) and not(hasattr(self, 'nid')):
             self.fit_param()
         if not(hasattr(self, 'light_int')):
             self.light_int = 100
         if not minimal:
-            pd = PerfData(cell_area = self.cell_area, Vmpp = Vmpp, Jmpp = Jmpp, Pmpp = Pmpp, 
-                          PCE = PCE, FF = FF, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, 
-                          Rs = self.Rs, Rsh = self.Rsh, light_int = self.light_int)
+            pd = PerfData(cell_area = self.cell_area, Vmpp = Vmpp, Jmpp = Jmpp, Pmpp = Pmpp,   # type: ignore
+                          PCE = PCE, FF = FF, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid,   # type: ignore
+                          Rs = self.Rs, Rsh = self.Rsh, light_int = self.light_int)  # type: ignore
             text = pd.light_int_text(uW) + ', ' + pd.vmpp_text() + ', ' + pd.jmpp_text(uA) + '\n' + pd.voc_text() + ', ' + pd.jsc_text(uA) + ', ' + pd.ff_text() + ', ' + pd.pce_text() + '\n' + pd.nid_text() + ', ' + pd.rs_text() + ', ' + pd.rsh_text() + '\n' + pd.cell_area_text()
 
         else:
-            pd = PerfData(cell_area = self.cell_area, Vmpp = Vmpp, Jmpp = Jmpp, Pmpp = Pmpp, 
-                          PCE = PCE, FF = FF, Voc = self.Voc, Jsc = self.Jsc, light_int = self.light_int)            
+            pd = PerfData(cell_area = self.cell_area, Vmpp = Vmpp, Jmpp = Jmpp, Pmpp = Pmpp,   # type: ignore
+                          PCE = PCE, FF = FF, Voc = self.Voc, Jsc = self.Jsc, light_int = self.light_int)              # type: ignore
             text = pd.light_int_text(uW) + ', ' + pd.vmpp_text() + ', ' + pd.jmpp_text(uA) + '\n' + pd.voc_text() + ', ' + pd.jsc_text(uA) + ', ' + pd.ff_text() + ', ' + pd.pce_text() + '\n' + pd.cell_area_text()
 
             
@@ -524,7 +525,7 @@ class IVData(XYData):
             plx(text)
     
  
-    def fit_param(self, T = T_RT, bounds = ([0, 0, 0], [10, np.inf, np.inf]), p0 = None, verbose = 0, xtol = None):
+    def fit_param(self, T: float = T_RT, bounds: Any = ([0, 0, 0], [10, np.inf, np.inf]), p0: Any | None = None, verbose: bool = 0, xtol: Any | None = None) -> Any:  # type: ignore
         """
         Fits  nid, Rs, Rsh to the JV curve. Saves the values in self.nid, self.Rs, self.Rsh.
         It also saves the initial fit parameters in self.ini_fp.
@@ -543,9 +544,9 @@ class IVData(XYData):
     
         """
     
-        def func(V_arr, nid, Rs, Rsh):
+        def func(V_arr: np.ndarray, nid: float, Rs: float, Rsh: float) -> Any:
             #J = np.array([IVData.i_of_v(self.x[i], self.Jsc, self.Voc, nid, Rs, Rsh, T = T) for i in range(len(self.x))])
-            J = np.array([IVData.i_of_v(V_arr[i], self.Jsc, self.Voc, nid, Rs, Rsh, T = T) for i in range(len(V_arr))])
+            J = np.array([IVData.i_of_v(V_arr[i], self.Jsc, self.Voc, nid, Rs, Rsh, T = T) for i in range(len(V_arr))])  # type: ignore
             return J
         #IVData.i_of_v(V, Isc, Voc, n, Rs, Rsh, T = T_RT)
             
@@ -562,12 +563,12 @@ class IVData(XYData):
         self.nid = popt[0]
         self.Rs = popt[1]
         self.Rsh = popt[2]
-        self.ini_fp = FiveParam(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)
+        self.ini_fp = FiveParam(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)  # type: ignore
         
         return popt
     
     
-    def fit_fivep(self, T = T_RT, bounds = ([0, 0, 0, 0, 0], [100, 10, 10, np.inf, np.inf]), p0 = None):
+    def fit_fivep(self, T: float = T_RT, bounds: Any = ([0, 0, 0, 0, 0], [100, 10, 10, np.inf, np.inf]), p0: Any | None = None) -> Any:
         """
         Fits all five parameters (Voc, Jsc, nid, Rs, Rsh) of the single diode curve to the JV curve. 
         It saves the initial fit parameters in self.ini_fp.
@@ -588,8 +589,8 @@ class IVData(XYData):
     
         """
     
-        def func(V, Jsc, Voc, nid, Rs, Rsh):
-            J = np.array([IVData.i_of_v(V[i], Jsc, Voc, nid, Rs, Rsh, T = T) for i in range(len(V))])
+        def func(V: float, Jsc: float, Voc: float, nid: float, Rs: float, Rsh: float) -> Any:
+            J = np.array([IVData.i_of_v(V[i], Jsc, Voc, nid, Rs, Rsh, T = T) for i in range(len(V))])  # type: ignore
             return J
     
         if p0 is None:
@@ -601,7 +602,7 @@ class IVData(XYData):
         popt, pcov = curve_fit(func, self.x, self.y, p0 = p0, bounds = bounds, verbose = 0, xtol = None)
     
         # store the initial 5 parameters in ini_fp
-        self.ini_fp = FiveParam(cell_area = self.cell_area, Voc = p0[1], Jsc = p0[0], nid = p0[2], Rs = p0[3], Rsh = p0[4])
+        self.ini_fp = FiveParam(cell_area = self.cell_area, Voc = p0[1], Jsc = p0[0], nid = p0[2], Rs = p0[3], Rsh = p0[4])  # type: ignore
     
         self.Jsc = popt[0]
         self.Voc = popt[1]
@@ -613,10 +614,10 @@ class IVData(XYData):
 
 
     
-    def get_fp(self):
-        return FiveParam(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)
+    def get_fp(self) -> Any:
+        return FiveParam(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)  # type: ignore
     
-    def table_param(PCE, Voc, Jsc, FF, Vmpp, Jmpp, light_int, cell_area):
+    def table_param(PCE: float, Voc: float, Jsc: float, FF: float, Vmpp: Any, Jmpp: Any, light_int: float, cell_area: float) -> Any:  # type: ignore
             
         row_labels = ['$PCE\ (\%)$', '$V_{OC}\ (V)$', '$J_{SC}\ (mA/cm^2)$', '$FF\ (\%)$', 
                       '$V_{mpp} \ (V)$', '$J_{mpp} \ (mA/cm^2)$', 
@@ -632,12 +633,12 @@ class IVData(XYData):
         cell_text.append([f'{cell_area}'])
         return cell_text, row_labels
          
-    def plot(self, title = 'self.name', xscale = 'linear', yscale = 'linear', 
-             left = None, right = None, bottom = None, top = None, plot_table = False, hline = None, vline = None, figsize=(9,6), return_fig = False, show_plot = True, **kwargs):
+    def plot(self, title: str = 'self.name', xscale: str = 'linear', yscale: str = 'linear',   # type: ignore
+             left: float | None = None, right: float | None = None, bottom: float | None = None, top: float | None = None, plot_table: bool = False, hline: Any | None = None, vline: Any | None = None, figsize: Any=(9,6), return_fig: bool = False, show_plot: bool = True, **kwargs) -> None:
         
         if plot_table:
-            cell_text, row_labels = IVData.table_param(self.pd.PCE, self.Voc, self.Jsc, self.pd.FF, 
-                                                        self.pd.Vmpp, self.pd.Jmpp, self.light_int, self.cell_area)
+            cell_text, row_labels = IVData.table_param(self.pd.PCE, self.Voc, self.Jsc, self.pd.FF,   # type: ignore
+                                                        self.pd.Vmpp, self.pd.Jmpp, self.light_int, self.cell_area)  # type: ignore
         else:
             cell_text = None
             row_labels = None
@@ -645,25 +646,25 @@ class IVData(XYData):
         if title is None:
             title = self.name
             
-        fig = XYData.plot(self, title = title, xscale = xscale, yscale = yscale, left = left, right = right, 
+        fig = XYData.plot(self, title = title, xscale = xscale, yscale = yscale, left = left, right = right,   # type: ignore
                            bottom = bottom, top = top, plot_table = plot_table, cell_text = cell_text, row_labels = row_labels, hline = hline, vline = vline, figsize = figsize, return_fig = return_fig, show_plot = show_plot, **kwargs)        
         if return_fig:      
             return fig
 
         
-    def plot_fit(self, xscale = 'linear', yscale = 'linear', left = None, right = None, bottom = None, top = None,  title = None, plot_table = False):
+    def plot_fit(self, xscale: str = 'linear', yscale: str = 'linear', left: float | None = None, right: float | None = None, bottom: float | None = None, top: float | None = None,  title: str | None = None, plot_table: bool = False) -> Any:
         """
         Plot the IV curve and the fit with the internal 5 parameters.
         """
-        J = np.array([IVData.i_of_v(self.x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(self.x))])
-        IVp = IVData(self.x, J, name=IVData._format_nid_rs_rsh_label(self.nid, self.Rs, self.Rsh))
+        J = np.array([IVData.i_of_v(self.x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(self.x))])  # type: ignore
+        IVp = IVData(self.x, J, name=IVData._format_nid_rs_rsh_label(self.nid, self.Rs, self.Rsh))  # type: ignore
         IVp.plotstyle = dict(linestyle = '-', color = 'red')
         mIV = MIVData([self, IVp])
         mIV.label(['Measurement', IVp.name])
         
         if plot_table:
-            cell_text, row_labels = IVData.table_param(self.pd.PCE, self.Voc, self.Jsc, self.pd.FF, 
-                                                        self.pd.Vmpp, self.pd.Jmpp, self.light_int, self.cell_area)
+            cell_text, row_labels = IVData.table_param(self.pd.PCE, self.Voc, self.Jsc, self.pd.FF,   # type: ignore
+                                                        self.pd.Vmpp, self.pd.Jmpp, self.light_int, self.cell_area)  # type: ignore
         else:
             cell_text = None
             row_labels = None
@@ -674,14 +675,14 @@ class IVData(XYData):
         mIV.plot(plotstyle = 'individual', xscale = xscale, yscale = yscale, left = left, right = right, bottom = bottom, top = top, 
                  title = title, plot_table = plot_table, cell_text = cell_text, row_labels = row_labels)
         
-    def plot_ini_and_fit(self, xscale = 'linear', yscale = 'linear', bottom = None, top = None):
+    def plot_ini_and_fit(self, xscale: str = 'linear', yscale: str = 'linear', bottom: float | None = None, top: float | None = None) -> Any:
         """
         Plot the IV curve, the fit with the internal 5 parameters and the fit with the ini_fp parameters.
         """
-        J_int = np.array([IVData.i_of_v(self.x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(self.x))])
-        J_ini = np.array([IVData.i_of_v(self.x[i], self.ini_fp.Jsc, self.ini_fp.Voc, self.ini_fp.nid, self.ini_fp.Rs, self.ini_fp.Rsh, T = T_RT) for i in range(len(self.x))])
-        IV_int = IVData(self.x, J_int, name='Fitted parameters:\n' + IVData._format_nid_rs_rsh_label(self.nid, self.Rs, self.Rsh))
-        IV_ini = IVData(self.x, J_ini, name='Initial parameters:\n' + IVData._format_nid_rs_rsh_label(self.ini_fp.nid, self.ini_fp.Rs, self.ini_fp.Rsh))
+        J_int = np.array([IVData.i_of_v(self.x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(self.x))])  # type: ignore
+        J_ini = np.array([IVData.i_of_v(self.x[i], self.ini_fp.Jsc, self.ini_fp.Voc, self.ini_fp.nid, self.ini_fp.Rs, self.ini_fp.Rsh, T = T_RT) for i in range(len(self.x))])  # type: ignore
+        IV_int = IVData(self.x, J_int, name='Fitted parameters:\n' + IVData._format_nid_rs_rsh_label(self.nid, self.Rs, self.Rsh))  # type: ignore
+        IV_ini = IVData(self.x, J_ini, name='Initial parameters:\n' + IVData._format_nid_rs_rsh_label(self.ini_fp.nid, self.ini_fp.Rs, self.ini_fp.Rsh))  # type: ignore
         IV_int.plotstyle = dict(linestyle = '-', color = 'red')
         IV_ini.plotstyle = dict(linestyle = '-', color = 'green')
         mIV = MIVData([self, IV_ini, IV_int])
@@ -690,7 +691,7 @@ class IVData(XYData):
         mIV.plot(plotstyle = 'individual', xscale = xscale, yscale = yscale, bottom = bottom, top = top, title = self.name)
      
     @staticmethod
-    def save_perf_data(sa, row_labels, col_labels, save_dir, filepath):
+    def save_perf_data(sa: Any, row_labels: Any, col_labels: Any, save_dir: str, filepath: str) -> Any:
             
         cell_text = []
 
@@ -706,7 +707,7 @@ class IVData(XYData):
             df.to_csv(join(save_dir, filepath), header = True, index = True)
 
     @staticmethod
-    def iv_sq(bg, x_max = None, light_int = None):
+    def iv_sq(bg: float, x_max: Any | None = None, light_int: float | None = None) -> Any:
         if light_int is None:
             fp_sq = IVData.sq_limit(bg)
         else:
@@ -720,7 +721,7 @@ class IVData(XYData):
         return iv_sq
     
     @staticmethod
-    def iv_rad(Vocrad, Jsc, light_int = 100, x_max = None):
+    def iv_rad(Vocrad: Any, Jsc: float, light_int: float = 100, x_max: Any | None = None) -> Any:
         if (x_max is None) or (x_max < Vocrad):
             x_max = Vocrad
         step = 0.001
@@ -731,20 +732,20 @@ class IVData(XYData):
         return iv_rad
     
     @staticmethod
-    def iv_trans(V_arr, Voc, Jsc, nid_rec, light_int = 100):
+    def iv_trans(V_arr: np.ndarray, Voc: float, Jsc: float, nid_rec: Any, light_int: float = 100) -> Any:
         Jtrans = np.array([IVData.i_of_v(V_arr[i], Jsc, Voc = Voc, nid = nid_rec, Rs = 0, Rsh = 1e10, T = T_RT) for i in range(len(V_arr))])
         iv_trans = IVData(V_arr, Jtrans, light_int = light_int, name = f'Transport limit: $V_{{oc}} = {Voc:.3f} \ V, \ J_{{sc,trans}} = {Jsc:.2f} \ mA/cm^2, \ n_{{id}} = {nid_rec:.2f},\ R_s = 0,\ R_{{sh}} = \infty$')
         iv_trans.det_perfparam()
         return iv_trans
         
         
-    def loss_plot(self, bg = None, Vocrad = None, nid_rec = None, x_max = None, iv_sq = None, iv_rad = None, iv_trans = None, IVfit = None, title = None, xscale = 'linear', yscale = 'linear', 
-                  left = None, right = None, bottom = None, top = None, what_to_show = ['measurement', 'fit', 'SQ limit', 'rad. limit', 'transp. limit'],
-                  show_legend_details= False, plot_table = False, figsize=(12,8), save = False, save_dir = '', bbox = [0.15, 0.25, 0.5, 0.3], **kwargs):
+    def loss_plot(self, bg: float | None = None, Vocrad: Any | None = None, nid_rec: Any | None = None, x_max: Any | None = None, iv_sq: Any | None = None, iv_rad: Any | None = None, iv_trans: Any | None = None, IVfit: Any | None = None, title: str | None = None, xscale: str = 'linear', yscale: str = 'linear', 
+                  left: float | None = None, right: float | None = None, bottom: float | None = None, top: float | None = None, what_to_show: Any = ['measurement', 'fit', 'SQ limit', 'rad. limit', 'transp. limit'],
+                  show_legend_details: bool= False, plot_table: bool = False, figsize: Any=(12,8), save: bool = False, save_dir: str = '', bbox: Any = [0.15, 0.25, 0.5, 0.3], **kwargs) -> Any:
         """
         Plot the IV curve, the fit with the internal 5 parameters and the fit with the ini_fp parameters.
         """
-        def print5param(Jsc, Voc, nid, Rs, Rsh):
+        def print5param(Jsc: float, Voc: float, nid: float, Rs: float, Rsh: float) -> Any:
             #text = f'Voc = {Voc:.3f} V, Jsc = {Jsc:.2f} mA/cm2' '\n' f'nid = {nid:.2f}, Rs = {Rs:.2e} Ohm cm2, Rsh = {Rsh:.2e} Ohm cm2'
             text = f'Voc = {Voc:.3f} V, Jsc = {Jsc:.2f} mA/cm$^2$, $n_{{id}} = {nid:.2f}, \ R_s = {Rs*1e3:.2e} \ \Omega \cdot cm^2, \ R_{{sh}} = {Rsh*1e3:.2e} \ \Omega \cdot cm^2$'
             return text
@@ -762,23 +763,23 @@ class IVData(XYData):
 
         if iv_sq is None:
             if self.light_int == 100:
-                iv_sq = IVData.iv_sq(bg, x_max = x_max)
+                iv_sq = IVData.iv_sq(bg, x_max = x_max)  # type: ignore
             else:
-                iv_sq = IVData.iv_sq(bg, x_max = x_max, light_int = self.light_int)
+                iv_sq = IVData.iv_sq(bg, x_max = x_max, light_int = self.light_int)  # type: ignore
                 print(f'Attention: light intensity {self.light_int:.1e} mW/cm2 is used to calculate Shockley-Queisser limit!')
         iv_sq.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'black')
         
         if iv_rad is None:
-            iv_rad = IVData.iv_rad(Vocrad, self.Jsc, self.light_int, x_max = Vocrad + 0.01)
+            iv_rad = IVData.iv_rad(Vocrad, self.Jsc, self.light_int, x_max = Vocrad + 0.01)  # type: ignore
         iv_rad.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'green')
         
         if iv_trans is None:
-            iv_trans = IVData.iv_trans(self.x, self.Voc, self.Jsc, nid_rec, light_int = self.light_int)
+            iv_trans = IVData.iv_trans(self.x, self.Voc, self.Jsc, nid_rec, light_int = self.light_int)  # type: ignore
         iv_trans.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'cyan')
         
         if IVfit is None and 'fit' in what_to_show:
-            Jfit = np.array([IVData.i_of_v(new_x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(new_x))])
-            IVfit = IVData(new_x, Jfit, light_int = self.light_int, name = 'Fit: ' + print5param(self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh))
+            Jfit = np.array([IVData.i_of_v(new_x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(new_x))])  # type: ignore
+            IVfit = IVData(new_x, Jfit, light_int = self.light_int, name = 'Fit: ' + print5param(self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh))  # type: ignore
             IVfit.det_perfparam()
             IVfit.plotstyle = dict(linestyle = '-', linewidth = linewidth, color = 'red')
         
@@ -792,9 +793,9 @@ class IVData(XYData):
             show_this.append(self)
             lab.append('Measurement')
         if 'fit' in what_to_show:
-            show_this.append(IVfit)
+            show_this.append(IVfit)  # type: ignore
             if show_legend_details:
-                lab.append(IVfit.name)
+                lab.append(IVfit.name)  # type: ignore
             else:
                 lab.append('fit')
         if 'SQ limit' in what_to_show:
@@ -844,7 +845,7 @@ class IVData(XYData):
                 row_labels.append('Transp. lim.')
                 
             IVData.save_perf_data(mIV.sa, row_labels, col_labels, save_dir, filepath)
-            mIV.save(save_dir, title, row_labels)
+            mIV.save(save_dir, title, row_labels)  # type: ignore
         
         if plot_table:
             
@@ -867,8 +868,8 @@ class IVData(XYData):
 
         else:
             cell_text = None
-            row_labels = None
-            col_labels = None
+            row_labels = None  # type: ignore
+            col_labels = None  # type: ignore
             
         if title is None:
             title = self.name
@@ -881,7 +882,7 @@ class IVData(XYData):
     
     
     @staticmethod
-    def loss_barplot(IV1, IVtrans1, IVrad1, IVsq1, IV2, IVtrans2, IVrad2, IVsq2, sample_names = ['Control', 'Treated'], save = False, save_dir = None, filepath = None):
+    def loss_barplot(IV1: Any, IVtrans1: Any, IVrad1: Any, IVsq1: Any, IV2: Any, IVtrans2: Any, IVrad2: Any, IVsq2: Any, sample_names: Any = ['Control', 'Treated'], save: bool = False, save_dir: str | None = None, filepath: str | None = None) -> Any:
     
         # Losses (for barplot)
     
@@ -974,17 +975,17 @@ class IVData(XYData):
                                 
             df = pd.DataFrame(data=allBars, columns = sample_names, index = labels)
                             
-            TFN = join(save_dir, filepath)
+            TFN = join(save_dir, filepath)  # type: ignore
             if save_ok(TFN):
-                df.to_csv(join(save_dir, filepath), header = True, index = True)
+                df.to_csv(join(save_dir, filepath), header = True, index = True)  # type: ignore
 
         
-    def plot_fp(self, fp, title = None, xscale = 'linear', yscale = 'linear', bottom = None, top = None):
+    def plot_fp(self, fp: Any, title: str | None = None, xscale: str = 'linear', yscale: str = 'linear', bottom: float | None = None, top: float | None = None) -> Any:
         """
         Plot the IV curve and the fit with the fp 5 parameters.
         """
         J = np.array([IVData.i_of_v(self.x[i], fp.Jsc, fp.Voc, fp.nid, fp.Rs, fp.Rsh, T = T_RT) for i in range(len(self.x))])
-        IVp = IVData(self.x, J, name=IVData._format_nid_rs_rsh_label(fp.nid, fp.Rs, fp.Rsh))
+        IVp = IVData(self.x, J, name=IVData._format_nid_rs_rsh_label(fp.nid, fp.Rs, fp.Rsh))  # type: ignore
         IVp.plotstyle = dict(linestyle = '-', color = 'red')
         mIV = MIVData([self, IVp])
         #mIV.names_to_label()
@@ -993,7 +994,7 @@ class IVData(XYData):
 
         
     @staticmethod
-    def from_fp(x_arr, fp, name = '', light_int = 100, T = T_RT, perfparam = True):
+    def from_fp(x_arr: np.ndarray, fp: Any, name: str = '', light_int: float = 100, T: float = T_RT, perfparam: Any = True) -> Any:
         """
         Returns an instance of IVData from the five parameters in fp.
 
@@ -1026,7 +1027,7 @@ class IVData(XYData):
     
     
     @staticmethod
-    def i_of_v(V, Isc, Voc, nid, Rs, Rsh, T = T_RT):
+    def i_of_v(V: float, Isc: Any, Voc: float, nid: float, Rs: float, Rsh: float, T: float = T_RT) -> Any:
         """
         Computes the I-V curve using an analytical LambertW-based model.
         See: Zhang et al., J. of Appl. Phys. 110, 064504 (2011) --> Eq. 8
@@ -1053,14 +1054,14 @@ class IVData(XYData):
     
 
     @staticmethod
-    def i_of_v_safe(V, Isc, Voc, nid, Rs, Rsh, T=T_RT):
+    def i_of_v_safe(V: float, Isc: Any, Voc: float, nid: float, Rs: float, Rsh: float, T: float=T_RT) -> Any:
         """
         Computes the I-V curve using an analytical LambertW-based model.
         See: Zhang et al., J. Appl. Phys. 110, 064504 (2011), Eq. 8
         This is a safer version to the previous one but much slower (factor ~8!).
 
         """
-        V = np.asarray(V, dtype=np.float64)        # vector‑safe
+        V = np.asarray(V, dtype=np.float64)  # type: ignore
     
         EPS = 1e-12                                # numerical floor
         Rs  = np.clip(Rs,  EPS,  np.inf)           # avoid 0
@@ -1089,7 +1090,7 @@ class IVData(XYData):
 
     
     @staticmethod
-    def sq_limit_voc(bg, illumspec_PF_eV = None, light_int = None, from_file = True):
+    def sq_limit_voc(bg: float, illumspec_PF_eV: Any | None = None, light_int: float | None = None, from_file: str = True) -> Any:  # type: ignore
         
         if from_file:
             filepath = 'Vocsq.csv'
@@ -1114,7 +1115,7 @@ class IVData(XYData):
         return Vocsq
     
     @staticmethod
-    def sq_limit_jsc(bg, illumspec_PF_eV = None, light_int = None):
+    def sq_limit_jsc(bg: float, illumspec_PF_eV: Any | None = None, light_int: float | None = None) -> Any:
                 
         if illumspec_PF_eV is None:
             AM15 = DiffSpectrum.am15_ev()
@@ -1129,7 +1130,7 @@ class IVData(XYData):
         
         
     @staticmethod
-    def sq_limit(bg, illumspec_PF_eV = None, light_int = None):
+    def sq_limit(bg: float, illumspec_PF_eV: Any | None = None, light_int: float | None = None) -> Any:
         """
         Returns the SQ-limit five parameters. 
     
@@ -1156,13 +1157,13 @@ class IVData(XYData):
                 am15_ev.y = am15_ev.y * light_int/100
             illumspec_PF_eV = am15_ev
         
-        v_sq = IVData.sq_limit_voc(bg, illumspec_PF_eV, light_int = light_int, from_file = False)
+        v_sq = IVData.sq_limit_voc(bg, illumspec_PF_eV, light_int = light_int, from_file = False)  # type: ignore
         Jsq = IVData.sq_limit_jsc(bg, illumspec_PF_eV, light_int = light_int)
         
         return FiveParam(cell_area = 1, Voc = v_sq, Jsc = Jsq, nid = 1, Rs = 0, Rsh = np.inf)
     
         
-    def calc_resistance_curve(self, left = None, right = None):
+    def calc_resistance_curve(self, left: float | None = None, right: float | None = None) -> Any:
         #Calculates a resistance from the derivative of the J-V curve
         if left is None:
             left = min(self.x)
@@ -1178,7 +1179,7 @@ class IVData(XYData):
         R = IVData(dIV.x, resist_arr, quants = dict(x = 'Voltage', y = 'Resistance'), units = dict(x = 'V', y = 'Ohm cm2'))        
         return R
     
-    def resistance_plot(self, V_rel, left = None, right = None, bottom = None, top = None, vline = None, hline=None, yscale = 'linear', title = None, noshow=False):
+    def resistance_plot(self, V_rel: Any, left: float | None = None, right: float | None = None, bottom: float | None = None, top: float | None = None, vline: Any | None = None, hline: Any | None=None, yscale: str = 'linear', title: str | None = None, noshow: Any=False) -> Any:
     
         if left is None:
             left = V_rel - 0.3
@@ -1203,6 +1204,6 @@ class IVData(XYData):
         
 class MIVData(MXYData):
     
-    def __init__(self, sa):
+    def __init__(self, sa: Any) -> None:
         super().__init__(sa)
         

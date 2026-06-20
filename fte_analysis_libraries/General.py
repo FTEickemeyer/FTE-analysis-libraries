@@ -18,6 +18,7 @@ import sys
 from os.path import join
 import warnings
 from numbers import Number
+from typing import Any
 
 if sys.platform == 'win32':
     import winsound
@@ -53,14 +54,14 @@ class color:
    UNDERLINE = '\033[4m'
    END = '\033[0m'
    
-def color_list(n):
+def color_list(n: float) -> Any:
     
     #cl = [color.BLACK, color.RED, color.BLUE, color.GREEN, color.CYAN, color.PURPLE, color.DARKCYAN, color.YELLOW]
     colors = mcolors.TABLEAU_COLORS
     cl = list(colors)
 
     c_list = []
-    for i in range(n):
+    for i in range(n):  # type: ignore
         c_list.append(cl[i])
 
     return c_list
@@ -78,9 +79,9 @@ CSS_col_names = [name for hsv, name in by_hsv]
 
 # This function rounds a float to 'sig' significant figures
 
-def round_sig(x, sig=2):
+def round_sig(x: np.ndarray, sig: Any=2) -> Any:
     if x != 0:
-        result = round(x, sig-int(math.floor(math.log10(abs(x))))-1)
+        result = round(x, sig-int(math.floor(math.log10(abs(x))))-1)  # type: ignore
     else:
         result = 0
     return result
@@ -88,9 +89,9 @@ def round_sig(x, sig=2):
 
 # This function returns a string with 'sig' significant figures
 
-def str_round_sig(x, sig=2):
+def str_round_sig(x: np.ndarray, sig: Any=2) -> Any:
     if x != 0:
-        num_string = str(round(x, sig-int(math.floor(math.log10(abs(x))))-1))
+        num_string = str(round(x, sig-int(math.floor(math.log10(abs(x))))-1))  # type: ignore
     else:
         num_string = '0.0'
     while len(num_string.replace('.','')) < sig:
@@ -99,17 +100,17 @@ def str_round_sig(x, sig=2):
 
 # This function returs a 1-dim array which represents the interpolated values of arr_y at the x-values new_x
     
-def int_arr(arr_x, arr_y, newarr_x, kind='cubic'):
+def int_arr(arr_x: np.ndarray, arr_y: np.ndarray, newarr_x: np.ndarray, kind: str='cubic') -> Any:
     arr_interp = interp1d(arr_x, arr_y, kind, bounds_error=False, fill_value=0)
     arr_int_y = np.zeros(len(newarr_x))
     for i, new_x in enumerate(newarr_x):
         arr_int_y[i] = arr_interp(new_x)
     return arr_int_y
 
-def interpolated_array(arr_nm, arr_y, wavelengths):
+def interpolated_array(arr_nm: np.ndarray, arr_y: np.ndarray, wavelengths: np.ndarray) -> Any:
     return int_arr(arr_nm, arr_y, wavelengths, kind='linear')
 
-def df_interpolate(df, new_index_arr):
+def df_interpolate(df: Any, new_index_arr: np.ndarray) -> Any:
     """
     Generates an interpolated dataframe, where the index of df is replaced by new_index_arr.
 
@@ -138,7 +139,7 @@ def df_interpolate(df, new_index_arr):
     df_new.index = df_new.index.astype(type(new_index_arr[0]))
     return df_new
 
-def findind(arr, value, show_warnings = False):
+def findind(arr: Any, value: Any, show_warnings: bool = False) -> Any:
     """
     Works only for ascending or descending arrays!
     """
@@ -160,13 +161,13 @@ def findind(arr, value, show_warnings = False):
     return ind
 
 
-def findind_exact(array, value):
+def findind_exact(array: Any, value: Any) -> Any:
     """
     Returns the first index idx where the array[idx] = value 
     """
     return np.where(array == value)[0][0]
 
-def linfit(array_x, array_y, von=None, bis=None):
+def linfit(array_x: np.ndarray, array_y: np.ndarray, von: Any | None=None, bis: Any | None=None) -> Any:
     if von is None:
         von = array_x[0]
     if bis is None:
@@ -174,7 +175,7 @@ def linfit(array_x, array_y, von=None, bis=None):
     m, b = np.polyfit(array_x[findind(array_x,von):findind(array_x,bis)], array_y[findind(array_x,von):findind(array_x,bis)], 1)
     return m, b
 
-def plx(text, size = 14):
+def plx(text: Any, size: Any = 14) -> Any:
     """
     Print text with latex.
     Parameters
@@ -192,7 +193,7 @@ def plx(text, size = 14):
     
     rcParams['font.sans-serif'] = ['Tahoma', 'DejaVu Sans',
                                'Lucida Grande', 'Verdana']
-    ax = plt.axes([0,0,2,0.1]) #left,bottom,width,height
+    ax = plt.axes([0,0,2,0.1])  # type: ignore
     ax.set_xticks([])
     ax.set_yticks([])
     ax.axis('off')
@@ -201,7 +202,7 @@ def plx(text, size = 14):
              verticalalignment='center', wrap = True)
     plt.show()
     
-def v_sq(Eg):
+def v_sq(Eg: float) -> Any:
     """
     This is a simple approximation of the SQ Voc limit. The precise calculation can be found in IV.py, IVData.sq_limit_voc.
 
@@ -218,23 +219,23 @@ def v_sq(Eg):
     """
     return 0.932*Eg - 0.167
 
-def v_loss(PLQY, T = T_RT):
+def v_loss(PLQY: Any, T: float = T_RT) -> Any:
     return k * T / q * np.log(PLQY)
 
-def qfls(Eg, PLQY):
+def qfls(Eg: float, PLQY: Any) -> Any:
     return v_sq(Eg) + v_loss(PLQY)
 
-def diff_coeff(mu):
+def diff_coeff(mu: Any) -> Any:
     # Calculates the diffusion coefficient from the mobility
     # If the mobility is given in cm2/(Vs) then the diffusion coefficient is in units cm2/s.
     return k * T_RT / q * mu
   
-def mobility(D):
+def mobility(D: float) -> Any:
     # Caluclates the mobility form the diffusion coefficient.
     # If the diff. coefficient is given in cm2/s then the mobility is in units cm2/(Vs).
     return (k * T_RT / q)**(-1) * D
 
-def save_ok(TFN, quitted = None):
+def save_ok(TFN: str, quitted: Any | None = None) -> Any:
     """
     Check if file exists. If yes, ask to override.
     Returns boolean indicating if it is ok to save (override) the file.
@@ -287,7 +288,7 @@ def save_ok(TFN, quitted = None):
         return ok, quitted
 
     
-def how_long(process, arr=None):
+def how_long(process: Any, arr: Any | None=None) -> Any:
     if arr is None:
         arr = np.arange(1, 2, 1)
     """
@@ -317,12 +318,12 @@ def how_long(process, arr=None):
     total_time = elapsed_time * no_steps
     return total_time
 
-def beep(freq = 600, duration = 1000):
+def beep(freq: Any = 600, duration: Any = 1000) -> Any:
     if sys.platform == 'win32':
-        winsound.beep( freq, duration )
+        winsound.beep( freq, duration )  # type: ignore
     
 
-def plot_first_n_lines(directory, filepath, n=20, encoding = "ISO-8859-1"):
+def plot_first_n_lines(directory: str, filepath: str, n: float=20, encoding: str = "ISO-8859-1") -> Any:
     
     TFN = join(directory,filepath)
         
@@ -338,24 +339,24 @@ def plot_first_n_lines(directory, filepath, n=20, encoding = "ISO-8859-1"):
             else:
                 break
 
-def fullprint(*args, **kwargs):
+def fullprint(*args, **kwargs) -> Any:
     """
     Print the full np.array.
     """
     from pprint import pprint
     opt = np.get_printoptions()
-    np.set_printoptions(threshold=np.inf)
+    np.set_printoptions(threshold=np.inf)  # type: ignore
     pprint(*args, **kwargs)
     np.set_printoptions(**opt)
     
-def is_even(num):
+def is_even(num: Any) -> Any:
     return num % 2 == 0
 
-def is_odd(num):
+def is_odd(num: Any) -> Any:
     return num % 2 != 0
 
 
-def idx_range(arr, left = None, right = None):
+def idx_range(arr: Any, left: float | None = None, right: float | None = None) -> Any:
     # Returns the index range from x = left to x = right
     # Only works for monotoneous ascending or descending np.arrays
     l = left
@@ -389,11 +390,11 @@ def idx_range(arr, left = None, right = None):
     
     return ra
 
-def scattered_boxplot(ax, x, notch=None, sym=None, vert=None, whis=None, positions=None, widths=None, patch_artist=None, bootstrap=None, usermedians=None, conf_intervals=None, meanline=None, showmeans=None, showcaps=None, showbox=None,
-                      showfliers="unif",
-                      hide_points_within_whiskers=False,
-                      boxprops=None, labels=None, flierprops=None, medianprops=None, meanprops=None, capprops=None, whiskerprops=None, manage_ticks=True, autorange=False, zorder=None, *, data=None,
-                      alpha=0.2,marker="o", facecolors='none', edgecolors="k"):
+def scattered_boxplot(ax: Any, x: np.ndarray, notch: Any | None=None, sym: Any | None=None, vert: Any | None=None, whis: Any | None=None, positions: Any | None=None, widths: Any | None=None, patch_artist: Any | None=None, bootstrap: Any | None=None, usermedians: Any | None=None, conf_intervals: Any | None=None, meanline: Any | None=None, showmeans: Any=None, showcaps: Any=None, showbox: Any=None,
+                      showfliers: Any="unif",
+                      hide_points_within_whiskers: Any=False,
+                      boxprops: Any | None=None, labels: Any | None=None, flierprops: Any | None=None, medianprops: Any | None=None, meanprops: Any | None=None, capprops: Any | None=None, whiskerprops: Any | None=None, manage_ticks: Any=True, autorange: Any=False, zorder: Any | None=None, *, data: Any | None=None,
+                      alpha: Any=0.2,marker: Any="o", facecolors: Any='none', edgecolors: Any="k") -> Any:
     if showfliers=="classic":
         classic_fliers=True
     else:
@@ -450,7 +451,7 @@ def scattered_boxplot(ax, x, notch=None, sym=None, vert=None, whis=None, positio
 setattr(plt.Axes, "scattered_boxplot", scattered_boxplot)
 
 
-def ignore_warnings(func, *args, enable_warnings = False, **kwargs):
+def ignore_warnings(func: Any, *args, enable_warnings: Any = False, **kwargs) -> Any:
     #ignore all warnings for the function func
     if not enable_warnings:
         with warnings.catch_warnings():
@@ -458,7 +459,7 @@ def ignore_warnings(func, *args, enable_warnings = False, **kwargs):
             return func(*args, **kwargs)
     return func(*args, **kwargs)
 
-def copy_to_clipboard(text):
+def copy_to_clipboard(text: Any) -> Any:
     """
     Copies text to the clipboard. The text can be copied by ctrl-v e.g. to an excel sheet. If commas are used, then the text between the commas is organized in different columns.
     Uses the package pyperclip (https://pypi.org/project/pyperclip/). To be installed via pip install pyperclip.
@@ -480,7 +481,7 @@ def copy_to_clipboard(text):
     import pyperclip
     pyperclip.copy(text)
     
-def win_long_fp(fp):
+def win_long_fp(fp: Any) -> Any:
     # If the os is windows: Transforms a filepath fp that is too long for windows into a windows readable filepath
     # in all other cases it just returns fp
     windows_long_file_prefix = '\\\\?\\'
@@ -489,7 +490,7 @@ def win_long_fp(fp):
     else:
         return fp
 
-def max_len(list_of_strings):
+def max_len(list_of_strings: Any) -> Any:
     #finds the max length of the strings in a list
     #This can be used e.g. in f-strings: print(f'{conditions[idx].ljust(max_len(conditions))}: text') T
     n = 0

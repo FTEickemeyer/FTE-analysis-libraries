@@ -9,10 +9,11 @@ Created on Mon Oct 19 14:29:18 2020
 import tkinter as tk
 from tkinter import filedialog
 import os
+from typing import Any
 
 
 
-def getFilenames(title, types=[], initialdir=None):
+def getFilenames(title: str, types: Any=[], initialdir: Any | None=None) -> Any:
     root = tk.Tk()
     root.withdraw()
     root.call('wm', 'attributes', '.', '-topmost', True)
@@ -29,7 +30,7 @@ def getFilenames(title, types=[], initialdir=None):
     cell_filenames = [os.path.basename(filepath) for filepath in filePaths]
     return cell_directory, cell_filenames
 
-def getFilename(title, types=[], initialdir=None):
+def getFilename(title: str, types: Any=[], initialdir: Any | None=None) -> Any:
     root = tk.Tk()
     root.withdraw()
     root.call('wm', 'attributes', '.', '-topmost', True)
@@ -41,7 +42,7 @@ def getFilename(title, types=[], initialdir=None):
     cell_filename = os.path.basename(filepath)
     return cell_directory, cell_filename
     
-def saveFile(title, types=[], initialdir=None):
+def saveFile(title: str, types: Any=[], initialdir: Any | None=None) -> Any:
     root = tk.Tk()
     root.withdraw()
     root.call('wm', 'attributes', '.', '-topmost', True)
@@ -66,9 +67,9 @@ if __name__ == "__main__":
     # Import my own libraries and modules
     mod_dir = r'C:\Users\dreickem\switchdrive\Work\Python\My modules' 
     sys.path.append(mod_dir)
-    import Tkdialogs as tk
+    import Tkdialogs as tk  # type: ignore
     
-    save_FN = tk.saveFile('Save file', initialdir = getcwd(), types = [('csv files','*.csv'), ('txt files', '*.txt'), ('all', '*.*')], )
+    save_FN = tk.saveFile('Save file', initialdir = getcwd(), types = [('csv files','*.csv'), ('txt files', '*.txt'), ('all', '*.*')], )  # type: ignore
     print(save_FN)
     
-    load_FNs = tk.getFilenames('Load files', types = [('csv files','*.csv'), ('txt files', '*.txt'), ('all', '*.*')], initialdir = getcwd())
+    load_FNs = tk.getFilenames('Load files', types = [('csv files','*.csv'), ('txt files', '*.txt'), ('all', '*.*')], initialdir = getcwd())  # type: ignore
