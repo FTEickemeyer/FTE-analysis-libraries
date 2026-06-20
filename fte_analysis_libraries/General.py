@@ -19,7 +19,7 @@ from os.path import join
 import warnings
 from numbers import Number
 
-if sys.platform == 'Win32':
+if sys.platform == 'win32':
     import winsound
 
 # Constants
@@ -34,7 +34,7 @@ q = 1.602176634e-19 #C (elementary charge)
 T_RT = 273.15+25 #K (room temperature)
 epsilon_0 = 8.8541878128e-12 #F/m = C /(Vm) = As / Vm (vacuum electric permittivity)
 F =  96485.3321233 #C·mol−1 (Faraday constant)
-R = 0.99999999965e-3 #kg/mol (molar gas constant)
+R = 8.314462618  # J/(mol·K) (molar gas constant)
 f1240 = h * c / q / 1e-9
 m_e = 9.1093837015e-31 #kg (electron mass)
 N_A = 6.02214076e23 # 1/mol Avogadro constant
@@ -175,7 +175,7 @@ def linfit(array_x, array_y, von=None, bis=None):
     if von == None:
         von = array_x[0]
     if bis == None:
-        bis = array_y[-1]
+        bis = array_x[-1]
     m, b = np.polyfit(array_x[findind(array_x,von):findind(array_x,bis)], array_y[findind(array_x,von):findind(array_x,bis)], 1)
     return m, b
 
@@ -224,7 +224,7 @@ def Vsq(Eg):
     return 0.932*Eg - 0.167
 
 def V_loss(PLQY, T = T_RT):
-    return k * T_RT / q * np.log(PLQY)
+    return k * T / q * np.log(PLQY)
 
 def QFLS(Eg, PLQY):
     return Vsq(Eg) + V_loss(PLQY)
@@ -267,29 +267,29 @@ def save_ok(TFN, quitted = None):
                 else:
                     input_var = input("Override? (yes: y, no: n, quit: q): ")
                 if input_var == 'y':
-                    save_ok = True
+                    ok = True
                     print('File/path overwritten!')
                     execute_loop = False
                 elif input_var == 'n':
-                    save_ok = False
+                    ok = False
                     print('File/path not saved!')
                     execute_loop = False
                 elif input_var == 'q':
-                    save_ok = False
+                    ok = False
                     quitted = True
                     print('File/path not saved, saving process quitted!')
                     execute_loop = False
                 else:
-                    print('Input not valid!')            
+                    print('Input not valid!')
         else:
-            save_ok = True
+            ok = True
     else:
-        save_ok = False
-            
+        ok = False
+
     if quitted == None:
-        return save_ok
+        return ok
     else:
-        return save_ok, quitted
+        return ok, quitted
 
     
 def how_long(process, arr = np.arange(1, 2, 1)):
@@ -321,7 +321,7 @@ def how_long(process, arr = np.arange(1, 2, 1)):
     return total_time
 
 def beep(freq = 600, duration = 1000):
-    if sys.platform == 'Win32':
+    if sys.platform == 'win32':
         winsound.beep( freq, duration )
     
 
@@ -372,8 +372,9 @@ def idx_range(arr, left = None, right = None):
             r = max(arr)
 
         if l > r:
+            tmp = l
             l = r
-            r = l
+            r = tmp
                         
     #Descending array
     else:
@@ -383,8 +384,9 @@ def idx_range(arr, left = None, right = None):
             l = max(arr)
 
         if l < r:
+            tmp = l
             l = r
-            r = l
+            r = tmp
     
     ra = range(findind(arr, l), findind(arr, r)+1)    
     
@@ -469,7 +471,8 @@ def ignore_warnings(func, *args, enable_warnings = False, **kwargs):
     if not enable_warnings:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-    return(func(*args, **kwargs))
+            return func(*args, **kwargs)
+    return func(*args, **kwargs)
 
 def copy_to_clipboard(text):
     """

@@ -16,7 +16,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit, least_squares
-import thot
+try:
+    import thot
+except ImportError:
+    thot = None
 
 from . import Spectrum as spc
 from .XYdata import xy_data, mxy_data
@@ -343,14 +346,8 @@ class exp_param:
                 self.PL_right = PL_right
 
             # PL peak (for the readjustment of the inbeam PL with fs PL)
-            if PL_peak == None:
-                #self.PL_peak = 540
-                #self.PL_peak = 700 #nm
-                PL_peak = None
-                #self.PL_peak = 750 #nm
-                #self.PL_peak = 790 #nm
-                #self.PL_peak = 800 #nm
-                #self.PL_peak = 920 #nm
+            if PL_peak is None:
+                self.PL_peak = None
             else:
                 self.PL_peak = PL_peak
 
@@ -442,12 +439,9 @@ class PLQY_dataset:
 
     def find_PL_peak(self):
         if self.param.PL_peak_auto:
-            #Finds the PL peak of the free space spectrum between PL_left and PL_right
-            if self.PL_peak == None:
-                if self.param.PL_peak_auto:
-                    ra = self.fs.idx_range(left = self.param.PL_left, right = self.param.PL_right)
-                    PL_peak = self.fs.x_of(max(self.fs.y[ra]), start = self.param.PL_left)
-                self.PL_peak = PL_peak
+            if self.PL_peak is None:
+                ra = self.fs.idx_range(left = self.param.PL_left, right = self.param.PL_right)
+                self.PL_peak = self.fs.x_of(max(self.fs.y[ra]), start = self.param.PL_left)
         self.Eg = f1240/self.PL_peak #eV
         self.Vsq = Vsq(self.Eg) #V
     
