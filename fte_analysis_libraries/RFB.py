@@ -75,85 +75,6 @@ def det_c_V_from_conc_and_electrolyte_details(conc, weight_pc_V_start=6.11, weig
 def pH_c_H_plus(c_H_plus):
     return -np.log10(c_H_plus)
 
-def calc_conc_functions_without_Ka1(c_V, c_SO4):
-
-    """
-    This function calculates the H+ and HSO4- concentration as a function fo the average vanadium oxidation state from 2 to 5.
-
-    
-    We have the following four equations:  
-    
-    $\begin{equation}
-    \ce{ H2O <=> HO- + H+ , \, K_w = \frac{[OH-] \ [H+]}{[H2O]} =  10^{-14} , \, [H2O] = 1 } \tag{1}
-    \end{equation}$
-    
-    $\begin{equation}
-    \ce{ HSO4- <=> SO4^{2-} + H+ , \, K_{a2} = \frac{[SO4^{2-}] \ [H+]}{[HSO4-]} = 10^{-1.99} } \tag{2}
-    \end{equation}$
-    
-    $\begin{equation}
-    \ce{ [HSO4-] + [SO4^{2-}] = [SO4] } \tag{3}
-    \end{equation}$
-    
-    Charge balance:
-    
-    $\begin{equation}
-    \ce{ c_{pos_V} + [H+] = [HSO4-] + 2 * [SO4^{2-}] + [OH-] } \tag{4}
-    \end{equation}$
-    
-    $\begin{equation}
-    \ce{ c_{pos_V} \equiv 2 \cdot [V^{2+}] + 3 \cdot [V^{3+}] + 2 \cdot [VO^{2+}] + 1 \cdot [VO_2^{+}]  \tag{5}}
-    \end{equation}$
-
-    Knowns: $\ce{K_a_2, K_w, c_{pos_V}, [SO4] }$  
-    Unknowns: $\ce{ [HSO4-], [SO4^{2-}], [H+], [OH-]}$  
-    So, 4 equations and 4 unknowns!
-
-    Once we have the proton concentration we can calculate the sulfate and bisulfate concentrations using equations (2) and (3):  
-    
-    $\begin{equation}
-    \ce{ [HSO4-] = \frac{[H+] [SO4]}{[H+] + K_{a2}} } \tag{6}
-    \end{equation}$
-    
-    $\begin{equation}
-    \ce{ [SO4^{2-}] = [SO4] - [HSO4-] } \tag{7}
-    \end{equation}$
-
-    Vanadium: Concentrations  
-    -$\ce{V^{2+}}$: c_2  
-    -$\ce{V^{3+}}$: c_3  
-    -$\ce{(V^{IV}O)^{2+}}$: c_4    
-    -$\ce{(V^{V}O_2)^{+}}$: c_5  
-
-    """
-    
-    
-    #Calculate concentration of positive charges from Vanadium
-    c_pos_V = lambda conc: 2*conc['c_2'] + 3*conc['c_3'] + 2*conc['c_4'] + 1*conc['c_5']
-    
-    Ka2 = 10**(-1.99) #https://en.wikipedia.org/wiki/Sulfuric_acid
-    Kw = 10**(-14)
-    
-    # h is the proton concentration, this is the quantity we want to know
-    s = c_SO4
-    func = lambda h, c_pos_V: h**3 + (c_pos_V+Ka2-s)*h**2 + (c_pos_V*Ka2-2*s*Ka2-Kw)*h - Kw*Ka2
-    #func = lambda h: h**2 + (c+Ka2-s)*h + (c*Ka2-2*s*Ka2) # if Kw is zero
-    
-    h_initial_guess = 2.0
-    c_H_plus = lambda conc: fsolve(func, h_initial_guess, args=(c_pos_V(conc)))[0]
-    
-    c_HSO4_minus = lambda c_H_plus: c_H_plus*c_SO4/(c_H_plus + Ka2)
-    c_SO4_2minus = lambda c_HSO4_minus: c_SO4 - c_HSO4_minus 
-    
-    #x is the average oxidation state (from 2 to 5)
-    c_2 = lambda x: c_V*(3-x) if (2 <= x) and (x < 3) else 0
-    c_3 = lambda x: c_V*(x-2) if (2 <= x) and (x < 3) else (c_V*(4-x) if (3 <= x) and (x < 4) else 0)
-    c_4 = lambda x: c_V*(x-3) if (3 <= x) and (x < 4) else (c_V*(5-x) if (4 <= x) and (x < 5) else 0)
-    c_5 = lambda x: c_V*(x-4) if (4 <= x) and (x <= 5) else 0
-    conc_x = lambda x: {'c_2': c_2(x), 'c_3': c_3(x), 'c_4': c_4(x), 'c_5': c_5(x)}
-
-    return conc_x, c_H_plus, c_HSO4_minus, c_SO4_2minus
-
 
 def calc_conc_functions(c_V, c_SO4):
 
@@ -1880,38 +1801,6 @@ def UVVIS_plot_fitted_multiple(time_list, target_spectrum_list, df_fit_list, ar_
     ax.legend()
     
     plt.show()
-    
-
-def UVVIS_fit_spectrum_old(target_spectrum, spec_Vr, spec_Vo):
-
-    def fit_model(wavelengths, ar, ao):
-        #offset1 = 0
-        #offset2 = 0
-        #return (ar * spec_Vr.values + offset1 +
-        #        ao * spec_Vo.values + offset2)
-        return (ar * spec_Vr.values + ao * spec_Vo.values)
-
-    # Extract wavelength and absorbance data from target spectrum
-    wavelengths = target_spectrum.index
-    absorbance = target_spectrum.values
-
-    # Initial guess for coefficients and offsets [c1, c2, offset1, offset2]
-    initial_guess = [0.5, 0.5]
-    bounds = ([0, 0], [np.inf, np.inf])
-
-    # Perform curve fitting
-    popt, _ = curve_fit(fit_model, wavelengths, absorbance, p0=initial_guess, bounds=bounds)
-
-    # Extract fitted coefficients and offsets
-    ar = popt[0]
-    ao = popt[1]
-
-    # Compute the fitted spectrum
-    fitted_spectrum = fit_model(wavelengths, ar, ao)
-    df_fit = pd.Series(fitted_spectrum, index=target_spectrum.index)
-
-    # Return the fit results and coefficients
-    return df_fit, ar, ao
 
 def UVVIS_fit_spectrum(target_spectrum, spec_Vr, spec_Vo):
 

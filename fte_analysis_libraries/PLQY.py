@@ -4,7 +4,6 @@ Created on Thu Mar 19 15:05:55 2020
 
 @author: dreickem
 """
-import sys
 import os
 from os import listdir
 from os.path import join
@@ -24,7 +23,6 @@ except ImportError:
 from . import Spectrum as spc
 from .XYdata import xy_data, mxy_data
 from .General import (
-    int_arr,
     linfit,
     save_ok,
     q,

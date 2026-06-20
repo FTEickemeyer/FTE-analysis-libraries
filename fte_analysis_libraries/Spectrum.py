@@ -6,7 +6,6 @@ Created on Thu Mar 19 15:05:55 2020
 """
 
 from scipy.optimize import curve_fit, least_squares
-import sys
 import numpy as np
 import pandas as pd
 import os
@@ -82,14 +81,6 @@ class spectrum(xy_data):
             sp_new = abs_spectrum(x_eV, y_eV, quants = quants, units = units, name = name)
             
         return sp_new
-    
-
-    
-    def old_max_within(self, left = None, right = None):
-        r = range(findind(self.x, left), findind(self.x,right)+1)
-        max_y = max(self.y[r])
-        max_x = self.x[findind(self.x, left) + findind(self.y[r], max_y) - 1]
-        return [max_x, max_y]
 
     
     @staticmethod
@@ -153,26 +144,6 @@ class EQE_spectrum(spectrum):
         num = ref_EQE.calc_Jsc(left = left, right = right, delta = delta, sp = ref_PF) * self.calc_Jsc(left = left, right = right, delta = delta, sp = sim_PF)
         denom = ref_EQE.calc_Jsc(left = left, right = right, delta = delta, sp = sim_PF) * self.calc_Jsc(left = left, right = right, delta = delta, sp = ref_PF)
         return num / denom
-    
-    def old_second_diff(self, left = None, right = None):
-        
-        if left == None:
-            left = min(self.x)
-        if right == None:
-            right = max(self.x)
-
-        le = findind(self.x, left)
-        ri = findind(self.x, right)
-
-        ra = range(le, ri+1)
-        x = self.x[ra]
-        
-        d2ydx2 = np.gradient(np.gradient(self.y[ra], x), x)
-        name = f'Second derivative of: {self.name}'
-        quants = dict(x = self.qx, y = f'$d^2$({self.qy})/$d$({self.qx})$^2$')
-        units = dict(x = self.ux, y = f'{self.uy}/({self.ux})$^2$')
-        
-        return EQE_spectrum(x, d2ydx2, quants = quants, units = units, name = name)
         
     
     def bg_from_ip(self, left = None, right = None, showplot = None):
@@ -487,40 +458,6 @@ class diff_spectrum(spectrum):
     
     def __init__(self, x, y, quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, name = '', plotstyle = dict(linestyle = '-', color = 'black', linewidth = 3), check_data = True):
         super().__init__(x, y, quants, units, name, plotstyle, check_data = check_data)
-               
-
-    def spectralflux_to_photonflux(self, factor = 1):
-        """
-        This is the old version: Use the function "diff_spectrum.irradiance_to_photonflux" in future!
-        In the new version self remains unchanged.
-        Converts y from spectral flux into photon flux (in 1/[s m2 nm]).
-        Expects that x is wavelength in nm and y is spectral flux in factor * W / (m2 nm).
-        Example: If y is in uW/(cm2 nm), then factor is 1e-6/1e-4.
-        """
-        
-        old_y = self.y
-        self.y = factor * old_y * (self.x * 1e-9) / (h * c)
-        self.qx = "Wavelength"
-        self.qy = "Spectral photon flux"
-        self.ux = "nm"
-        self.uy = "1/[s m2 nm]"
-            
-    def pf_to_sf(self):
-        """
-        This is the old version: Use the function "diff_spectrum.photonflux_to_irradiance" in future!
-        """
-        if self.uy == '1/[s m2 nm]':
-            if self.ux == 'nm':
-                SF = self.y / (self.x * 1e-09 / (h * c)) # spectral flux (SF) in W/[m2 nm]
-                new = self.copy()
-                new.y = SF
-                new.qy = 'Spectral flux'
-                new.uy = 'W/[m2 nm]'
-                return new
-            else:
-                print('Attention: pf_to_sf works only if ux = nm!')
-        else:
-            print('Attention: pf_to_sf works only if uy = 1/[s m2 nm]!')
             
             
     def photonflux_to_irradiance(self):
@@ -1136,89 +1073,6 @@ class spectra(mxy_data):
         spa_new.sa = spectra_eV
     
         return spa_new
-
-    def plot_old(self, title = '', yscale = 'linear', left = None, right = None, bottom = None, top = None, plotstyle = 'auto', showindex = False, in_name = [], hline = None, vline = None, figsize=(8,5)):
-
-        """
-        Plots multiple spectra of type spectrum. The axis title are taken from the first spectrum.
-        showindex: If True then the index of the sa list will be shown before the regular label. 
-        This is helpful when certain curves have to be selected e.g. for PLQY. 
-        in_name: List with strings that have to be in the name to be plotted. If [] then everything is plotted
-        """
-        plt.rcParams.update({'font.size': 12})
-        plt.figure(figsize=figsize)
-        
-        plt.yscale(yscale)
-        
-        if left != None:
-            plt.xlim(left = left)
-        #     left_idx = findind(self.sa[0].x, left)
-        # else:
-        #     left_idx = 0
-        if right != None:
-            plt.xlim(right = right)
-        #     right_idx = findind(self.x, right)
-        # else:
-        #     right_idx = len(self.x)
-        # r = range(left_idx, right_idx+1)
-        if bottom != None:
-            plt.ylim(bottom = bottom)
-        if top != None:
-            plt.ylim(top = top)
-            
-        def in_name_in_spec(in_name, spec):
-            
-            result = False
-
-            if in_name == []:
-                result = True
-            else:
-                for i, name in enumerate(in_name):
-                    if name in spec.name:
-                        result = True
-                        break
-            
-            return result
-            
-        for i, spec in enumerate(self.sa):
-
-            if in_name_in_spec(in_name, spec):
-            
-                if self.label_defined:
-                    if plotstyle == 'auto':
-                        if showindex == True:
-                            plt.plot(spec.x, spec.y, label = f'{i}: {self.lab[i]}')
-                        else:
-                            plt.plot(spec.x, spec.y, label = self.lab[i])
-                    else:
-                        if showindex == True:
-                            plt.plot(spec.x, spec.y, **spec.plotstyle, label = f'{i}: {self.lab[i]}')
-                        else:
-                            plt.plot(spec.x, spec.y, **spec.plotstyle, label = self.lab[i])
-                    plt.legend()
-                else:
-                    if plotstyle == 'auto':
-                        plt.plot(spec.x, spec.y)
-                    else:
-                        plt.plot(spec.x, spec.y, **spec.plotstyle)
-    
-        sp = self.sa[0]
-        plt.xlabel(f'{sp.qx} ({sp.ux})')
-        
-        if sp.uy == '':
-            plt.ylabel(f'{sp.qy}')
-        else:
-            plt.ylabel(f'{sp.qy} ({sp.uy})')
-
-        if title != '':
-            plt.title(title)
-
-        if hline != None:
-            plt.axhline(y = hline, color='black', linestyle='-')
-        if vline != None:
-            plt.axvline(x = vline, color='r', linestyle='-')
-            
-        plt.show()
             
     def save(self, save_dir, FN):
         
@@ -1248,30 +1102,6 @@ class spectra(mxy_data):
                             
             TFN = join(save_dir, FN)
             if save_ok(TFN):
-                df.to_csv(join(save_dir, FN), header = True, index = False)
-                
-                
-    def save_individual_old(self, save_dir, FNs = None):
-        
-        quitted = False
-        for i, sp in enumerate(self.sa):
-                    
-            x_col_name = sp.qx
-            if sp.ux != "":
-                x_col_name = x_col_name + f' ({sp.ux})'
-            y_col_name = sp.qy
-            if sp.uy != "":
-                y_col_name = y_col_name + f' ({sp.uy})'
-                                    
-            if FNs == None:
-                FN = sp.name
-            else:
-                FN = FNs[i]
-                
-            TFN = join(save_dir, FN)
-            ok_to_save, quitted = save_ok(TFN, quitted)
-            if ok_to_save and not(quitted):
-                df = pd.DataFrame({x_col_name : sp.x, y_col_name : sp.y})
                 df.to_csv(join(save_dir, FN), header = True, index = False)
                 
     @staticmethod
@@ -1309,41 +1139,6 @@ class spectra(mxy_data):
             new_spectra = spectra(sa)
 
         return new_spectra
-
-
-    def load_old(self, directory, FN, delimiter = ',', header = 'infer', quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False):
-
-        """
-        Loads multiple spectra, all spectra in one file FN.
-        """
-        
-        dat = pd.read_csv(join(directory, FN), delimiter = delimiter, header = header)
-        
-        npdat = np.array(dat, dtype = np.float64)
-        x = npdat[:,0]
-
-        sa = []
-        for i in range(np.shape(npdat)[1]-1): #"-1" because x-column disregarded
-
-            y = np.array(dat, dtype = np.float64)[:,i+1]
-            sp = spectrum(x, y, quants, units, FN)
-       
-            if take_quants_and_units_from_file:
-
-                col0 = list(dat)[0]
-                sp.qx = col0.split(' (')[0]
-                if ' (' in col0:
-                    sp.ux = col0.split(' (')[1].split(')')[0]
-
-                col1 = list(dat)[i+1]
-                sp.qy = col1.split(' (')[0]
-                if ' (' in col1:
-                    sp.uy = col1.split(' (')[1].split(')')[0]
-
-            sa.append(sp)
-            self.sa = sa
-
-        return self 
     
     @classmethod
     def load_individual(cls, directory, FNs = [], delimiter = ',', header = 'infer', quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False, check_data = False):
@@ -1690,34 +1485,6 @@ class PEL_spectra(diff_spectra):
         result = least_squares(fun = f, x0 = [1])
         
         return result.x[0]
-    
-    def guess_factor_old(self, left, right):
-        """
-        Returns the inbeam-free space adjustment factor.
-        self.sa[0] has to be the ip spectrum.
-        self.sa[1] has to be the fs spectrum.
-        Both spectra have to have the same x array.
-        """
-        
-        r = range(findind(self.sa[0].x, left), findind(self.sa[0].x, right)+1)        
-
-        def f(fac): 
-            diff = self.sa[0].y[r] - fac * self.sa[1].y[r]
-            return math.sqrt(1/len(diff) * np.dot(diff, diff))
-            
-        result = least_squares(fun = f, x0 = [1])
-        
-        return result.x[0]
-
-        
-    def _inb_oob_adjust(self, factor = 1):
-        """
-        Probably a very old version, the current one is in module PLQY.py
-        Multiplies the freespace spectrum with constant factor.
-        The aim is to have the low energy tail of fs and ip measurement equal.
-        The first spectrum of self.sa should be the ip one and the secon one the fs one.
-        """
-        self.sa[1].y = self.sa[1].y * factor  
         
     def Udata_plot(self, overlap, yscale = 'log', left = None, right = None, save = False, save_dir = '', save_name = None, return_fig = False, show_plot = True):
         ab = self.sa[0]

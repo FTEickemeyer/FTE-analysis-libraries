@@ -421,63 +421,6 @@ class xy_data:
         if return_fig:
             return fig
 
-
-    def plot_new(self, title = 'self.name', xscale = 'linear', yscale = 'linear', 
-             left = None, right = None, bottom = None, top = None,
-             plot_table = False, cell_text = None, row_labels = None, 
-             hline = None, vline = None, figsize=(9,6)):
-        """
-        Plots the x and y data.
-        examples for plotstyle:
-            plotstyle = dict(linestyle = 'None', marker = 'o', color = 'green', markersize = 20)
-            plotstyle = dict(linestyle = '-', color = 'green', linewidth = 5)
-        """
-        
-        #plt.rcParams.update({'font.size': 12})
-        #fig = plt.figure(figsize=figsize)
-        fig = Figure(figsize = figsize, dpi = 100) 
-        if plot_table:
-            ax = fig.add_subplot(111)
-
-        graph = fig.add_subplot(111) 
-        graph.set_xscale(xscale)
-        graph.set_yscale(yscale)
-
-        if left != None:
-            graph.set_xlim(left=left)
-        if right != None:
-            graph.set_xlim(right=right)
-        if bottom != None:
-            graph.set_ylim(bottom = bottom)
-        if top != None:
-            graph.set_ylim(top = top)
-        plt.plot(self.x, self.y, **self.plotstyle)
-
-        plt.xlabel(f'{self.qx} ({self.ux})')
-        if self.uy == '':
-            plt.ylabel(f'{self.qy}')
-        else:
-            plt.ylabel(f'{self.qy} ({self.uy})')
-        if title == 'self.name':
-            plt.title(self.name)
-        else:
-            plt.title(title)
-
-        if plot_table:
-            the_table = plt.table(cellText = cell_text, rowLabels = row_labels, loc='bottom',
-                                  bbox = [0.4, 0.2, 0.1, 0.7])  #bbox = [x0, y0, width, height])
-            the_table.auto_set_font_size(False)
-            the_table.set_fontsize(12)
-            the_table.scale(1, 5)
-            
-        if hline != None:
-            plt.axhline(y = hline, color='black', linestyle='-')
-        if vline != None:
-            plt.axvline(x = vline, color='r', linestyle='-')
-
-        #plt.legend()
-        plt.show()
-
         
     def plot_linfit(self, von = None, bis = None, residue = False, return_data = False):
         
@@ -506,37 +449,6 @@ class xy_data:
             both.plot()
             if return_data:
                 return both
-            
-        
-    def load_old(directory, FN = '', delimiter = ',', header = 'infer', quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False):
-
-        """
-        This is the old version. The new one is defined as classmethod.
-        Loads a single xy data. If a filename is given it will be used, if not the first file in the directory will be used.
-        """
-        
-        if FN == '':
-            FN = os.listdir(directory)[0]
-        dat = pd.read_csv(join(directory, FN), delimiter = delimiter, header = header)
-        
-        x = np.array(dat, dtype = np.float64)[:,0]
-        y = np.array(dat, dtype = np.float64)[:,1]
-        
-        sp = xy_data(x, y, quants, units, FN)
-        
-        if take_quants_and_units_from_file:
-            
-            col0 = list(dat)[0]
-            sp.qx = col0.split(' (')[0]
-            if ' (' in col0:
-                sp.ux = col0.split(' (')[1].split(')')[0]
-
-            col1 = list(dat)[1]
-            sp.qy = col1.split(' (')[0]
-            if ' (' in col1:
-                sp.uy = col1.split(' (')[1].split(')')[0]
-                
-        return sp 
     
     @classmethod
     def load(cls, filepath_or_directory, FN = '', delimiter = ',', columns=(0, 1), header = 'infer', 
@@ -619,16 +531,6 @@ class xy_data:
                 df.to_csv(TFN, header = True, index = False)
         else:
             df.to_csv(TFN, header = True, index = False)
-            
-    def idfac_fit_old(self):
-        
-        m, b = np.polyfit(np.log10(self.x), self.y, 1)
-        nid = q/(k * T_RT * math.log(10)) * m
-        
-        fit = xy_data(self.x, m*np.log10(self.x) + b, quants = {"x": "Light intensity", "y": "Voc"}, units = {"x": "mW/cm2", "y": "V"}, name = 'fit')
-        fit.nid = nid
-        
-        return fit 
     
     def lowpass_filter(self, test = False, yscale = 'log', left = None, right = None, T = 5.0, fs = 30.0, cutoff = 0.7, order = 2, filter_only_from_left_to_right = False):
     
@@ -899,18 +801,6 @@ class xy_data:
         self.y = y_raw[logic_list]
         #if len(self.x) != len(self.y):
         #    print('Attention: xy_data.remove_nan() gave an x-array and a y-array with different sizes. The reason could be that, e.g. x[i] = nan but y[i] = number')
-
-        
-    def keep_interval(self, intval):
-        """
-        Legacy, use cut_data_outside!
-        Cuts the data outside x = [left, right]. 
-        """
-        left = findind(self.x, intval[0])
-        right = findind(self.x, intval[1])
-        ra = range(left, right+1)
-        self.x = self.x[ra]
-        self.y = self.y[ra]
         
     def idfac_fit(self, left = None, right = None, plot = False, plotrange = [None, None], return_fit = True):
         
@@ -1141,10 +1031,6 @@ class mxy_data:
         ms.n_y = self.n_y
         ms.n_x = self.n_x
         return ms
-        
-    def add(self, data): #depreciated, use append
-        self.sa.append(data)
-        self.label_defined = False
         
     def append(self, data):
         self.sa.append(data)
@@ -1493,12 +1379,6 @@ class mxy_data:
         if show_plot:
             plt.show()
         
-        self = self_old
-        
-        if generate_image_stream:
-            image_stream = io.BytesIO()
-            plt.savefig(image_stream)
-            return image_stream
         
         if return_fig:
             return fig

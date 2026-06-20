@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from scipy.special import lambertw
 from scipy.optimize import curve_fit
 from scipy.interpolate import interp1d
-import sys
 import numpy as np
 import pandas as pd
 from os.path import join, dirname
@@ -192,25 +191,6 @@ class IV_data(xy_data):
         self.Jsc = Jsc
         self.Voc = Voc
         self.plotstyle = plotstyle
-        
-    def copy_old(self):
-        """
-        replaced by the new version 210108.
-        """
-        dat = IV_data(self.x.copy(), self.y.copy(), cell_area = self.cell_area, light_int = self.light_int, sweep_dir = self.sweep_dir, name = self.name, Voc = self.Voc, Jsc = self.Jsc)
-
-        dat.plotstyle = self.plotstyle.copy()
-        
-        if hasattr(self, 'nid'):
-            dat.nid = self.nid
-        if hasattr(self, 'Rs'):
-            dat.Rs = self.Rs
-        if hasattr(self, 'Rsh'):
-            dat.Rsh = self.Rsh
-        if hasattr(self, 'pd'):
-            dat.pd = self.pd
-
-        return dat
     
     def copy(self):
         dat = super().copy()
@@ -328,135 +308,6 @@ class IV_data(xy_data):
                 sweep_dir = 'fwd'
     
         return IV_data(x, y, cell_area = cell_area, light_int = light_int, sweep_dir = sweep_dir, name = FN)
-
-
-    @staticmethod
-    def load_Biologic_CV_old(dir, FN, cell_area, light_int = 100, J_1sun = None, raw_data = False, both_scans = False, reverse_scan = True, warning = True):
-        """
-        shifted to module biologic!
-        Loads CV data measured with a Biologic potentiostat. It works if the CV was measured first forward and then backward.
-    
-        Parameters
-        ----------
-        dir : string
-            data directory.
-        FN : string
-            data file name.
-        cell_area : float
-            active cell area in cm2.
-        light_int : float, optional
-            light intensity in mW/cm2. If none then the light intensity is calculated from the Jsc and the current at 1 sun
-            given by the variable current_1sun. The default is 1 sun (=100 mW/cm2)
-        J_1sun : float, optional
-            Current density at 1 sun, used to calculate the light intensity. The default is None.
-        raw_data : boolean, optional
-            True: The raw data is taken with forward and reverse scan. In this case no evaluation of the IV data is possible. The default is False.
-        both_scans : boolean, optional
-            True if both scans (reverse and forward) are taken The default is False
-        reverse_scan : boolean, optional
-            True if the reverse scan is taken, False if the forward scan is taken. The default is True.
-        warning: boolean, optional
-            True: prints a warning that the CV has to be first forward, then backward.
-    
-        Returns
-        -------
-        Returns an instance of IV_data if both_scans is False or raw_data is True, otherwise a tuple of two instances of IV_data
-    
-        """
-        if warning:
-            print('Function IV_data.load_Biologic_CV: The CV scan has to be first in forward then in reverse sweep direction!')
-            print('To switch off this message, set argument warning = False!')
-    
-        TFN = join(dir,FN)
-    
-        # Returns the number of header lines in the .mpt file
-        def header_lines(TFN):
-    
-            with open(TFN, encoding = "ISO-8859-1") as mpt_file:
-            #with open(Dir_FN) as mpt_file:
-    
-                for line in mpt_file:
-    
-                    if 'Nb header lines' in line:
-                        header_lines = int(line[17:].strip())
-                        #print(f'Number of header_lines = {header_lines}')
-                        break
-    
-            return header_lines
-    
-    
-        raw = pd.read_csv(TFN, delimiter='\t', header = header_lines(TFN))
-        raw_V = np.array(raw)[:,7]
-        raw_J = np.array(raw)[:,8] / cell_area    
-    
-        if raw_data:
-            V_array = raw_V
-            J_array = raw_J
-            sweep_dir = None
-            IV = IV_data(V_array, J_array, cell_area = cell_area, light_int = light_int, sweep_dir = sweep_dir, name = FN, check_data = False)
-    
-        else:
-            
-    
-            def IV_from_raw(data, sweep_dir, cell_area, light_int, J_1sun):
-            
-                # Sort data by ascending V (important to find the mpp voltage and Voc)
-                data2 = data[data[:,0].argsort()]
-                
-                
-                # Only take such data points for wich voltages are not equal, 
-                # i.e. truly ascending (important to find the mpp voltage and Voc)
-                data3 = []
-                for i in range(len(data2[:,0])-1):
-                    if data2[i+1,0] > data2[i,0]:
-                        data3.append(data2[i,:])
-                        
-                data3 = np.array(data3)
-                
-                # V data as an array in 0.001 V steps
-                begin_V = round(min(data3[:,0]) * 1000) / 1000
-                end_V = round(max(data3[:,0]) * 1000) / 1000
-                V_array = np.arange(begin_V, end_V, 0.001)
-             
-                JVinterp = interp1d(data3[:, 0], data3[:, 1], kind='cubic', bounds_error=False, fill_value='extrapolate')
-                #J_array = np.zeros(len(V_array))
-                #for i in range(len(V_array)):
-                #    J_array[i] = JVinterp(V_array[i])[0]
-                J_array = JVinterp(V_array)
-                
-                IV = IV_data(V_array, J_array, cell_area = cell_area, light_int = light_int, sweep_dir = sweep_dir, name = FN)
-    
-                if light_int == None:
-                    Jsc = IV.det_Jsc(fit_to = None, show_fit = False)
-                    light_int = Jsc/J_1sun*100
-                    IV.light_int = light_int
-            
-                return IV
-            
-            
-            idx = findind(raw_V, max(raw_V))        
-    
-            # Get forward scan
-            data_fwd = np.zeros((idx, 2), dtype = float)
-            data_fwd[:,0] = raw_V[:idx]
-            data_fwd[:,1] = raw_J[:idx]
-            IV_fwd = IV_from_raw(data_fwd, 'fwd', cell_area, light_int, J_1sun)
-            
-            # Get reverse scan
-            data_rev = np.zeros((len(raw_V)-idx, 2), dtype = float)
-            data_rev[:,0] = raw_V[idx:]
-            data_rev[:,1] = raw_J[idx:]
-            IV_rev = IV_from_raw(data_rev, 'rev', cell_area, light_int, J_1sun)        
-    
-            if both_scans:
-                IV = (IV_fwd, IV_rev)
-            else:
-                if reverse_scan:
-                    IV = IV_rev
-                else:
-                    IV = IV_fwd
-            
-        return IV
 
     @staticmethod
     def load(filepath_or_directory, FN = '', data_format = 'csv', cell_area = 1, light_int = 100, delimiter = ',', header = 'infer', quants = {"x": "Voltage", "y": "Current density"}, units = {"x": "V", "y": "mA/cm2"}, 
@@ -742,47 +593,6 @@ class IV_data(xy_data):
         self.ini_fp = fivep(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)
         
         return popt
-
-
-    def fit_param_old(self, T = T_RT, bounds = ([0, 0, 0], [10, np.inf, np.inf]), p0 = None):
-        """
-        Fits  nid, Rs, Rsh to the JV curve. Saves the values in self.nid, self.Rs, self.Rsh.
-        It also saves the initial fit parameters in self.ini_fp.
-
-        Parameters
-        ----------
-        T : FLOAT, optional
-            Temperature. The default is T_RT.
-        bounds : tuple of two 3-arrays ([nid_min, Rs_min, Rsh_min], [nid_max, Rs_max, Rsh_max]), optional
-            Boundary values for nid, Rs, and Rsh. The default is ([0, 0, 0], [3, np.inf, np.inf]).
-
-        Returns
-        -------
-        3-ARRAY [nid, Rs, Rsh]
-            Returns the fit parameters for nid, Rs and Rsh.
-
-        """
-        
-        def func(V, nid, Rs, Rsh):
-            J = np.array([IV_data.I_of_V(self.x[i], self.Jsc, self.Voc, nid, Rs, Rsh, T = T) for i in range(len(self.x))])
-            return J
-        #IV_data.I_of_V(V, Isc, Voc, n, Rs, Rsh, T = T_RT)
-        
-        if not(hasattr(self, 'nid')):
-            self.det_ini_5param()
-        p0 = [self.nid, self.Rs, self.Rsh]
-        
-        
-        popt, pcov = curve_fit(func, self.x, self.y, p0 = p0, bounds = bounds)
-        
-        # store the initial 5 parameters in ini_fp
-        self.ini_fp = fivep(cell_area = self.cell_area, Voc = self.Voc, Jsc = self.Jsc, nid = self.nid, Rs = self.Rs, Rsh = self.Rsh)
-        
-        self.nid = popt[0]
-        self.Rs = popt[1]
-        self.Rsh = popt[2]
-        
-        return popt      
     
     
     def fit_fivep(self, T = T_RT, bounds = ([0, 0, 0, 0, 0], [100, 10, 10, np.inf, np.inf]), p0 = None):
@@ -913,22 +723,6 @@ class IV_data(xy_data):
         #mIV.names_to_label()
         mIV.label(['Measurement', IV_ini.name, IV_int.name])
         mIV.plot(plotstyle = 'individual', xscale = xscale, yscale = yscale, bottom = bottom, top = top, title = self.name)
-        
-    def save_loss_param_old(self, IVsq, IVrad, IVtrans, row_labels, col_labels, save_dir, FN):
-            
-        cell_text = []
-        cell_text.append([IVsq.Voc, IVsq.Jsc, IVsq.pd.FF, IVsq.pd.PCE])
-        cell_text.append([IVrad.Voc, IVrad.Jsc, IVrad.pd.FF, IVrad.pd.PCE])
-        cell_text.append([IVtrans.Voc, IVtrans.Jsc, IVtrans.pd.FF, IVtrans.pd.PCE])
-        cell_text.append([self.Voc, self.Jsc, self.pd.FF, self.pd.PCE])
-        
-        alldata = np.array(cell_text, dtype = np.float64)
-                    
-        df = pd.DataFrame(data=alldata[0:,0:], columns = col_labels, index = row_labels)
-                        
-        TFN = join(save_dir, FN)
-        if save_ok(TFN):
-            df.to_csv(join(save_dir, FN), header = True, index = True)
      
     @staticmethod
     def save_perf_data(sa, row_labels, col_labels, save_dir, FN):

@@ -9,7 +9,6 @@ Created on Mon Oct 19 14:29:18 2020
 import tkinter as tk
 from tkinter import filedialog
 import os
-from os import getcwd
 
 
 
