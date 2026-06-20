@@ -29,6 +29,14 @@ from .XYdata import XYData, MXYData
 from .IV import IVData
 
 
+def _read_mpt_header_lines(filepath, encoding='ISO-8859-1'):
+    """Return the number of header lines declared in a Biologic .mpt file."""
+    with open(filepath, encoding=encoding) as f:
+        for line in f:
+            if 'Nb header lines' in line:
+                return int(line[17:].strip())
+
+
 def load_Biologic_CV(directory, filepath, cell_area, light_int = 100, J_1sun = None, raw_data = False, both_scans = False, reverse_scan = True, warning = True, encoding = "ISO-8859-1"):
     """
     Loads CV data measured with a Biologic potentiostat. It works if the CV was measured first forward and then backward.
@@ -66,23 +74,7 @@ def load_Biologic_CV(directory, filepath, cell_area, light_int = 100, J_1sun = N
 
     TFN = join(directory,filepath)
 
-    # Returns the number of header lines in the .mpt file
-    def header_lines(TFN):
-
-        with open(TFN, encoding = encoding) as mpt_file:
-        #with open(Dir_FN) as mpt_file:
-
-            for line in mpt_file:
-
-                if 'Nb header lines' in line:
-                    header_lines = int(line[17:].strip())
-                    #print(f'Number of header_lines = {header_lines}')
-                    break
-
-        return header_lines
-
-
-    raw = pd.read_csv(TFN, delimiter='\t', header = header_lines(TFN), encoding = encoding)
+    raw = pd.read_csv(TFN, delimiter='\t', header=_read_mpt_header_lines(TFN, encoding), encoding=encoding)
     raw_V = np.array(raw)[:,7]
     raw_J = np.array(raw)[:,8] / cell_area    
 
@@ -165,23 +157,7 @@ def load_Biologic_CA(directory, filepath, uA = False, cell_area = None):
 
     TFN = join(directory,filepath)
 
-    # Returns the number of header lines in the .mpt file
-    def header_lines(TFN):
-
-        with open(TFN, encoding = "ISO-8859-1") as mpt_file:
-        #with open(Dir_FN) as mpt_file:
-
-            for line in mpt_file:
-
-                if 'Nb header lines' in line:
-                    header_lines = int(line[17:].strip())
-                    #print(f'Number of header_lines = {header_lines}')
-                    break
-
-        return header_lines
-
-
-    raw = pd.read_csv(TFN, delimiter='\t', header = header_lines(TFN))
+    raw = pd.read_csv(TFN, delimiter='\t', header=_read_mpt_header_lines(TFN))
     raw_t = np.array(raw)[:,7]
     raw_t -= raw_t[0]
     raw_I = np.array(raw)[:,10]
@@ -211,23 +187,7 @@ def load_Biologic_CstC(directory, filepath):
 
     TFN = join(directory,filepath)
 
-    # Returns the number of header lines in the .mpt file
-    def header_lines(TFN):
-
-        with open(TFN, encoding = "ISO-8859-1") as mpt_file:
-        #with open(Dir_FN) as mpt_file:
-
-            for line in mpt_file:
-
-                if 'Nb header lines' in line:
-                    header_lines = int(line[17:].strip())
-                    #print(f'Number of header_lines = {header_lines}')
-                    break
-
-        return header_lines
-
-
-    raw = pd.read_csv(TFN, delimiter='\t', header = header_lines(TFN))
+    raw = pd.read_csv(TFN, delimiter='\t', header=_read_mpt_header_lines(TFN))
     raw_t = np.array(raw)[:,6]
     raw_t -= raw_t[0]
     raw_V = np.array(raw)[:,8]    

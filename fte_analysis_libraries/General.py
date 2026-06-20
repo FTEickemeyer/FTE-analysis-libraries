@@ -99,20 +99,15 @@ def str_round_sig(x, sig=2):
 
 # This function returs a 1-dim array which represents the interpolated values of arr_y at the x-values new_x
     
-def interpolated_array(arr_nm, arr_y, wavelengths):
-    arr_interp = interp1d(arr_nm, arr_y, kind = 'linear', bounds_error=False, fill_value=0)
-    #arr_interp = interp1d(arr_nm, arr_y, kind = 'cubic', bounds_error=False, fill_value=0)
-    arr_int_y = np.zeros(len(wavelengths)) # dummy array
-    for i,nm in enumerate(wavelengths):
-        arr_int_y[i] = arr_interp(nm)
-    return arr_int_y  
-
-def int_arr(arr_x, arr_y, newarr_x, kind = 'cubic'):
+def int_arr(arr_x, arr_y, newarr_x, kind='cubic'):
     arr_interp = interp1d(arr_x, arr_y, kind, bounds_error=False, fill_value=0)
-    arr_int_y = np.zeros(len(newarr_x)) # dummy array
-    for i,new_x in enumerate(newarr_x):
+    arr_int_y = np.zeros(len(newarr_x))
+    for i, new_x in enumerate(newarr_x):
         arr_int_y[i] = arr_interp(new_x)
     return arr_int_y
+
+def interpolated_array(arr_nm, arr_y, wavelengths):
+    return int_arr(arr_nm, arr_y, wavelengths, kind='linear')
 
 def df_interpolate(df, new_index_arr):
     """

@@ -337,40 +337,34 @@ class IVData(XYData):
         return (Jsc + (Rs*Jsc-Voc)/Rsh) * math.exp(-q*Voc / (nid * k * T)) / (1 - math.exp(q * (Rs * Jsc - Voc) / (nid * k * T)))
       
         
-    def det_voc(self, use_interpolate_extrapolate_method= True):
+    @staticmethod
+    def _linear_extrapolate(x_target, x_data, y_data):
+        """Estimate y at x_target by linear interpolation or extrapolation."""
+        order = np.argsort(x_data)
+        x_data, y_data = x_data[order], y_data[order]
+        if x_target <= x_data[0]:
+            i1, i2 = 0, 1
+        elif x_target >= x_data[-1]:
+            i1, i2 = -2, -1
+        else:
+            i2 = np.searchsorted(x_data, x_target)
+            i1 = i2 - 1
+        x1, x2 = x_data[i1], x_data[i2]
+        y1, y2 = y_data[i1], y_data[i2]
+        return y1 + (y2 - y1) / (x2 - x1) * (x_target - x1)
+
+    @staticmethod
+    def _format_nid_rs_rsh_label(nid, Rs, Rsh):
+        return f'$n_{{id}} = {nid:.2f}, \ R_s = {Rs*1e3:.2e} \ \Omega \cdot cm^2, \ R_{{sh}} = {Rsh*1e3:.2e} \ \Omega \cdot cm^2$'
+
+    def det_voc(self, use_interpolate_extrapolate_method=True):
         """
         use_interpolate_extrapolate_method: Use interpolation/extrapolation method to determine Jsc
         """
-        
-        if use_interpolate_extrapolate_method:
-            def linear_extrapolate(x_target, x_data, y_data):
-                """Estimate y at x_target by linear interpolation or extrapolation."""
-                # Sort by x to avoid issues
-                order = np.argsort(x_data)
-                x_data, y_data = x_data[order], y_data[order]
 
-                # Find two closest points around x_target
-                if x_target <= x_data[0]:  # x_target is left of data
-                    i1, i2 = 0, 1
-                elif x_target >= x_data[-1]:  # x_target is right of data
-                    i1, i2 = -2, -1
-                else:  # inside the data range
-                    i2 = np.searchsorted(x_data, x_target)
-                    i1 = i2 - 1
-            
-                # Linear interpolation or extrapolation
-                x1, x2 = x_data[i1], x_data[i2]
-                y1, y2 = y_data[i1], y_data[i2]
-                slope = (y2 - y1) / (x2 - x1)
-                return y1 + slope * (x_target - x1)
-             
-            def linear_extrapolate_inverse(y_target, x_data, y_data):
-                """Estimate x at y_target by linear interpolation or extrapolation."""
-                # Same logic but swap roles
-                return linear_extrapolate(y_target, y_data, x_data)
-            
-            # Compute Voc (at J = 0)
-            self.Voc = linear_extrapolate_inverse(0.0, self.x, self.y)
+        if use_interpolate_extrapolate_method:
+            # Compute Voc (at J = 0) by treating axes as swapped
+            self.Voc = IVData._linear_extrapolate(0.0, self.y, self.x)
             
         else:
             JVinterp = interp1d(self.x, self.y, kind='cubic', bounds_error=False, fill_value='extrapolate')
@@ -387,29 +381,8 @@ class IVData(XYData):
         """
         
         if use_interpolate_extrapolate_method:
-            def linear_extrapolate(x_target, x_data, y_data):
-                """Estimate y at x_target by linear interpolation or extrapolation."""
-                # Sort by x to avoid issues
-                order = np.argsort(x_data)
-                x_data, y_data = x_data[order], y_data[order]
-            
-                # Find two closest points around x_target
-                if x_target <= x_data[0]:  # x_target is left of data
-                    i1, i2 = 0, 1
-                elif x_target >= x_data[-1]:  # x_target is right of data
-                    i1, i2 = -2, -1
-                else:  # inside the data range
-                    i2 = np.searchsorted(x_data, x_target)
-                    i1 = i2 - 1
-            
-                # Linear interpolation or extrapolation
-                x1, x2 = x_data[i1], x_data[i2]
-                y1, y2 = y_data[i1], y_data[i2]
-                slope = (y2 - y1) / (x2 - x1)
-                return y1 + slope * (x_target - x1)
-
             # Compute Jsc (at V = 0)
-            self.Jsc = -linear_extrapolate(0.0, self.x, self.y)
+            self.Jsc = -IVData._linear_extrapolate(0.0, self.x, self.y)
         else:
             if fit_to is None:
                 fit_to = max(self.x)/10
@@ -682,11 +655,8 @@ class IVData(XYData):
         """
         Plot the IV curve and the fit with the internal 5 parameters.
         """
-        def print5param():
-            text = f'$n_{{id}} = {self.nid:.2f}, \ R_s = {self.Rs*1e3:.2e} \ \Omega \cdot cm^2, \ R_{{sh}} = {self.Rsh*1e3:.2e} \ \Omega \cdot cm^2$'
-            return text
         J = np.array([IVData.i_of_v(self.x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(self.x))])
-        IVp = IVData(self.x, J, name = print5param())
+        IVp = IVData(self.x, J, name=IVData._format_nid_rs_rsh_label(self.nid, self.Rs, self.Rsh))
         IVp.plotstyle = dict(linestyle = '-', color = 'red')
         mIV = MIVData([self, IVp])
         mIV.label(['Measurement', IVp.name])
@@ -708,14 +678,10 @@ class IVData(XYData):
         """
         Plot the IV curve, the fit with the internal 5 parameters and the fit with the ini_fp parameters.
         """
-        def print5param(Jsc, Voc, nid, Rs, Rsh):
-            #text = f'Voc = {Voc:.3f} V, Jsc = {Jsc:.2f} mA/cm2' '\n' f'nid = {nid:.2f}, Rs = {Rs:.2e} Ohm cm2, Rsh = {Rsh:.2e} Ohm cm2'
-            text = f'$n_{{id}} = {nid:.2f}, \ R_s = {Rs*1e3:.2e} \ \Omega \cdot cm^2, \ R_{{sh}} = {Rsh*1e3:.2e} \ \Omega \cdot cm^2$'
-            return text
         J_int = np.array([IVData.i_of_v(self.x[i], self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh, T = T_RT) for i in range(len(self.x))])
         J_ini = np.array([IVData.i_of_v(self.x[i], self.ini_fp.Jsc, self.ini_fp.Voc, self.ini_fp.nid, self.ini_fp.Rs, self.ini_fp.Rsh, T = T_RT) for i in range(len(self.x))])
-        IV_int = IVData(self.x, J_int, name = 'Fitted parameters:\n' + print5param(self.Jsc, self.Voc, self.nid, self.Rs, self.Rsh))
-        IV_ini = IVData(self.x, J_ini, name = 'Initial parameters:\n' + print5param(self.ini_fp.Jsc, self.ini_fp.Voc, self.ini_fp.nid, self.ini_fp.Rs, self.ini_fp.Rsh))
+        IV_int = IVData(self.x, J_int, name='Fitted parameters:\n' + IVData._format_nid_rs_rsh_label(self.nid, self.Rs, self.Rsh))
+        IV_ini = IVData(self.x, J_ini, name='Initial parameters:\n' + IVData._format_nid_rs_rsh_label(self.ini_fp.nid, self.ini_fp.Rs, self.ini_fp.Rsh))
         IV_int.plotstyle = dict(linestyle = '-', color = 'red')
         IV_ini.plotstyle = dict(linestyle = '-', color = 'green')
         mIV = MIVData([self, IV_ini, IV_int])
@@ -1017,13 +983,8 @@ class IVData(XYData):
         """
         Plot the IV curve and the fit with the fp 5 parameters.
         """
-        def print5param():
-            #text = f'Voc = {fp.Voc:.3f} V, Jsc = {fp.Jsc:.2f} mA/cm2' '\n' f'nid = {fp.nid:.2f}, Rs = {fp.Rs:.2e} Ohm cm2, Rsh = {fp.Rsh:.2e} Ohm cm2'
-            text = f'$n_{{id}} = {fp.nid:.2f}, \ R_s = {fp.Rs*1e3:.2e} \ \Omega \cdot cm^2, \ R_{{sh}} = {fp.Rsh*1e3:.2e} \ \Omega \cdot cm^2$'
-            return text
-
         J = np.array([IVData.i_of_v(self.x[i], fp.Jsc, fp.Voc, fp.nid, fp.Rs, fp.Rsh, T = T_RT) for i in range(len(self.x))])
-        IVp = IVData(self.x, J, name = print5param())
+        IVp = IVData(self.x, J, name=IVData._format_nid_rs_rsh_label(fp.nid, fp.Rs, fp.Rsh))
         IVp.plotstyle = dict(linestyle = '-', color = 'red')
         mIV = MIVData([self, IVp])
         #mIV.names_to_label()
