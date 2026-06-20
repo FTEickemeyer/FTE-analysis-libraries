@@ -10,7 +10,7 @@ from os import listdir
 from os.path import join
 import re
 import math
-import pkg_resources
+from importlib.resources import files as _resource_files
 
 import numpy as np
 import pandas as pd
@@ -37,7 +37,7 @@ from .General import (
 )
 
 
-system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
+system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data'))
 
 def get_Andor_metadata(f, showall = False):
     """

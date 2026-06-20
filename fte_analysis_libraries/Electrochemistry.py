@@ -18,8 +18,6 @@ from os.path import join
 from os import getcwd, remove, listdir
 import math
 import matplotlib.pyplot as plt
-from importlib import reload
-from IPython import embed
 
 from impedance import preprocessing
 from impedance.models.circuits import CustomCircuit

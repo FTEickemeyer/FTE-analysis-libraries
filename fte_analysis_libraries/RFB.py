@@ -20,9 +20,9 @@ if __name__ != "__main__":
     from . import XYdata as xyd
     from . import Electrochemistry as ech
 else:
-    from FTE_analysis_libraries import General as gen
-    from FTE_analysis_libraries import XYdata as xyd
-    from FTE_analysis_libraries import Electrochemistry as ech
+    from fte_analysis_libraries import General as gen
+    from fte_analysis_libraries import XYdata as xyd
+    from fte_analysis_libraries import Electrochemistry as ech
 
 R = const.physical_constants['molar gas constant'][0]
 F = const.physical_constants['Faraday constant'][0]
