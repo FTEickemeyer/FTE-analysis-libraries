@@ -15,14 +15,15 @@ system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data
 from .General import h, c, pi, k, q, T_RT, f1240, findind, interpolated_array
 from .XYdata import XYData, MXYData
 from .Spectrum import above_bg_photon_flux
+from typing import Any
 
-def lambeer(alpha, x, P):
+def lambeer(alpha: Any, x: np.ndarray, P: float) -> Any:
     """
     P: Excitation photon density in photons /cm2
     """
     return alpha * P * np.e**(-alpha * x)
 
-def pulse(t, pl = 60e-12):
+def pulse(t: float, pl: Any = 60e-12) -> Any:
     """
     Gaussian pulse profile with integral 1
 
@@ -51,7 +52,7 @@ def pulse(t, pl = 60e-12):
     return A * np.e**(-(4*math.log(2)*((t-1.5*pl)/pl)**2)) # Factor of 1.5 is to determine the start point of the pulse so that the integral is still nearly 1
 
 
-def one_sun_carrier_conc(lifetime = 1000, bg = f1240/800, film_thickness = 500, print_with_units = False):
+def one_sun_carrier_conc(lifetime: Any = 1000, bg: float = f1240/800, film_thickness: Any = 500, print_with_units: Any = False) -> Any:
     """
     Calculates the carrier concentration at 1 sun in 1/cm3 for a material with a carrier lifetime of lifetime in ns
     and a bandgap of bg in eV and a film thickness in nm.
@@ -61,7 +62,7 @@ def one_sun_carrier_conc(lifetime = 1000, bg = f1240/800, film_thickness = 500, 
         print(f'The one sun carrier concentration is {cc:.2e} 1/cm3')
     return cc
 
-def initial_carrier_conc(wavelength, film_thickness, fluence, print_result = False):
+def initial_carrier_conc(wavelength: np.ndarray, film_thickness: Any, fluence: float, print_result: Any = False) -> Any:
 
     """
     Initial carrier concentration n0 (1/cm3) 
@@ -87,7 +88,7 @@ def initial_carrier_conc(wavelength, film_thickness, fluence, print_result = Fal
 
 # These are the important functions for the numerical simulation of the carrier density and TRPL
 
-def EulerHeatConstBCSparse(u0, x, dt, nr_times, t0, mu, k1, k2, k3, SL, SR, n_exc = 0):
+def EulerHeatConstBCSparse(u0: Any, x: np.ndarray, dt: Any, nr_times: Any, t0: Any, mu: Any, k1: float, k2: float, k3: Any, SL: Any, SR: Any, n_exc: Any = 0) -> Any:
     """ This function solves the equation :
             n_t = D n_xx -k1 n - k2 n^2 - k3 n^3
     by using the Euler method. The function takes 
@@ -125,7 +126,7 @@ def EulerHeatConstBCSparse(u0, x, dt, nr_times, t0, mu, k1, k2, k3, SL, SR, n_ex
     return u, time
 
 
-def EulerHeatConstBCSparse_simple(u0, x, dt, nr_times, t0, mu, k1, SL, SR, n_exc = 0):
+def EulerHeatConstBCSparse_simple(u0: Any, x: np.ndarray, dt: Any, nr_times: Any, t0: Any, mu: Any, k1: float, SL: Any, SR: Any, n_exc: Any = 0) -> Any:
     """ This function solves the equation :
             n_t = D n_xx -k1 n # no bimol. and no Auger recombination
     by using the Euler method. The function takes 
@@ -164,7 +165,7 @@ def EulerHeatConstBCSparse_simple(u0, x, dt, nr_times, t0, mu, k1, SL, SR, n_exc
 
 
 
-def MakeTridiagonalMatrix(main, upper_offset_one, lower_offset_one):
+def MakeTridiagonalMatrix(main: Any, upper_offset_one: Any, lower_offset_one: Any) -> Any:
     """This function will make a tridiagonal 2D matrix
     which has the main array on its main diagonal and the offset_one 
     array on its super and sub diagonals.
@@ -175,13 +176,59 @@ def MakeTridiagonalMatrix(main, upper_offset_one, lower_offset_one):
     A = spdiags(data, offsets, size, size)    
     return A
 
-def PLsignal(u, dx, k2):
-    return np.trapz(k2*u**2,dx=dx)
+def PLsignal(u: float, dx: Any, k2: float) -> Any:
+    """
+    P Lsignal.
+    
+    Parameters
+    ----------
+    u : float
+        U.
+    dx : Any
+        Dx.
+    k2 : float
+        K2.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> PLsignal()
+    """
+    return np.trapz(k2*u**2,dx=dx)  # type: ignore
 
 
 # Plot animation of carrier concentration
 
-def plot_animation(pset1, pset2, interval = 1, ylim=(1e-2,1.2), normalize_to_end = False):
+def plot_animation(pset1: Any, pset2: Any, interval: Any = 1, ylim: Any=(1e-2,1.2), normalize_to_end: Any = False) -> Any:
+    """
+    Plot animation.
+    
+    Parameters
+    ----------
+    pset1 : Any
+        Pset1.
+    pset2 : Any
+        Pset2.
+    interval : Any
+        Interval.
+    ylim : Any
+        Ylim.
+    normalize_to_end : Any
+        Normalize to end.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> plot_animation()
+    """
 
     global u1, u2, time1, time2 # Necessary. 
     
@@ -195,17 +242,17 @@ def plot_animation(pset1, pset2, interval = 1, ylim=(1e-2,1.2), normalize_to_end
 
     #u1 = pset1.n0
     if pset1.pulse_len is None:
-        u1 = pset1.n0
+        u1 = pset1.n0  # type: ignore
     else:
-        u1 = np.zeros(len(pset1.x))
-    time1 = 0
+        u1 = np.zeros(len(pset1.x))  # type: ignore
+    time1 = 0  # type: ignore
 
     #u2 = pset2.n0
     if pset2.pulse_len is None:
-        u2 = pset2.n0
+        u2 = pset2.n0  # type: ignore
     else:
-        u2 = np.zeros(len(pset2.x))
-    time2 = 0
+        u2 = np.zeros(len(pset2.x))  # type: ignore
+    time2 = 0  # type: ignore
 
     #n_exc = lambeer(alpha_per, pset1.x, N0_per) # constant illumination
 
@@ -230,13 +277,13 @@ def plot_animation(pset1, pset2, interval = 1, ylim=(1e-2,1.2), normalize_to_end
 
     patches = lines
 
-    def init():
+    def init() -> Any:
         time_label.set_text('') 
         for i, line in enumerate(lines):
             line.set_data([], [])
         return lines[0], lines[1], time_label #return everything that must be updated
 
-    def animate(i):
+    def animate(i: float) -> Any:
 
         global u1, u2, time1, time2 # Necessary. 
 
@@ -246,30 +293,30 @@ def plot_animation(pset1, pset2, interval = 1, ylim=(1e-2,1.2), normalize_to_end
 
         #print(f'Elapsed time: {time1*1e12:.0f} ps', end = '\r')
         if pset1.pulse_len is None:
-            u1, time1 = EulerHeatConstBCSparse(u1, pset1.x, pset1.dt, nr_times, time1, pset1.mu, pset1.k1, pset1.k2, pset1.k3, pset1.SL, pset1.SR)
+            u1, time1 = EulerHeatConstBCSparse(u1, pset1.x, pset1.dt, nr_times, time1, pset1.mu, pset1.k1, pset1.k2, pset1.k3, pset1.SL, pset1.SR)  # type: ignore
         else:
-            u1, time1 = EulerHeatConstBCSparse(u1 + pulse(time1, pset1.pulse_len)*pset1.dt * pset1.n0, pset1.x, pset1.dt, nr_times, time1, pset1.mu, pset1.k1, pset1.k2, pset1.k3, pset1.SL, pset1.SR)
+            u1, time1 = EulerHeatConstBCSparse(u1 + pulse(time1, pset1.pulse_len)*pset1.dt * pset1.n0, pset1.x, pset1.dt, nr_times, time1, pset1.mu, pset1.k1, pset1.k2, pset1.k3, pset1.SL, pset1.SR)  # type: ignore
 
         if pset2.pulse_len is None:
-            u2, time2 = EulerHeatConstBCSparse(u2, pset2.x, pset2.dt, nr_times, time2, pset2.mu, pset2.k1, pset2.k2, pset2.k3, pset2.SL, pset2.SR)
+            u2, time2 = EulerHeatConstBCSparse(u2, pset2.x, pset2.dt, nr_times, time2, pset2.mu, pset2.k1, pset2.k2, pset2.k3, pset2.SL, pset2.SR)  # type: ignore
         else:
-            u2, time2 = EulerHeatConstBCSparse(u2 + pulse(time2, pset2.pulse_len)*pset2.dt * pset2.n0, pset2.x, pset2.dt, nr_times, time2, pset2.mu, pset2.k1, pset2.k2, pset2.k3, pset2.SL, pset2.SR)
+            u2, time2 = EulerHeatConstBCSparse(u2 + pulse(time2, pset2.pulse_len)*pset2.dt * pset2.n0, pset2.x, pset2.dt, nr_times, time2, pset2.mu, pset2.k1, pset2.k2, pset2.k3, pset2.SL, pset2.SR)  # type: ignore
         #u2 = u2 + pulse(time2)*pset2.dt * pset2.n0
         #time2 = time1     
 
-        time1_ns = time1*1e9    
-        time2_ns = time2*1e9    
+        time1_ns = time1*1e9      # type: ignore
+        time2_ns = time2*1e9      # type: ignore
         #time_label.set_text('time1 = %.1f ns' % time1_ns + ', time2 = %.1f ns' % time2_ns) # Display the current time to the accuracy of your liking.
         #time_label.set_text('time1 = %.3f ns' % time1_ns)
         time_label.set_text(f'time 1 = {time1_ns:.3f} ns')
 
         if normalize_to_end:
-            lines[0].set_data(pset1.x*1e7, u1/u1[-1])
-            lines[1].set_data(pset2.x*1e7, u2/u2[-1])
+            lines[0].set_data(pset1.x*1e7, u1/u1[-1])  # type: ignore
+            lines[1].set_data(pset2.x*1e7, u2/u2[-1])  # type: ignore
        
         else:
-            lines[0].set_data(pset1.x*1e7, u1/pset1.n0[0]*5)
-            lines[1].set_data(pset2.x*1e7, u2/pset2.n0[0]*5)
+            lines[0].set_data(pset1.x*1e7, u1/pset1.n0[0]*5)  # type: ignore
+            lines[1].set_data(pset2.x*1e7, u2/pset2.n0[0]*5)  # type: ignore
 
         return lines[0], lines[1], time_label #return everything that must be updated
 
@@ -283,7 +330,30 @@ def plot_animation(pset1, pset2, interval = 1, ylim=(1e-2,1.2), normalize_to_end
 
 # Plot animation of quasi-Fermi level splitting
 
-def plot_animation_QFLS(pset1, pset2, interval = 1, ylim=(1e-2,1.2)):
+def plot_animation_QFLS(pset1: Any, pset2: Any, interval: Any = 1, ylim: Any=(1e-2,1.2)) -> Any:
+    """
+    Plot animation QFLS.
+    
+    Parameters
+    ----------
+    pset1 : Any
+        Pset1.
+    pset2 : Any
+        Pset2.
+    interval : Any
+        Interval.
+    ylim : Any
+        Ylim.
+    
+    Returns
+    -------
+    Any
+        Computed result.
+    
+    Examples
+    --------
+    >>> plot_animation_QFLS()
+    """
 
     global u1, u2, time1, time2 # Necessary. 
     
@@ -297,17 +367,17 @@ def plot_animation_QFLS(pset1, pset2, interval = 1, ylim=(1e-2,1.2)):
 
     #u1 = pset1.n0
     if pset1.pulse_len is None:
-        u1 = pset1.n0
+        u1 = pset1.n0  # type: ignore
     else:
-        u1 = np.zeros(len(pset1.x))
-    time1 = 0
+        u1 = np.zeros(len(pset1.x))  # type: ignore
+    time1 = 0  # type: ignore
 
     #u2 = pset2.n0
     if pset2.pulse_len is None:
-        u2 = pset2.n0
+        u2 = pset2.n0  # type: ignore
     else:
-        u2 = np.zeros(len(pset2.x))
-    time2 = 0
+        u2 = np.zeros(len(pset2.x))  # type: ignore
+    time2 = 0  # type: ignore
 
     #n_exc = lambeer(alpha_per, pset1.x, N0_per) # constant illumination
 
@@ -331,13 +401,13 @@ def plot_animation_QFLS(pset1, pset2, interval = 1, ylim=(1e-2,1.2)):
 
     patches = lines
 
-    def init():
+    def init() -> Any:
         time_label.set_text('') 
         for i, line in enumerate(lines):
             line.set_data([], [])
         return lines[0], lines[1], time_label #return everything that must be updated
 
-    def animate(i):
+    def animate(i: float) -> Any:
 
         global u1, u2, time1, time2 # Necessary. 
 
@@ -347,14 +417,14 @@ def plot_animation_QFLS(pset1, pset2, interval = 1, ylim=(1e-2,1.2)):
 
         #print(f'Elapsed time: {time1*1e12:.0f} ps', end = '\r')
         if pset1.pulse_len is None:
-            u1, time1 = EulerHeatConstBCSparse(u1, pset1.x, pset1.dt, nr_times, time1, pset1.mu, pset1.k1, pset1.k2, pset1.k3, pset1.SL, pset1.SR)
+            u1, time1 = EulerHeatConstBCSparse(u1, pset1.x, pset1.dt, nr_times, time1, pset1.mu, pset1.k1, pset1.k2, pset1.k3, pset1.SL, pset1.SR)  # type: ignore
         else:
-            u1, time1 = EulerHeatConstBCSparse(u1 + pulse(time1, pset1.pulse_len)*pset1.dt * pset1.n0, pset1.x, pset1.dt, nr_times, time1, pset1.mu, pset1.k1, pset1.k2, pset1.k3, pset1.SL, pset1.SR)
+            u1, time1 = EulerHeatConstBCSparse(u1 + pulse(time1, pset1.pulse_len)*pset1.dt * pset1.n0, pset1.x, pset1.dt, nr_times, time1, pset1.mu, pset1.k1, pset1.k2, pset1.k3, pset1.SL, pset1.SR)  # type: ignore
 
         if pset2.pulse_len is None:
-            u2, time2 = EulerHeatConstBCSparse(u2, pset2.x, pset2.dt, nr_times, time2, pset2.mu, pset2.k1, pset2.k2, pset2.k3, pset2.SL, pset2.SR)
+            u2, time2 = EulerHeatConstBCSparse(u2, pset2.x, pset2.dt, nr_times, time2, pset2.mu, pset2.k1, pset2.k2, pset2.k3, pset2.SL, pset2.SR)  # type: ignore
         else:
-            u2, time2 = EulerHeatConstBCSparse(u2 + pulse(time2, pset2.pulse_len)*pset2.dt * pset2.n0, pset2.x, pset2.dt, nr_times, time2, pset2.mu, pset2.k1, pset2.k2, pset2.k3, pset2.SL, pset2.SR)
+            u2, time2 = EulerHeatConstBCSparse(u2 + pulse(time2, pset2.pulse_len)*pset2.dt * pset2.n0, pset2.x, pset2.dt, nr_times, time2, pset2.mu, pset2.k1, pset2.k2, pset2.k3, pset2.SL, pset2.SR)  # type: ignore
         #u2 = u2 + pulse(time2)*pset2.dt * pset2.n0
         #time2 = time1     
         
@@ -365,11 +435,11 @@ def plot_animation_QFLS(pset1, pset2, interval = 1, ylim=(1e-2,1.2)):
         Nc = 2e18 #1/cm3
         Nv = 2e18 #1/cm3
 
-        QFLS1 = k*T_RT * np.log(u1**2/(Nc*Nv) * math.exp(Eg/(k*T_RT)))/q
-        QFLS2 = k*T_RT * np.log(u2**2/(Nc*Nv) * math.exp(Eg/(k*T_RT)))/q
+        QFLS1 = k*T_RT * np.log(u1**2/(Nc*Nv) * math.exp(Eg/(k*T_RT)))/q  # type: ignore
+        QFLS2 = k*T_RT * np.log(u2**2/(Nc*Nv) * math.exp(Eg/(k*T_RT)))/q  # type: ignore
 
-        time1_ns = time1*1e9    
-        time2_ns = time2*1e9    
+        time1_ns = time1*1e9      # type: ignore
+        time2_ns = time2*1e9      # type: ignore
         #time_label.set_text('time1 = %.1f ns' % time1_ns + ', time2 = %.1f ns' % time2_ns) # Display the current time to the accuracy of your liking.
         #time_label.set_text('time1 = %.3f ns' % time1_ns)
         time_label.set_text(f'time 1 = {time1_ns:.3f} ns')
@@ -386,8 +456,47 @@ def plot_animation_QFLS(pset1, pset2, interval = 1, ylim=(1e-2,1.2)):
 
 
 class TRPLParam:
+    """
+    Container class for TRPLParam data and operations.
+    """
 
-    def __init__(self, dt = 2e-12, finaltime = 200e-9, thickness = 350, N_points = 50, alpha = 1e5, P_exc = 1e10, pulse_len = 60e-12, mu = 1, k1 = 0, k2 = 1e-10, k3 = 8.8e-29, SL = 0, SR = 0):
+    def __init__(self, dt: Any = 2e-12, finaltime: Any = 200e-9, thickness: Any = 350, N_points: Any = 50, alpha: Any = 1e5, P_exc: Any = 1e10, pulse_len: Any = 60e-12, mu: Any = 1, k1: float = 0, k2: float = 1e-10, k3: Any = 8.8e-29, SL: Any = 0, SR: Any = 0) -> None:
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        dt : Any
+            Dt.
+        finaltime : Any
+            Finaltime.
+        thickness : Any
+            Thickness.
+        N_points : Any
+            N points.
+        alpha : Any
+            Alpha.
+        P_exc : Any
+            P exc.
+        pulse_len : Any
+            Pulse len.
+        mu : Any
+            Mu.
+        k1 : float
+            K1.
+        k2 : float
+            K2.
+        k3 : Any
+            K3.
+        SL : Any
+            Sl.
+        SR : Any
+            Sr.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
 
         self.dt = dt # s
         self.finaltime = finaltime # s
@@ -409,16 +518,47 @@ class TRPLParam:
         self.SR = SR # cm/s
         self.n0 = lambeer(self.alpha, self.x, self.P_exc)
         
-    def copy(self):
+    def copy(self) -> Any:
+        """
+        Return a deep copy of this object.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.copy()
+        """
         
         return TRPLParam(dt = self.dt, finaltime = self.finaltime, thickness = self.thickness, N_points = self.N_points, alpha = self.alpha, P_exc = self.P_exc, pulse_len = self.pulse_len, mu = self.mu, k1 = self.k1, k2 = self.k2, k3 = self.k3, SL = self.SL, SR = self.SR)
 
     @staticmethod
-    def D_from_mu(mu, T = T_RT):
+    def D_from_mu(mu: Any, T: float = T_RT) -> Any:
+        """
+        D from mu.
+        
+        Parameters
+        ----------
+        mu : Any
+            Mu.
+        T : float
+            T.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.D_from_mu()
+        """
         D = k * T / q * mu
         return D
     
-    def replace_with_fit(self, what_to_fit, fit_value):
+    def replace_with_fit(self, what_to_fit: Any, fit_value: Any) -> Any:
         """
         After a fit of what_to_fit the old parameter is replaced by the fitted parameter.
 
@@ -452,8 +592,37 @@ class TRPLParam:
 
     
 class TRPLData(XYData):
+    """
+    Single time-resolved photoluminescence decay trace.
+    """
     
-    def __init__(self, ns, cts, quants = dict(x = "Time", y = "Intensity"), units = dict(x = "ns", y = "cts"),  name = '', filepath = '', plotstyle = dict(linestyle = '-', color = 'black', linewidth = 3), check_data = True):
+    def __init__(self, ns: Any, cts: Any, quants: Any = dict(x = "Time", y = "Intensity"), units: Any = dict(x = "ns", y = "cts"),  name: str = '', filepath: str = '', plotstyle: str = dict(linestyle = '-', color = 'black', linewidth = 3), check_data: bool = True) -> None:  # type: ignore
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        ns : Any
+            Ns.
+        cts : Any
+            Cts.
+        quants : Any
+            Quants.
+        units : Any
+            Units.
+        name : str
+            Name.
+        filepath : str
+            Filepath.
+        plotstyle : str
+            Plotstyle.
+        check_data : bool
+            Check data.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         super().__init__(ns, cts, quants = quants, units = units, name = name, plotstyle = plotstyle, check_data = check_data)
         self.filepath = filepath
         self.mexp_exist = False
@@ -461,7 +630,19 @@ class TRPLData(XYData):
         self.plotrange_left = 0
         self.plotrange_right = 100
         
-    def copy(self):
+    def copy(self) -> Any:
+        """
+        Copy.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.copy()
+        """
         dat = super().copy()
         dat.filepath = self.filepath
         dat.mexp_exist = self.mexp_exist
@@ -471,7 +652,7 @@ class TRPLData(XYData):
         return dat
         
     @staticmethod
-    def load(directory, filepath = '', name = '', delimiter = ',', header = 'infer', time_unit = 'ns'):
+    def load(directory: str, filepath: str = '', name: str = '', delimiter: str = ',', header: Any = 'infer', time_unit: str = 'ns') -> Any:  # type: ignore
 
         """
         Loads a sinlge TRPL data.
@@ -490,7 +671,30 @@ class TRPLData(XYData):
         return TRPLData(ns, cts, name = name, filepath = filepath)
     
     
-    def mono_expfit(self, start = 400, stop = None, p0 = (1, 500), showparam = False):
+    def mono_expfit(self, start: float = 400, stop: float | None = None, p0: Any = (1, 500), showparam: bool = False) -> Any:
+        """
+        Mono exponential fit.
+        
+        Parameters
+        ----------
+        start : float
+            Start.
+        stop : float | None
+            Stop.
+        p0 : Any
+            P0.
+        showparam : bool
+            Showparam.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.mono_expfit()
+        """
         
         f = lambda t, a, tau : a * np.e**(-t/tau)
         
@@ -521,7 +725,7 @@ class TRPLData(XYData):
         
         return mexpfit
     
-    def mult2_expfit(self, start = 0, stop = None, p0 = (1, 1e-1, 10, 100), showparam = False):
+    def mult2_expfit(self, start: float = 0, stop: float | None = None, p0: Any = (1, 1e-1, 10, 100), showparam: bool = False) -> Any:
         '''
         2-exponential fit of TRPL data self.
         Parameters
@@ -584,7 +788,7 @@ class TRPLData(XYData):
             
         return mexpfit
     
-    def mult3_expfit(self, start = 0, stop = None, p0 = (1, 1e-1, 1e-2, 5, 20, 100), showparam = False):
+    def mult3_expfit(self, start: float = 0, stop: float | None = None, p0: Any = (1, 1e-1, 1e-2, 5, 20, 100), showparam: bool = False) -> Any:
         '''
         3-exponential fit of TRPL data self.
         Parameters
@@ -648,7 +852,7 @@ class TRPLData(XYData):
             
         return mexpfit
     
-    def mult4_expfit(self, start = 0, stop = None, p0 = (1, 1e-1, 1e-2, 1e-3, 5, 20, 100, 500), showparam = False):
+    def mult4_expfit(self, start: float = 0, stop: float | None = None, p0: Any = (1, 1e-1, 1e-2, 1e-3, 5, 20, 100, 500), showparam: bool = False) -> Any:
         '''
         4-exponential fit of TRPL data self.
         Parameters
@@ -717,7 +921,7 @@ class TRPLData(XYData):
         return mexpfit
     
     @staticmethod
-    def gen_med(ns, a, tau):
+    def gen_med(ns: Any, a: float, tau: Any) -> Any:
         """
         Generates a monoexponential data.
         ns: times in ns
@@ -725,13 +929,13 @@ class TRPLData(XYData):
         tau: time in ns
         """
         d = TRPLData(ns, a * np.e**(-ns/tau), name = f'a = {a:.1e}, tau = {tau:.0f}')
-        d.popt = [a, tau]
-        d.start = 0
-        d.stop = ns[-1]
+        d.popt = [a, tau]  # type: ignore
+        d.start = 0  # type: ignore
+        d.stop = ns[-1]  # type: ignore
         return d
 
     @staticmethod
-    def gen_m2ed(ns, p0):
+    def gen_m2ed(ns: Any, p0: Any) -> Any:
         """
         Generates a 2 exponential data.
         ns: times in ns
@@ -743,14 +947,14 @@ class TRPLData(XYData):
         tau1 = p0[2]
         tau2 = p0[3]
         d = TRPLData(ns, a1 * np.e**(-ns/tau1) + a2 * np.e**(-ns/tau2))
-        d.popt = p0
-        d.start = 0
-        d.stop = ns[-1]
+        d.popt = p0  # type: ignore
+        d.start = 0  # type: ignore
+        d.stop = ns[-1]  # type: ignore
         return d    
 
     
     @staticmethod
-    def gen_m3ed(ns, p0):
+    def gen_m3ed(ns: Any, p0: Any) -> Any:
         """
         Generates a 3 exponential data.
         ns: times in ns
@@ -764,13 +968,13 @@ class TRPLData(XYData):
         tau2 = p0[4]
         tau3 = p0[5]
         d = TRPLData(ns, a1 * np.e**(-ns/tau1) + a2 * np.e**(-ns/tau2) + a3 * np.e**(-ns/tau3))
-        d.popt = p0
-        d.start = 0
-        d.stop = ns[-1]
+        d.popt = p0  # type: ignore
+        d.start = 0  # type: ignore
+        d.stop = ns[-1]  # type: ignore
         return d    
 
     @staticmethod
-    def gen_m4ed(ns, p0):
+    def gen_m4ed(ns: Any, p0: Any) -> Any:
         """
         Generates a 4 exponential data.
         ns: times in ns
@@ -786,12 +990,39 @@ class TRPLData(XYData):
         tau3 = p0[6]
         tau4 = p0[7]
         d = TRPLData(ns, a1 * np.e**(-ns/tau1) + a2 * np.e**(-ns/tau2) + a3 * np.e**(-ns/tau3) + a4 * np.e**(-ns/tau4))
-        d.popt = p0
-        d.start = 0
-        d.stop = ns[-1]
+        d.popt = p0  # type: ignore
+        d.start = 0  # type: ignore
+        d.stop = ns[-1]  # type: ignore
         return d
     
-    def dlifetime(self, x = 'time', m = 2, wavelength = 510, film_thickness = 500, fluence = 5e-9, ni = 8.05e4):  
+    def dlifetime(self, x: np.ndarray = 'time', m: float = 2, wavelength: np.ndarray = 510, film_thickness: Any = 500, fluence: float = 5e-9, ni: float = 8.05e4) -> Any:    # type: ignore
+        """
+        Dlifetime.
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            X.
+        m : float
+            M.
+        wavelength : np.ndarray
+            Wavelength, in nm.
+        film_thickness : Any
+            Film thickness.
+        fluence : float
+            Fluence, in photons/cm².
+        ni : float
+            Ni.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.dlifetime()
+        """
         # m = 1 for low level injection, m = 2 for high level injection
         # ni = 8.05e4 cm-3
         # fluence in J/cm2
@@ -816,7 +1047,7 @@ class TRPLData(XYData):
 
     
     @staticmethod
-    def from_param(p, time_delta = 0.01e-9, name = '', normalize_ns = None, normalize_cts = None, model = 'simple', show_progress = False):
+    def from_param(p: float, time_delta: Any = 0.01e-9, name: str = '', normalize_ns: Any | None = None, normalize_cts: Any | None = None, model: Any = 'simple', show_progress: bool = False) -> Any:
         """
         Generate a TRPL curve from the TRPL parameter p.
 
@@ -835,52 +1066,52 @@ class TRPLData(XYData):
         """
     
         t=0
-        if p.pulse_len is None:
-            n = p.n0
+        if p.pulse_len is None:  # type: ignore
+            n = p.n0  # type: ignore
         else:
-            n = np.zeros(len(p.x))
+            n = np.zeros(len(p.x))  # type: ignore
     
         TRPL_list = []
         ns_list = []
     
-        TRPL_list.append(PLsignal(n, p.dx, p.k2))   
+        TRPL_list.append(PLsignal(n, p.dx, p.k2))     # type: ignore
         ns_list.append(0)
             
-        if p.pulse_len is not None:
+        if p.pulse_len is not None:  # type: ignore
     
             # Start the calculation over the pulse length * 3 in 1ps steps
             #dt = 1e-12
             nr_times = 1
     
-            for i in range(int(p.pulse_len * 3 / p.dt)):
+            for i in range(int(p.pulse_len * 3 / p.dt)):  # type: ignore
     
                 if model == 'simple':
-                    n, t = EulerHeatConstBCSparse_simple(n + pulse(t, p.pulse_len)*p.dt * p.n0, p.x, p.dt, nr_times, t, p.mu, p.k1, p.SL, p.SR)
+                    n, t = EulerHeatConstBCSparse_simple(n + pulse(t, p.pulse_len)*p.dt * p.n0, p.x, p.dt, nr_times, t, p.mu, p.k1, p.SL, p.SR)  # type: ignore
    
                 else:
-                    n, t = EulerHeatConstBCSparse(n + pulse(t, p.pulse_len)*p.dt * p.n0, p.x, p.dt, nr_times, t, p.mu, p.k1, p.k2, p.k3, p.SL, p.SR)
+                    n, t = EulerHeatConstBCSparse(n + pulse(t, p.pulse_len)*p.dt * p.n0, p.x, p.dt, nr_times, t, p.mu, p.k1, p.k2, p.k3, p.SL, p.SR)  # type: ignore
     
-                TRPL_list.append(PLsignal(n, p.dx, p.k2))   
+                TRPL_list.append(PLsignal(n, p.dx, p.k2))     # type: ignore
                 ns_list.append(t*1e9)
     
             # Now the rest of the time 
         
         # time_delta in s; originally 0.1 ns, display PL intensity every time_delta s
-        nr_times = int(time_delta / p.dt)
+        nr_times = int(time_delta / p.dt)  # type: ignore
         
-        for i in range(int(p.finaltime/(p.dt*nr_times))):
+        for i in range(int(p.finaltime/(p.dt*nr_times))):  # type: ignore
     
             if model == 'simple':
-                n, t = EulerHeatConstBCSparse_simple(n, p.x, p.dt, nr_times, t, p.mu, p.k1, p.SL, p.SR)
+                n, t = EulerHeatConstBCSparse_simple(n, p.x, p.dt, nr_times, t, p.mu, p.k1, p.SL, p.SR)  # type: ignore
    
             else:
-                n, t = EulerHeatConstBCSparse(n, p.x, p.dt, nr_times, t, p.mu, p.k1, p.k2, p.k3, p.SL, p.SR)
+                n, t = EulerHeatConstBCSparse(n, p.x, p.dt, nr_times, t, p.mu, p.k1, p.k2, p.k3, p.SL, p.SR)  # type: ignore
 
-            TRPL_list.append(PLsignal(n, p.dx, p.k2))  
+            TRPL_list.append(PLsignal(n, p.dx, p.k2))    # type: ignore
             ns_list.append(t*1e9)
             
             if show_progress == True:
-                print(f'{t*1e9:.0f} ns of {p.finaltime*1e9:.0f} ns', end = '\r')
+                print(f'{t*1e9:.0f} ns of {p.finaltime*1e9:.0f} ns', end = '\r')  # type: ignore
     
         cts = np.array(TRPL_list)
         ns= np.array(ns_list)
@@ -897,7 +1128,36 @@ class TRPLData(XYData):
     
 
     # Fit for the full continuity equation
-    def model_fit(self, param, fit_from = 'end', fit_range_ns = [30, 40], what = 'SL', start_value= 0, verbose = 2, gtol = 1e-12):
+    def model_fit(self, param: Any, fit_from: Any = 'end', fit_range_ns: Any = [30, 40], what: Any = 'SL', start_value: Any= 0, verbose: bool = 2, gtol: Any = 1e-12) -> Any:  # type: ignore
+        """
+        Model fit.
+        
+        Parameters
+        ----------
+        param : Any
+            Param.
+        fit_from : Any
+            Fit from.
+        fit_range_ns : Any
+            Fit range ns.
+        what : Any
+            What.
+        start_value : Any
+            Start value.
+        verbose : bool
+            Verbose.
+        gtol : Any
+            Gtol.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.model_fit()
+        """
         #Automized fitting routine
         
         fit_range_ns = np.array(fit_range_ns)
@@ -922,7 +1182,7 @@ class TRPLData(XYData):
             datatobefitted = datatobefitted/datatobefitted[-1]
     
             
-        def data_minus_fit(args):
+        def data_minus_fit(args) -> Any:
     
             if what == 'mu':
                 p.mu = args
@@ -956,7 +1216,7 @@ class TRPLData(XYData):
 #________________________________________________________________________________________
 # simplified model dn/dt = -k1*n - k2*n**2 begin
 
-    def _trpl_prepare(self, start, stop, used_for_fit, savgol_param):
+    def _trpl_prepare(self, start: float, stop: float, used_for_fit: str, savgol_param: Any) -> None:
         """Common setup for k-fit methods: defaults, smoothing, index range, n0 initial."""
         if start is None:
             start = 0
@@ -971,9 +1231,9 @@ class TRPLData(XYData):
         start_idx = dat.x_idx_of(start)
         stop_idx = dat.x_idx_of(stop)
         r = range(start_idx, stop_idx + 1)
-        return start, stop, dat, r, dat.y[start_idx]
+        return start, stop, dat, r, dat.y[start_idx]  # type: ignore
 
-    def _trpl_show_debug(self, dat, fit, start, stop):
+    def _trpl_show_debug(self, dat: Any, fit: Any, start: float, stop: float) -> None:
         """Show raw + smoothed + fit trace on log scale."""
         dta = MTRPLData([self, dat, fit])
         dta.label([self.name, 'savgol', 'fit'])
@@ -983,86 +1243,115 @@ class TRPLData(XYData):
         m = dta.max_within(left=start, right=stop)
         dta.plot(yscale='log', left=0, right=stop, bottom=m/100, top=m*1.1, plotstyle='individual')
 
-    def _trpl_make_result(self, fit, k1, k2):
+    def _trpl_make_result(self, fit: Any, k1: float, k2: float) -> None:
         """Assemble a labeled MTRPLData containing measured + fit traces."""
         da_new = MTRPLData([self, fit])
         da_new.label([self.name, f'fit, k1 = {k1:.2e} s-1, k2 = {k2:.2e} cm3 s-1'])
         da_new.sa[0].plotstyle = dict(linestyle='-', color='blue', linewidth=1)
         da_new.sa[1].plotstyle = dict(linestyle='-', color='red', linewidth=3)
-        return da_new
+        return da_new  # type: ignore
 
-    def k1_k2_fit(self, start=None, stop=None, x0=[3e5, 2.4e4], used_for_fit='savgol', savgol_param=None, show_all=False, **kwargs):
+    def k1_k2_fit(self, start: float | None=None, stop: float | None=None, x0: float=[3e5, 2.4e4], used_for_fit: str='savgol', savgol_param: Any | None=None, show_all: bool=False, **kwargs) -> Any:  # type: ignore
         """
         Fits k1, k2 to a TRPL trace.
         Rate equation: dn/dt = -k1*n - k2*n**2
         """
-        start, stop, dat, r, n0 = self._trpl_prepare(start, stop, used_for_fit, savgol_param)
+        start, stop, dat, r, n0 = self._trpl_prepare(start, stop, used_for_fit, savgol_param)  # type: ignore
 
-        def n_of_t(t, n0, k1, k2):
+        def n_of_t(t: float, n0: float, k1: float, k2: float) -> Any:
             return k1/k2 * 1/(np.exp(k1*t*1e-9)*(1+k1/(n0*k2))-1)
 
-        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0=[n0, x0[0], x0[1]], bounds=(0, np.inf), **kwargs)
+        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0=[n0, x0[0], x0[1]], bounds=(0, np.inf), **kwargs)  # type: ignore
         k1, k2 = popt[1], popt[2]
-        fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))
+        fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))  # type: ignore
         if show_all:
-            self._trpl_show_debug(dat, fit, start, stop)
-        return self._trpl_make_result(fit, k1, k2), popt
+            self._trpl_show_debug(dat, fit, start, stop)  # type: ignore
+        return self._trpl_make_result(fit, k1, k2), popt  # type: ignore
 
-    def k1_fit(self, start=None, stop=None, x0=[2.4e4], k2=1e-8, used_for_fit='savgol', savgol_param=None, show_all=False, **kwargs):
+    def k1_fit(self, start: float | None=None, stop: float | None=None, x0: float=[2.4e4], k2: float=1e-8, used_for_fit: str='savgol', savgol_param: Any | None=None, show_all: bool=False, **kwargs) -> Any:  # type: ignore
         """
         Fits k1 to a TRPL trace.
         Rate equation: dn/dt = -k1*n - k2*n**2
         """
-        start, stop, dat, r, n0 = self._trpl_prepare(start, stop, used_for_fit, savgol_param)
+        start, stop, dat, r, n0 = self._trpl_prepare(start, stop, used_for_fit, savgol_param)  # type: ignore
 
-        def n_of_t(t, n0, k1):
+        def n_of_t(t: float, n0: float, k1: float) -> Any:
             if k2 != 0:
                 return k1/k2 * 1/(np.exp(k1*t*1e-9)*(1+k1/(n0*k2))-1)
             else:
                 return n0*np.exp(-k1*t*1e-9)
 
-        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0=[n0, x0[0]], bounds=(0, np.inf), **kwargs)
+        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0=[n0, x0[0]], bounds=(0, np.inf), **kwargs)  # type: ignore
         k1 = popt[1]
-        fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))
+        fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))  # type: ignore
         if show_all:
-            self._trpl_show_debug(dat, fit, start, stop)
-        return self._trpl_make_result(fit, k1, k2), popt
+            self._trpl_show_debug(dat, fit, start, stop)  # type: ignore
+        return self._trpl_make_result(fit, k1, k2), popt  # type: ignore
 
-    def k2_fit(self, start=None, stop=None, x0=[1e-8], k1=1e6, used_for_fit='savgol', savgol_param=None, show_all=False, **kwargs):
+    def k2_fit(self, start: float | None=None, stop: float | None=None, x0: float=[1e-8], k1: float=1e6, used_for_fit: str='savgol', savgol_param: Any | None=None, show_all: bool=False, **kwargs) -> Any:  # type: ignore
         """
         Fits k2 to a TRPL trace.
         Rate equation: dn/dt = -k1*n - k2*n**2
         """
-        start, stop, dat, r, n0 = self._trpl_prepare(start, stop, used_for_fit, savgol_param)
+        start, stop, dat, r, n0 = self._trpl_prepare(start, stop, used_for_fit, savgol_param)  # type: ignore
 
-        def n_of_t(t, n0, k2):
+        def n_of_t(t: float, n0: float, k2: float) -> Any:
             return k1/k2 * 1/(np.exp(k1*t*1e-9)*(1+k1/(n0*k2))-1)
 
         # lower n0 bound kept above 0 to prevent n0 from collapsing
-        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0=[n0, x0[0]], bounds=([n0/10, 0], np.inf), **kwargs)
+        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0=[n0, x0[0]], bounds=([n0/10, 0], np.inf), **kwargs)  # type: ignore
         k2 = popt[1]
-        fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))
+        fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))  # type: ignore
         if show_all:
-            self._trpl_show_debug(dat, fit, start, stop)
-        return self._trpl_make_result(fit, k1, k2), popt
+            self._trpl_show_debug(dat, fit, start, stop)  # type: ignore
+        return self._trpl_make_result(fit, k1, k2), popt  # type: ignore
 
-    def n0_fit(self, start=None, stop=None, n0=1e13, k1=1e6, k2=1e-8, used_for_fit='savgol', savgol_param=None, show_all=False, **kwargs):
+    def n0_fit(self, start: float | None=None, stop: float | None=None, n0: float=1e13, k1: float=1e6, k2: float=1e-8, used_for_fit: str='savgol', savgol_param: Any | None=None, show_all: bool=False, **kwargs) -> Any:
         """
-        Fits n0 to a TRPL trace.
+        Fit the initial carrier density n0 to TRPL data.
         Rate equation: dn/dt = -k1*n - k2*n**2
         """
-        start, stop, dat, r, n0_initial = self._trpl_prepare(start, stop, used_for_fit, savgol_param)
+        start, stop, dat, r, n0_initial = self._trpl_prepare(start, stop, used_for_fit, savgol_param)  # type: ignore
 
-        def n_of_t(t, n0):
+        def n_of_t(t: float, n0: float) -> Any:
             return k1/k2 * 1/(np.exp(k1*t*1e-9)*(1+k1/(n0*k2))-1)
 
-        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0=[n0_initial], bounds=(0, np.inf), **kwargs)
-        fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))
+        popt, pcov = curve_fit(n_of_t, dat.x[r], dat.y[r], p0=[n0_initial], bounds=(0, np.inf), **kwargs)  # type: ignore
+        fit = TRPLData(dat.x[r], n_of_t(dat.x[r], *popt))  # type: ignore
         if show_all:
-            self._trpl_show_debug(dat, fit, start, stop)
-        return self._trpl_make_result(fit, k1, k2), popt
+            self._trpl_show_debug(dat, fit, start, stop)  # type: ignore
+        return self._trpl_make_result(fit, k1, k2), popt  # type: ignore
     
-    def k1_k2_model_fit(self, what_to_fit = ['k1', 'k2'], start = None, stop = None, n0 = 1e-15, k1 = 1e6, k2 = 1e-7, show = None):
+    def k1_k2_model_fit(self, what_to_fit: Any = ['k1', 'k2'], start: float | None = None, stop: float | None = None, n0: float = 1e-15, k1: float = 1e6, k2: float = 1e-7, show: bool = None) -> Any:
+        """
+        K 1 k 2 model fit.
+        
+        Parameters
+        ----------
+        what_to_fit : Any
+            What to fit.
+        start : float | None
+            Start.
+        stop : float | None
+            Stop.
+        n0 : float
+            N0.
+        k1 : float
+            K1.
+        k2 : float
+            K2.
+        show : bool
+            Show.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.k1_k2_model_fit()
+        """
     
         if start is None:
             start = 0
@@ -1080,14 +1369,14 @@ class TRPLData(XYData):
         cc.uy = '1/cm3'
         
         if show is not None:
-            if (show == 'all') or ('step 1' in show):
+            if (show == 'all') or ('step 1' in show):  # type: ignore
                 #m_max = cc.max_within(left = start, right = stop)
                 #m_min = cc.min_within(left = start, right = stop)
                 #cc.plot(yscale = 'log', left = start, right = stop, bottom = abs(m_min)*0.9, top = m_max*1.1)
                 print('Step 1: Transformation from PL intensity into carrier concentration')
                 cc.plot(yscale = 'log')
             # show_all is used for the actual calculation of the fit curves
-            if (show == 'all') or ('step 2' in show):
+            if (show == 'all') or ('step 2' in show):  # type: ignore
                 show_all = True
                 print('Step 2: Fit')    
         else:
@@ -1114,7 +1403,7 @@ class TRPLData(XYData):
                 dta, [n0, k2] = cc.k2_fit(start, stop, x0 = [k2], k1 = k1, show_all = show_all, used_for_fit = 'savgol', **kwargs)
     
         if show is not None:
-            if (show == 'all') or ('step 3' in show):
+            if (show == 'all') or ('step 3' in show):  # type: ignore
                 print('Step 3: Show fit.')
                 m_max = dta.sa[0].y[0]
                 m_min = dta.sa[1].y[-1]
@@ -1131,7 +1420,7 @@ class TRPLData(XYData):
             sp.uy = 'cts.'
     
         if show is not None:
-            if (show == 'all') or ('step 4' in show):
+            if (show == 'all') or ('step 4' in show):  # type: ignore
                 print('Step 4: Back-transformation from carrier concentration into PL intensity.')
                 PL_dta.plot(yscale = 'log', right = stop)
         
@@ -1141,12 +1430,12 @@ class TRPLData(XYData):
 # simplified model dn/dt = -k1*n - k2*n**2 end
 #________________________________________________________________________________________
 
-    def del_bg(self, plot_details = False, norm_val = None, start = None, stop = None):
+    def del_bg(self, plot_details: bool = False, norm_val: float | None = None, start: float | None = None, stop: float | None = None) -> Any:
         """
         Deletes the background of raw TRPL data. 
         """
 
-        def bg_idx_start():
+        def bg_idx_start() -> Any:
             idx = 0
             stop = False
             while not stop:
@@ -1156,7 +1445,7 @@ class TRPLData(XYData):
                     stop = True
             return idx
 
-        def bg_idx_stop():
+        def bg_idx_stop() -> Any:
             idx = findind(self.y,max(self.y))
             stop = False
             while not stop:
@@ -1182,7 +1471,7 @@ class TRPLData(XYData):
                 start += 1
             stop = findind(self.y, max(self.y))
             stop -= 1
-        r = range(start, stop + 1)
+        r = range(start, stop + 1)  # type: ignore
         m = max(self.y[r])
         av = np.average(self.y[r])
         dat = self.copy()
@@ -1192,7 +1481,7 @@ class TRPLData(XYData):
         
         if plot_details:
             print(f'______{self.name}________')
-            self.plot(yscale = 'linear', left = self.x[start]*0, right = self.x[stop]*1.2, bottom = 0, top = m*2, vline = [self.x[start], self.x[stop]], title = 'noise')
+            self.plot(yscale = 'linear', left = self.x[start]*0, right = self.x[stop]*1.2, bottom = 0, top = m*2, vline = [self.x[start], self.x[stop]], title = 'noise')  # type: ignore
             #Show original and bg subtracted data
             dat_all = MTRPLData([self, dat])
             if not (norm_val is None):
@@ -1203,12 +1492,29 @@ class TRPLData(XYData):
         
         return dat
     
-    def shift_zero(self, ns):
+    def shift_zero(self, ns: Any) -> Any:
+        """
+        Shift zero.
+        
+        Parameters
+        ----------
+        ns : Any
+            Ns.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.shift_zero()
+        """
         ind = findind(self.x, ns)
         self.x = self.x[ind:] - self.x[ind]
         self.y = self.y[ind:]
             
-    def shift_to_max(self, plot_details = False, left = None, right = None):
+    def shift_to_max(self, plot_details: bool = False, left: float | None = None, right: float | None = None) -> Any:
         """
         Shift the data so that the maximum value is at x = 0.
         """
@@ -1243,17 +1549,29 @@ class MTRPLData(MXYData):
     sa is a list of TRPLData.
     """
     
-    def __init__(self, sa):
+    def __init__(self, sa: Any) -> None:
+        """
+        Initialize the object.
+        
+        Parameters
+        ----------
+        sa : Any
+            Sa.
+        
+        Examples
+        --------
+        >>> obj.__init__()
+        """
         super().__init__(sa)
         
     @classmethod
-    def load_individual(cls, directory, FNs = [], delimiter = ',', header = 'infer', quants = {"x": "x", "y": "y"}, units = {"x": "", "y": ""}, take_quants_and_units_from_file = False):
+    def load_individual(cls, directory: str, FNs: str = [], delimiter: str = ',', header: Any = 'infer', quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": "", "y": ""}, take_quants_and_units_from_file: bool = False) -> Any:  # type: ignore
 
         """
         Loads all xy data in individual files in directory.
         """
         if len(FNs) == 0:
-            FNs = listdir(directory)
+            FNs = listdir(directory)  # type: ignore
 
         sa = []
         
@@ -1285,7 +1603,7 @@ class MTRPLData(MXYData):
     
         return result
         
-    def _batch_expfit(self, method_name, name_prefix, start, stop, p0, showparam):
+    def _batch_expfit(self, method_name: str, name_prefix: str, start: float, stop: float, p0: Any, showparam: bool) -> None:
         """Shared loop scaffold for all batch multi-exponential fit wrappers."""
         dafit_sa = []
         for d in self.sa:
@@ -1302,22 +1620,141 @@ class MTRPLData(MXYData):
                 MTRPLData([d, dfit]).label(['original', 'fit'])
         dafit = MTRPLData(dafit_sa)
         dafit.names_to_label(split_ch='.csv')
-        return dafit
+        return dafit  # type: ignore
 
-    def mono_expfit(self, start=400, stop=None, p0=(1, 500), showparam=False):
-        return self._batch_expfit('mono_expfit', 'mono exp fit_', start, stop, p0, showparam)
+    def mono_expfit(self, start: float=400, stop: float | None=None, p0: Any=(1, 500), showparam: bool=False) -> Any:
+        """
+        Mono exponential fit.
+        
+        Parameters
+        ----------
+        start : float
+            Start.
+        stop : float | None
+            Stop.
+        p0 : Any
+            P0.
+        showparam : bool
+            Showparam.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.mono_expfit()
+        """
+        return self._batch_expfit('mono_expfit', 'mono exp fit_', start, stop, p0, showparam)  # type: ignore
 
-    def mult2_expfit(self, start=0, stop=None, p0=(1, 1e-1, 10, 100), showparam=False):
-        return self._batch_expfit('mult2_expfit', '2 exp fit_', start, stop, p0, showparam)
+    def mult2_expfit(self, start: float=0, stop: float | None=None, p0: Any=(1, 1e-1, 10, 100), showparam: bool=False) -> Any:
+        """
+        Mult 2 exponential fit.
+        
+        Parameters
+        ----------
+        start : float
+            Start.
+        stop : float | None
+            Stop.
+        p0 : Any
+            P0.
+        showparam : bool
+            Showparam.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.mult2_expfit()
+        """
+        return self._batch_expfit('mult2_expfit', '2 exp fit_', start, stop, p0, showparam)  # type: ignore
 
-    def mult3_expfit(self, start=0, stop=None, p0=(1, 1e-1, 1e-2, 5, 20, 100), showparam=False):
-        return self._batch_expfit('mult3_expfit', '3 exp fit_', start, stop, p0, showparam)
+    def mult3_expfit(self, start: float=0, stop: float | None=None, p0: Any=(1, 1e-1, 1e-2, 5, 20, 100), showparam: bool=False) -> Any:
+        """
+        Mult 3 exponential fit.
+        
+        Parameters
+        ----------
+        start : float
+            Start.
+        stop : float | None
+            Stop.
+        p0 : Any
+            P0.
+        showparam : bool
+            Showparam.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.mult3_expfit()
+        """
+        return self._batch_expfit('mult3_expfit', '3 exp fit_', start, stop, p0, showparam)  # type: ignore
 
-    def mult4_expfit(self, start=0, stop=None, p0=(1, 1e-1, 1e-2, 1e-3, 5, 20, 100, 500), showparam=False):
-        return self._batch_expfit('mult4_expfit', '4 exp fit_', start, stop, p0, showparam)
+    def mult4_expfit(self, start: float=0, stop: float | None=None, p0: Any=(1, 1e-1, 1e-2, 1e-3, 5, 20, 100, 500), showparam: bool=False) -> Any:
+        """
+        Mult 4 exponential fit.
+        
+        Parameters
+        ----------
+        start : float
+            Start.
+        stop : float | None
+            Stop.
+        p0 : Any
+            P0.
+        showparam : bool
+            Showparam.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.mult4_expfit()
+        """
+        return self._batch_expfit('mult4_expfit', '4 exp fit_', start, stop, p0, showparam)  # type: ignore
 
 
-    def dlifetime(self, x = 'time', m = 2, wavelength = 510, film_thickness = 500, fluence = 5e-9, ni = 8.05e4):  
+    def dlifetime(self, x: np.ndarray = 'time', m: float = 2, wavelength: np.ndarray = 510, film_thickness: Any = 500, fluence: float = 5e-9, ni: float = 8.05e4) -> Any:    # type: ignore
+        """
+        Dlifetime.
+        
+        Parameters
+        ----------
+        x : np.ndarray
+            X.
+        m : float
+            M.
+        wavelength : np.ndarray
+            Wavelength, in nm.
+        film_thickness : Any
+            Film thickness.
+        fluence : float
+            Fluence, in photons/cm².
+        ni : float
+            Ni.
+        
+        Returns
+        -------
+        Any
+            Computed result.
+        
+        Examples
+        --------
+        >>> obj.dlifetime()
+        """
         diff_tau_sa = [] 
         for idx, sp in enumerate(self.sa):
             diff_tau = sp.dlifetime(x = x, m = m, wavelength = wavelength, film_thickness = film_thickness, fluence = fluence, ni = ni)
