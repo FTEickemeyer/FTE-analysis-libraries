@@ -16,11 +16,9 @@ from os.path import join, dirname
 import pathlib
 import math
 import matplotlib.pyplot as plt
-from importlib import reload
-from IPython import embed
 from scipy.optimize import fsolve, fmin
-import pkg_resources
-system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
+from importlib.resources import files as _resource_files
+system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data'))
 
 from .General import linfit, findind, save_ok, plx, q, k, T_RT
 from .XYdata import xy_data, mxy_data

@@ -10,7 +10,7 @@ import os
 from os.path import join
 import math
 import platform
-import pkg_resources
+from importlib.resources import files as _resource_files
 import warnings
 import io
 
@@ -25,7 +25,7 @@ from .General import findind, findind_exact, int_arr, save_ok, q, k, T_RT, linfi
 from . import General as gen
 
 
-system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
+system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data'))
 
 class xy_data:
     

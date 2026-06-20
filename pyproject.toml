@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fte-analysis-libraries"
+version = "1.0.0"
+description = "An assortment of scientific analysis libraries for photovoltaic and energy materials research."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "matplotlib",
+    "lmfit",
+    "impedance",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "sphinx",
+    "numpydoc",
+    "ruff",
+    "mypy",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["fte_analysis_libraries"]
+
+[tool.hatch.build.targets.wheel.sources]
+"fte_analysis_libraries" = "fte_analysis_libraries"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "fte_analysis_libraries/**",
+    "README.md",
+    "LICENSE",
+]

@@ -15,10 +15,8 @@ from matplotlib import animation
 from os import listdir
 from os.path import join
 import sys
-from IPython import embed
-from importlib import reload
-import pkg_resources
-system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
+from importlib.resources import files as _resource_files
+system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data'))
 
 from .General import h, c, pi, k, q, T_RT, f1240, findind, interpolated_array
 from .XYdata import xy_data, mxy_data

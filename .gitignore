@@ -1,2 +1,35 @@
-*.egg*
-__pycache__
+# Build artifacts
+*.egg-info/
+*.egg
+dist/
+build/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Hatch / pip
+.hatch/
+pip-wheel-metadata/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Docs
+docs/_build/
+
+# OS
+.DS_Store
+Thumbs.db

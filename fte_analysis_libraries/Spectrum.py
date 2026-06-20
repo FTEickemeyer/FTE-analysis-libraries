@@ -14,10 +14,8 @@ from os import listdir
 from os.path import join
 import math
 import matplotlib.pyplot as plt
-from importlib import reload
-from IPython import embed
-import pkg_resources
-system_dir = pkg_resources.resource_filename( 'FTE_analysis_libraries', 'System_data' )
+from importlib.resources import files as _resource_files
+system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data'))
 
 
 from .General import findind, int_arr, linfit, save_ok, q, k, T_RT, h, c, f1240, pi

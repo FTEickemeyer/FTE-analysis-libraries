@@ -13,7 +13,6 @@ from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import matplotlib.colors as mcolors
-from IPython import embed
 from pathlib import Path
 import sys
 from os.path import join
