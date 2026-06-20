@@ -453,19 +453,6 @@ def scattered_boxplot(ax, x, notch=None, sym=None, vert=None, whis=None, positio
 setattr(plt.Axes, "scattered_boxplot", scattered_boxplot)
 
 
-if __name__ == "__main__":
-    
-    #print(str_round_sig(1123423.0234))
-    
-    # test interpolated_array
-    arr_x = np.arange(1,10,5)
-    arr_y = arr_x**2
-    newarr_x = np.arange(0, 13, 0.5)
-    plt.plot(arr_x, arr_y, '-')
-    newy = int_arr(arr_x, arr_y, newarr_x, kind = 'linear')
-    plt.plot(newarr_x, newy, 'o')
-    plt.show()
-    
 def ignore_warnings(func, *args, enable_warnings = False, **kwargs):
     #ignore all warnings for the function func
     if not enable_warnings:

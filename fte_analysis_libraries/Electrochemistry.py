@@ -9,19 +9,18 @@ from dataclasses import dataclass
 from scipy.special import lambertw
 from scipy.optimize import curve_fit
 from scipy.interpolate import interp1d
-import sys
 import numpy as np
 import pandas as pd
 import re
 import os
 from os.path import join
-from os import getcwd, remove, listdir
+from os import remove, listdir
 import math
 import matplotlib.pyplot as plt
 
 from impedance import preprocessing
 from impedance.models.circuits import CustomCircuit
-import matplotlib.pyplot as plt
+
 from impedance.visualization import plot_nyquist, plot_bode
 
 from . import General as gen
@@ -526,98 +525,6 @@ def EIS_get_data(TFNs, f_range = None, Z_4th_quadrant = True, cell_area = 1, V_i
     return fs, Zs, Vs
 
 
-def EIS_get_data_old(title, TFNs, f_idx_end, pos_Z_only = True, cell_area = 1, V_idx_list = None, show_details = True, show_title = True):
-    #f_idx_end changed to f_range in the new version
-    #f_idx_end: index until which the frequencies will be sliced. If -1, then the whole list will be taken and not sliced until -1.
-    
-    #title = data_label[cell_idx]
-    #print(all_TFNs[cell_idx])
-    #cell_area = cell_area_list[cell_idx]
-
-    fs = []
-    Zs = []
-    Vs = []
-    
-    if V_idx_list is None:
-        V_idx_list = [i for i in range(len(TFNs))]
-    
-    for idx in V_idx_list:
-        file = TFNs[idx]
-        #print(file)
-        frequencies, Z = preprocessing.readCSV(file)
-
-        # keep only the impedance data in the first quandrant
-        if pos_Z_only:
-            frequencies, Z = preprocessing.ignoreBelowX(frequencies, Z)
-        Z *= cell_area
-
-        if f_idx_end == -1:
-            f_idx_end = len(frequencies)
-        frequencies = frequencies[0:f_idx_end]
-        Z = Z[0:f_idx_end]
-
-        voltage = float(file.split('.csv')[0].split('SPEIS_')[1].split('V')[0])
-
-        Zs.append(Z)
-        fs.append(frequencies)
-        Vs.append(voltage)
-
-    if show_details:
-
-        #print(data_dir_list[cell_idx])
-        print(title)
-        print(f'Cell area: {cell_area:.1f} cm2')
-        
-        #Plot Nyquist plot
-        print('_________')
-        print('')
-        print('Nyquist plot')
-        print('_________')
-        print('')
-
-        fig, ax = plt.subplots(figsize=(10,10))
-        for Z, voltage in zip(Zs, Vs):
-            label = f'{voltage:.3f} V'
-            plot_nyquist(Z, ax=ax, fmt='o-', label = label)
-
-        ax.tick_params(axis='both', which='major', labelsize=16)
-        ax.grid(False)
-        plt.legend()
-        
-        if show_title:
-            plt.title(title)
-        plt.xlabel('$Z^{\\prime}(\\omega) \, [\\Omega \, cm^2]$')
-        plt.ylabel('$-Z^{\\prime \\prime}(\\omega) \, [\\Omega \, cm^2]$')
-        plt.show()
-        
-        #Plot Bode plot
-        print('_________')
-        print('')
-        print('Bode plot')
-        print('_________')
-        print('')
-        fig, ax = plt.subplots(nrows = 2, figsize=(10,10))
-        for f, Z, voltage in zip(fs, Zs, Vs):
-            label = f'{voltage:.3f} V'
-            #plot_bode(ax[0], ax[1], f, Z, fmt='o', label = label)
-            plot_bode(f, Z, axes=[ax[0], ax[1]], fmt='o-', label = label)
-
-        ax[0].tick_params(axis='both', which='major', labelsize=16)
-        ax[0].grid(False)
-        ax[0].set_ylabel('$\\vert Z(\\omega) \\vert \, [\\Omega \, cm^2]$')
-        if show_title:
-            ax[0].set_title(title)
-        ax[1].tick_params(axis='both', which='major', labelsize=16)
-        ax[1].grid(False)
-        #ax[1].set_title(title)
-
-        plt.legend()
-        fig.tight_layout()
-        plt.show()
-            
-    return fs, Zs, Vs
-
-
 def EIS_predict(f, circuit_str, params):
     
     circuit = CustomCircuit(circuit_str, initial_guess = params)
@@ -926,33 +833,6 @@ def multiple_capacitance_plot(f_list, Z_list, f_range = None, f_fit_list = None,
             
         f_range = [1e5, 1e6]
         f_range = None
-    
-    
-def import_datum(file, use_cols):
-    """
-    Depreciated, use import_biologic_mpt_data
-    """
-    #encoding = "ISO-8859-1"
-    
-    ext = os.path.splitext(file)[-1].lower()
-    if ext == '.mpt':
-        encoding = "latin-1" # Biologic
-        # find header lines
-        header_pattern = 'Nb header lines : (\d+)'
-        header_lines = None
-        with open( file, encoding = encoding ) as f:
-            for line in f:
-                match = re.match( header_pattern, line )
-                if match is not None:
-                    # found header line
-                    header_lines = int( match.group( 1 ) )
-                    break
-        df = pd.read_csv(file, sep = '\t', skiprows = header_lines-1, usecols = use_cols, encoding=encoding)
-    elif ext == '.txt' or ext == '.csv':
-        encoding = "UTF-8" #Autolab Nova
-        df = pd.read_csv(file, sep = ',', usecols = use_cols, encoding=encoding)        
-    
-    return df
 
 def import_biologic_mpt_data(file, use_cols):
     """

@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Jun 29 16:07:17 2020
-
-@author: dreickem
-"""
 
 import math
 import numpy as np
@@ -14,7 +9,6 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 from os import listdir
 from os.path import join
-import sys
 from importlib.resources import files as _resource_files
 system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data'))
 
@@ -1407,12 +1401,6 @@ class mTRPL_data(mxy_data):
         spectra = cls(sa)
     
         return spectra
-    
-    def copy_old(self):
-        sa_new = []
-        for i, sp in enumerate(self.sa):
-            sa_new.append(sp.copy())
-        return type(self)(sa_new)
         
     def mono_expfit(self, start = 400, stop = None, p0 = (1, 500), showparam = False):
         dafit_sa = []
@@ -1498,143 +1486,3 @@ class mTRPL_data(mxy_data):
             diff_tau = sp.dlifetime(x = x, m = m, wavelength = wavelength, film_thickness = film_thickness, fluence = fluence, ni = ni)
             diff_tau_sa.append(diff_tau)
         return mTRPL_data(diff_tau_sa)
-
-"""        
-if __name__ == "__main__":
-    #Perovskites: alpha = 1e5 # 1/cm
-    alpha_per = 8e5
-    bg = f1240/800 #eV
-    # bg 800nm: above bg photonflux P(0) = 1.7e21 1/(s m2) = 1.7e17 1/(s cm2) = N0
-    N0_per = above_bg_photon_flux(f1240/800) * 1e-4 # 1/(s cm2)
-    
-    # Excitation laser fluence
-    F_exc = 3e-9 #3e-9 # J/cm2
-    
-    #Excitation wavelength and photon energy
-    l_exc = 510 # nm
-    E_l = f1240 * q / l_exc # J
-    
-    # TRPL laser pulse length FWHM
-    pl = 40e-12 # s
-    
-    # Excitation photon density
-    P_exc = F_exc / E_l # photons / cm2
-    
-    print(f'Average photon flux during pulse excitation: {P_exc/pl:.2e} 1/(s cm2)')
-    print(f'Average number of suns during pulse excitation: {P_exc/pl/N0_per:.2f} suns')
-    
-    # absorption depth
-    ad = 1/alpha_per #cm
-    print(f'The absorption depth is {ad * 1e7:.1f} nm ')
-     
-    # carrier concentration
-    c = P_exc / ad
-    print(f'Average carrier concentration within absoprtion depth is {c:.2e} 1/cm3')
-    
-    k1 = 1e6 #1/s
-    k2 = 1e-10 #cm3/s
-    k3 = 8.8e-29 #cm6/s
-    print(f'SRH recombination rate: {k1 * c:.2e} 1/(cm3 s)')
-    print(f'Radiative recombination rate: {k2 * c**2:.2e} 1/(cm3 s)')
-    print(f'Auger recombination rate: {k3 * c**3:.2e} 1/(cm3 s)')
-    
-    # Plot the initial carrier concentration profile after the pulse has been absorbed
-    plot_ini = True
-    if plot_ini:
-        p = TRPL_param()
-        c_prof = lambeer(alpha_per, p.x, P_exc)
-        plt.plot(p.x, c_prof)
-        plt.show()
-        
-    mu = 1
-    k1 = 0 #1/s
-    SR = 0 #cm/s
-    SL = 100
-    thickness = 500 #640
-    finaltime = 100e-9 #s
-    alpha = 1e-3
-    P_exc = 1.0
-    pulse_len = None
-    fit_range_stop_ns = 10 #ns
-    
-    # Starting parameters
-    
-    # Excitation laser fluence
-    F_exc = 11000e-9 #3e-9 # J/cm2
-    #Excitation wavelength and photon energy
-    l_exc = 510 # nm
-    E_l = f1240 * q / l_exc # J
-    # TRPL laser pulse length FWHM
-    pulse_len = 100e-12 # s
-    # Excitation photon density
-    P_exc = F_exc / E_l # photons / cm2
-    
-    P_exc = 1.0
-    pulse_len = None
-    
-    mu_0 = mu #5 #cm2/Vs
-    k1_0 = k1 #1e6 #1/s
-    k2_0 = 1e-10 #cm3/s
-    k3_0 = 8.8e-29 #cm3/s
-    SR_0 = SR #0 #cm/s
-    SL_2 = 12.6 #SL_d2 #1400 #cm/s
-    SL_1 = 20.5 #SL_d1 # 400
-    thickness = thickness #570
-    finaltime = finaltime #40e-9
-    # Carry out calculation
-    
-    pset1 = TRPL_param(thickness = thickness, finaltime = finaltime, N_points = 50, alpha = alpha, P_exc = P_exc, pulse_len = pulse_len, mu = mu_0, k1 = k1_0, k2 = k2_0, k3 = k3_0, SL = SL_1)
-    # Standard values for k2 and k3: k2 = 1e-10, k3 = 8.8e-29
-    pset2 = TRPL_param(thickness = thickness, finaltime = finaltime, N_points = 50, alpha = alpha, P_exc = P_exc, pulse_len = pulse_len, mu = mu_0, k1 = k1_0, k2 = k2_0 * 1e-0, k3 = k3_0 * 1e-1, SL = SL_1)
-
-
- if __name__ == "__main__":
-
-    what_animate = 'carrier_conc' 
-    #what_animate = 'QFLS'
-
-    #standard parameter    
-    mu = 0.25
-    k1 = 0 #1/s # typical 1e6
-    SR = 1e4 #cm/s
-    SL = 10
-    thickness = 300 #nm typical 640
-    finaltime = 300e-9 #s
-    alpha = 3e5
-    P_exc = 1.0
-    pulse_len = None
-
-    # Starting parameters
-
-    # Excitation laser fluence
-    F_exd = 4.6e-9 # J/cm2
-    F_exc1 = 46e-9 # J/cm2
-    F_exc2 = 46e-9 # J/cm2
-    #Excitation wavelength and photon energy
-    l_exc = 510 # nm
-    E_l = gen.f1240 * gen.q / l_exc # J
-    # TRPL laser pulse length FWHM
-    pulse_len = 100e-12 # s
-    # Excitation photon density
-    P_exc1 = F_exc1 / E_l # photons / cm2
-    P_exc2 = F_exc2 / E_l # photons / cm2
-
-    mu_0 = mu #5 #cm2/Vs
-    k1_0 = k1 #1/s
-    k2_0 = k1 #cm3/s
-    k3_0 = 8.8e-29 #cm3/s
-    SR_0 = SR #cm/s
-    SL_2 = 0 #SL_d2 #1400 #cm/s
-    SL_1 = 0 #SL_d1 # 400
-    thickness = thickness 
-    finaltime = finaltime
-    # Carry out calculation
-
-    pset1 = tpl.TRPL_param(thickness = thickness, finaltime = finaltime, N_points = 50, alpha = alpha, P_exc = P_exc1, pulse_len = pulse_len, mu = mu_0, k1 = k1_0, k2 = k2_0, k3 = k3_0, SL = SL_1, SR = SR)
-    # Standard values for k2 and k3: k2 = 1e-10, k3 = 8.8e-29
-    pset2 = tpl.TRPL_param(thickness = thickness, finaltime = finaltime, N_points = 50, alpha = alpha, P_exc = P_exc2, pulse_len = pulse_len, mu = mu_0, k1 = k1_0, k2 = k2_0, k3 = k3_0, SL = SL_2, SR = SR)
-
-    what_animate = 'carrier_conc'
-    if animate and what_animate == 'carrier_conc':
-        tpl.plot_animation(pset1, pset2, interval = 1, ylim = (1e-4, 1e0), normalize_to_end = False) # if normalize_to_end is True the effect of a finite pulse length can't be observed 
-"""
