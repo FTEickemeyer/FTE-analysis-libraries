@@ -41,7 +41,7 @@ def pulse(t: float, pl: Any = 60e-12) -> Any:
         
     # Check if integral is 1
     times = np.linspace(0, 5e-9, 1001)
-    print(f'The integral over pulse is: {np.trapz(pulse(times), times):.3f}')
+    print(f'The integral over pulse is: {np.trapezoid(pulse(times), times):.3f}')
     plt.plot(times, pulse(times))
     plt.show()
 
@@ -198,7 +198,7 @@ def PLsignal(u: float, dx: Any, k2: float) -> Any:
     --------
     >>> PLsignal()
     """
-    return np.trapz(k2*u**2,dx=dx)  # type: ignore
+    return np.trapezoid(k2*u**2,dx=dx)  # type: ignore
 
 
 # Plot animation of carrier concentration
