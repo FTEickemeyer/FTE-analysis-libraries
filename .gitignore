@@ -27,6 +27,10 @@ pip-wheel-metadata/
 .coverage
 htmlcov/
 
+# Type checking / linting caches
+.mypy_cache/
+.ruff_cache/
+
 # Docs
 docs/_build/
 

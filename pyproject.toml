@@ -76,3 +76,11 @@ python_version = "3.10"
 ignore_missing_imports = true
 warn_unused_ignores = false
 no_strict_optional = true
+
+[[tool.mypy.overrides]]
+module = ["matplotlib.*", "scipy.*", "lmfit.*", "impedance.*", "thot.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
