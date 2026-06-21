@@ -1,10 +1,12 @@
 """Sixteenth coverage-boost: XYData image stream, long path, linfit return, IV load+perf, PELSpectra PLQY."""
-import warnings
-import tempfile
 import os
+import tempfile
+import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -32,7 +34,7 @@ class TestXYDataPlotImageStream:
 class TestMXYDataPlotImageStream:
     def test_create_image_stream(self):
         """Line 2111: plt.show() inside create_image_stream + show_plot=True."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.sin(x), name='a'),
                      XYData(x, np.cos(x), name='b')])
@@ -49,7 +51,7 @@ class TestMXYDataPlotImageStream:
 class TestSaveIndividualSaveDirNone:
     def test_save_dir_none_uses_cwd(self):
         """Line 2201: save_dir=None → os.getcwd()."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 20)
         m = MXYData([XYData(x, np.sin(x), name='__test_boost16_wave__')])
         m.label(['A'])
@@ -70,7 +72,9 @@ class TestXYDataLoadLongPath:
     def test_long_path_windows_prefix(self):
         """Line 702: file path > 255 chars gets \\?\\ prefix on Windows."""
         import platform
+
         import pandas as pd
+
         from fte_analysis_libraries.XYdata import XYData
         if platform.system() != 'Windows':
             pytest.skip('Windows-only long-path test')
@@ -120,6 +124,7 @@ class TestIVDataLoadCsv:
     def test_load_csv_format(self):
         """Lines 646, 652-653: IVData.load with data_format='csv'."""
         import pandas as pd
+
         from fte_analysis_libraries.IV import IVData
         V = np.linspace(-0.05, 1.0, 100)
         J = 20.0 - 20.001 * np.exp(V / 0.026)
@@ -155,7 +160,11 @@ class TestDetPerfparamNotMinimal:
 class TestCalcPlqyParamComplete:
     def test_calc_plqy_param_all_signals(self):
         """Lines 1939-1986: all IF branches hit when expl maps to valid spectra."""
-        from fte_analysis_libraries.Spectrum import PELSpectrum, PELSpectra, DiffSpectrum
+        from fte_analysis_libraries.Spectrum import (
+            DiffSpectrum,
+            PELSpectra,
+            PELSpectrum,
+        )
         wl_laser = np.linspace(410, 428, 50)
         wl_pl = np.linspace(450, 800, 100)
         # La, Lb, Lc: laser range spectra (uniform photon flux)
@@ -198,7 +207,7 @@ class TestCalcPlqyParamComplete:
 class TestUdataPlot:
     def test_udata_plot_basic(self):
         """Lines 2044-2070: udata_plot needs 4+ spectra — ab, uf, sp, bb."""
-        from fte_analysis_libraries.Spectrum import PELSpectra, DiffSpectrum
+        from fte_analysis_libraries.Spectrum import DiffSpectrum, PELSpectra
         wl = np.linspace(1.0, 3.0, 200)  # eV range
         # ab: absorptance (positive, non-zero)
         ab = DiffSpectrum(wl, 0.5 + 0.4 * np.exp(-(wl - 2.0)**2 / 0.1),
@@ -227,7 +236,7 @@ class TestUdataPlot:
 
     def test_udata_plot_save_and_return_fig(self):
         """Lines 2063-2067: save=True; Line 2070: return_fig=True."""
-        from fte_analysis_libraries.Spectrum import PELSpectra, DiffSpectrum
+        from fte_analysis_libraries.Spectrum import DiffSpectrum, PELSpectra
         wl = np.linspace(1.0, 3.0, 200)
         ab = DiffSpectrum(wl, 0.5 + 0.4 * np.exp(-(wl - 2.0)**2 / 0.1),
                           quants={'x': 'Photon energy', 'y': 'Absorptance'},

@@ -1,9 +1,11 @@
 """Supplementary tests targeting coverage gaps in TRPL, IV, XYdata, Spectrum, RFB, General."""
 import warnings
+
+import matplotlib
 import numpy as np
 import pandas as pd
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -20,8 +22,9 @@ class TestGeneralExtended:
         assert win_long_fp(fp) == fp
 
     def test_win_long_fp_long_path(self):
-        from fte_analysis_libraries.General import win_long_fp
         import platform
+
+        from fte_analysis_libraries.General import win_long_fp
         fp = 'C:/' + 'a' * 260
         result = win_long_fp(fp)
         if platform.system() == 'Windows':
@@ -332,8 +335,8 @@ class TestXYDataExtended:
         plt.close('all')
 
     def test_idfac_fit(self):
+        from fte_analysis_libraries.General import T_RT, k, q
         from fte_analysis_libraries.XYdata import XYData
-        from fte_analysis_libraries.General import q, k, T_RT
         # Diode equation: J = J0 * (exp(q*V/(n*k*T)) - 1)
         n_ideal = 1.5
         J0 = 1e-12
@@ -349,12 +352,12 @@ class TestXYDataExtended:
 # ---------------------------------------------------------------------------
 class TestMXYDataExtended:
     def _make_mxy(self, n=3, pts=50):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, pts)
         return MXYData([XYData(x, (i+1)*np.exp(-x * 0.3), name=f'd{i}') for i in range(n)])
 
     def test_append(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         m = self._make_mxy(2)
         d_new = XYData(np.linspace(0, 5, 50), np.ones(50)*5.0, name='new')
         m.append(d_new)
@@ -441,21 +444,21 @@ class TestMXYDataExtended:
         assert m.sa[0].x[0] >= 0.0
 
     def test_del_edge_zero_data(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         y = np.array([0.0, 1.0, 2.0, 3.0, 0.0])
         m = MXYData([XYData(np.arange(5, dtype=float), y, name='ez')])
         m.del_edge_zero_data()
         assert m.sa[0].y[0] != 0.0
 
     def test_strictly_ascending(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.array([1.0, 1.0, 2.0, 3.0])
         m = MXYData([XYData(x, np.ones(4), name='sa')])
         m.strictly_ascending()
         assert len(m.sa[0].x) == 3
 
     def test_remove_nan(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         y = np.array([1.0, np.nan, 2.0, 3.0])
         m = MXYData([XYData(np.arange(4, dtype=float), y, name='n', check_data=False)])
         m.remove_nan()
@@ -770,7 +773,7 @@ class TestTRPLMult:
         assert 200 < taus[1] < 400
 
     def test_mult2_expfit_batch(self):
-        from fte_analysis_libraries.TRPL import TRPLData, MTRPLData
+        from fte_analysis_libraries.TRPL import MTRPLData, TRPLData
         t = np.linspace(0, 500, 501)
         traces = [TRPLData(t, (i+1)*np.exp(-t/100) + np.exp(-t/400), name=f't{i}')
                   for i in range(3)]
@@ -791,7 +794,7 @@ class TestTRPLMult:
         assert len(result.popt) == 8
 
     def test_mono_expfit_batch(self):
-        from fte_analysis_libraries.TRPL import TRPLData, MTRPLData
+        from fte_analysis_libraries.TRPL import MTRPLData, TRPLData
         t = np.linspace(0, 500, 501)
         traces = [TRPLData(t, (i+1)*np.exp(-t/(100.0 + i*20)), name=f't{i}')
                   for i in range(4)]
@@ -803,7 +806,7 @@ class TestTRPLMult:
 
 class TestTRPLFromParam:
     def test_from_param_basic(self):
-        from fte_analysis_libraries.TRPL import TRPLParam, TRPLData
+        from fte_analysis_libraries.TRPL import TRPLData, TRPLParam
         p = TRPLParam(dt=1e-12, finaltime=1e-9, thickness=100, N_points=10,
                       k1=1e7, k2=1e-10, pulse_len=50e-12)
         dat = TRPLData.from_param(p, time_delta=0.1e-9)
@@ -812,7 +815,7 @@ class TestTRPLFromParam:
         assert dat.y.max() == 1.0
 
     def test_from_param_no_pulse(self):
-        from fte_analysis_libraries.TRPL import TRPLParam, TRPLData
+        from fte_analysis_libraries.TRPL import TRPLData, TRPLParam
         p = TRPLParam(dt=1e-12, finaltime=2e-9, thickness=100, N_points=10,
                       k1=1e7, k2=1e-10, pulse_len=None)
         p.n0 = np.ones(10) * 1e15
@@ -822,7 +825,7 @@ class TestTRPLFromParam:
 
 class TestMTRPLData:
     def test_construction(self):
-        from fte_analysis_libraries.TRPL import TRPLData, MTRPLData
+        from fte_analysis_libraries.TRPL import MTRPLData, TRPLData
         t = np.linspace(0, 500, 501)
         traces = [TRPLData(t, np.exp(-t / (100 + i*50)), name=f't{i}')
                   for i in range(3)]
@@ -830,7 +833,7 @@ class TestMTRPLData:
         assert len(m.sa) == 3
 
     def test_mult3_expfit_raises_or_succeeds(self):
-        from fte_analysis_libraries.TRPL import TRPLData, MTRPLData
+        from fte_analysis_libraries.TRPL import MTRPLData, TRPLData
         t = np.linspace(0, 1000, 1001)
         y3 = 5*np.exp(-t/50) + 2*np.exp(-t/200) + 0.5*np.exp(-t/600)
         dat = TRPLData(t, y3)
@@ -927,7 +930,7 @@ class TestSpectrumExtended:
         assert jsc > 0
 
     def test_spectra_construction(self):
-        from fte_analysis_libraries.Spectrum import Spectrum, Spectra
+        from fte_analysis_libraries.Spectrum import Spectra, Spectrum
         items = [Spectrum(np.linspace(400, 700, 50), np.ones(50) * float(i+1),
                           name=f'sp_{i}')
                  for i in range(4)]
@@ -935,7 +938,7 @@ class TestSpectrumExtended:
         assert sa.n_y == 4
 
     def test_spectra_plot(self):
-        from fte_analysis_libraries.Spectrum import Spectrum, Spectra
+        from fte_analysis_libraries.Spectrum import Spectra, Spectrum
         items = [Spectrum(np.linspace(400, 700, 50), np.ones(50) * float(i+1),
                           name=f'sp_{i}')
                  for i in range(3)]

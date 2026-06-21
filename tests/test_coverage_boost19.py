@@ -1,10 +1,12 @@
 """Nineteenth coverage-boost: TRPL from_param non-simple model, model_fit."""
-import warnings
-import tempfile
 import os
+import tempfile
+import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 

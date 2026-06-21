@@ -5,20 +5,21 @@ Spyder Editor
 This is a temporary script file.
 """
 
-import platform
 import math
-import numpy as np
-import pandas as pd
-from scipy.interpolate import interp1d
-import matplotlib.pyplot as plt
-from matplotlib import rcParams
-import matplotlib.colors as mcolors
-from pathlib import Path
+import platform
 import sys
-from os.path import join
 import warnings
 from numbers import Number
+from os.path import join
+from pathlib import Path
 from typing import Any
+
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib import rcParams
+from scipy.interpolate import interp1d
 
 if sys.platform == 'win32':
     import winsound
@@ -56,7 +57,7 @@ class color:
    BOLD = '\033[1m'
    UNDERLINE = '\033[4m'
    END = '\033[0m'
-   
+
 def color_list(n: float) -> Any:
     """
     Return a list of matplotlib colours for cycling through multiple plots.
@@ -75,7 +76,7 @@ def color_list(n: float) -> Any:
     --------
     >>> color_list()
     """
-    
+
     #cl = [color.BLACK, color.RED, color.BLUE, color.GREEN, color.CYAN, color.PURPLE, color.DARKCYAN, color.YELLOW]
     colors = mcolors.TABLEAU_COLORS
     cl = list(colors)
@@ -85,8 +86,8 @@ def color_list(n: float) -> Any:
         c_list.append(cl[i])
 
     return c_list
-   
-   
+
+
 #colors = mcolors.TABLEAU_COLORS
 #colors = mcolors.CSS4_COLORS
 #col_names = list(colors)
@@ -157,7 +158,7 @@ def str_round_sig(x: np.ndarray, sig: Any=2) -> Any:
     return num_string
 
 # This function returs a 1-dim array which represents the interpolated values of arr_y at the x-values new_x
-    
+
 def int_arr(arr_x: np.ndarray, arr_y: np.ndarray, newarr_x: np.ndarray, kind: str='cubic') -> Any:
     """
     Interpolate y values onto a new x grid via scipy interp1d.
@@ -253,12 +254,12 @@ def findind(arr: Any, value: Any, show_warnings: bool = False) -> Any:
         value = max(arr)
         if show_warnings:
             print('Attention (function findind(arr, value)): Value > maximum of arr! Value set to maximum')
-    
+
     if arr[-1] > arr[0]:
         ind, = next((idx for idx, val in np.ndenumerate(arr) if (val >= value)))
     else:
         arr_rev = arr[::-1]
-        ind, = next((idx for idx, val in np.ndenumerate(arr_rev) if (val >= value))) 
+        ind, = next((idx for idx, val in np.ndenumerate(arr_rev) if (val >= value)))
         ind = len(arr) - ind - 1
     return ind
 
@@ -315,18 +316,18 @@ def plx(text: Any, size: Any = 14) -> Any:
     None.
 
     """
-    
+
     rcParams['font.sans-serif'] = ['Tahoma', 'DejaVu Sans',
                                'Lucida Grande', 'Verdana']
     ax = plt.axes([0,0,2,0.1])  # type: ignore
     ax.set_xticks([])
     ax.set_yticks([])
     ax.axis('off')
-    
-    plt.text(0.0,0.0, text, size = size, horizontalalignment='left', 
+
+    plt.text(0.0,0.0, text, size = size, horizontalalignment='left',
              verticalalignment='center', wrap = True)
     plt.show()
-    
+
 def v_sq(Eg: float) -> Any:
     """
     This is a simple approximation of the SQ Voc limit. The precise calculation can be found in IV.py, IVData.sq_limit_voc.
@@ -409,7 +410,7 @@ def diff_coeff(mu: Any) -> Any:
     # Calculates the diffusion coefficient from the mobility
     # If the mobility is given in cm2/(Vs) then the diffusion coefficient is in units cm2/s.
     return k * T_RT / q * mu
-  
+
 def mobility(D: float) -> Any:
     """
     Calculate charge-carrier mobility from the diffusion coefficient.
@@ -452,7 +453,7 @@ def save_ok(TFN: str, quitted: Any | None = None) -> Any:
         my_file = Path(TFN)
         if my_file.is_file() or my_file.is_dir():
             print(f'Warning: "{my_file}" exists!')
-            
+
             execute_loop = True
             while execute_loop:
                 if quitted is None:
@@ -484,7 +485,7 @@ def save_ok(TFN: str, quitted: Any | None = None) -> Any:
     else:
         return ok, quitted
 
-    
+
 def how_long(process: Any, arr: Any | None=None) -> Any:
     """
     Estimate and print the remaining time for a loop iteration.
@@ -530,7 +531,7 @@ def how_long(process: Any, arr: Any | None=None) -> Any:
     process()
     elapsed_time = time.process_time() - t
     no_steps = len(arr)
-    
+
     total_time = elapsed_time * no_steps
     return total_time
 
@@ -556,7 +557,7 @@ def beep(freq: Any = 600, duration: Any = 1000) -> Any:
     """
     if sys.platform == 'win32':
         winsound.beep( freq, duration )  # type: ignore
-    
+
 
 def plot_first_n_lines(directory: str, filepath: str, n: float=20, encoding: str = "ISO-8859-1") -> Any:
     """
@@ -582,16 +583,16 @@ def plot_first_n_lines(directory: str, filepath: str, n: float=20, encoding: str
     --------
     >>> plot_first_n_lines()
     """
-    
+
     TFN = join(directory,filepath)
-        
+
     count = 0
     with open(TFN, encoding = encoding) as z:
-        
+
         for line in z:
-            
+
             if count < n:
-                print(f'{count}: {line}', end = '\r')        
+                print(f'{count}: {line}', end = '\r')
                 count += 1
 
             else:
@@ -606,7 +607,7 @@ def fullprint(*args, **kwargs) -> Any:
     np.set_printoptions(threshold=np.inf)  # type: ignore
     pprint(*args, **kwargs)
     np.set_printoptions(**opt)
-    
+
 def is_even(num: Any) -> Any:
     """
     Return True if n is even.
@@ -674,10 +675,10 @@ def idx_range(arr: Any, left: float | None = None, right: float | None = None) -
     # Only works for monotoneous ascending or descending np.arrays
     l = left
     r = right
-    
+
     #Ascending array
     if arr[-1] > arr[0]:
-        if (l is None) or (l < min(arr)): 
+        if (l is None) or (l < min(arr)):
             l = min(arr)
         if (r is None) or (r > max(arr)):
             r = max(arr)
@@ -686,10 +687,10 @@ def idx_range(arr: Any, left: float | None = None, right: float | None = None) -
             tmp = l
             l = r
             r = tmp
-                        
+
     #Descending array
     else:
-        if (r is None) or (r < min(arr)): 
+        if (r is None) or (r < min(arr)):
             r = min(arr)
         if (l is None) or (l > max(arr)):
             l = max(arr)
@@ -698,9 +699,9 @@ def idx_range(arr: Any, left: float | None = None, right: float | None = None) -
             tmp = l
             l = r
             r = tmp
-    
-    ra = range(findind(arr, l), findind(arr, r)+1)    
-    
+
+    ra = range(findind(arr, l), findind(arr, r)+1)
+
     return ra
 
 def scattered_boxplot(ax: Any, x: np.ndarray, notch: Any | None=None, sym: Any | None=None, vert: Any | None=None, whis: Any | None=None, positions: Any | None=None, widths: Any | None=None, patch_artist: Any | None=None, bootstrap: Any | None=None, usermedians: Any | None=None, conf_intervals: Any | None=None, meanline: Any | None=None, showmeans: Any=None, showcaps: Any=None, showbox: Any=None,
@@ -893,7 +894,7 @@ def copy_to_clipboard(text: Any) -> Any:
 
     import pyperclip
     pyperclip.copy(text)
-    
+
 def win_long_fp(fp: Any) -> Any:
     """
     Prepend \\?\\ to a path to enable Windows long-path support.

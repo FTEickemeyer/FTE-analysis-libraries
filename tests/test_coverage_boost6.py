@@ -1,8 +1,10 @@
 """Sixth coverage-boost: Spectrum.py conversions, loading variants, Spectra methods."""
 import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -215,7 +217,7 @@ class TestSpectrumNmToEv:
 # ---------------------------------------------------------------------------
 class TestSpectraMethods:
     def _make_spectra(self, n=3):
-        from fte_analysis_libraries.Spectrum import Spectrum, Spectra
+        from fte_analysis_libraries.Spectrum import Spectra, Spectrum
         wl = np.linspace(400, 700, 50)
         sa = [Spectrum(wl, np.ones(50) * float(i+1), name=f'sp_{i}')
               for i in range(n)]
@@ -245,8 +247,10 @@ class TestSpectraMethods:
         assert len(sa.sa) == 0
 
     def test_save(self):
-        import tempfile, os
-        from fte_analysis_libraries.Spectrum import Spectrum, Spectra
+        import os
+        import tempfile
+
+        from fte_analysis_libraries.Spectrum import Spectra, Spectrum
         wl = np.linspace(400, 700, 301)  # equidistant with delta=1
         sa = Spectra([Spectrum(wl, np.ones(301), name=f'sp_{i}') for i in range(2)])
         with tempfile.TemporaryDirectory() as tmp:
@@ -260,8 +264,8 @@ class TestSpectraMethods:
 # ---------------------------------------------------------------------------
 class TestPELSpectrumBBTFit:
     def test_bbt_fit_converges(self):
-        from fte_analysis_libraries.Spectrum import PELSpectrum
         from fte_analysis_libraries.General import k, q
+        from fte_analysis_libraries.Spectrum import PELSpectrum
         T_target = 300.0
         E = np.linspace(1.8, 3.0, 200)
         A = 1e20

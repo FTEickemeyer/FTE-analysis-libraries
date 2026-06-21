@@ -1,8 +1,10 @@
 """Additional coverage tests targeting TRPL, Spectrum, Electrochemistry, PLQY."""
 import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -108,7 +110,7 @@ class TestTRPLDataMethods:
 
 class TestMTRPLDataMethods:
     def _make_mtrpl(self, n=3):
-        from fte_analysis_libraries.TRPL import TRPLData, MTRPLData
+        from fte_analysis_libraries.TRPL import MTRPLData, TRPLData
         t = np.linspace(0, 500, 501)
         return MTRPLData([TRPLData(t, (i+1)*np.exp(-t/(100+i*50)), name=f't{i}')
                           for i in range(n)])
@@ -119,7 +121,7 @@ class TestMTRPLDataMethods:
         assert len(m.sa) == 3
 
     def test_mult4_expfit_batch(self):
-        from fte_analysis_libraries.TRPL import TRPLData, MTRPLData
+        from fte_analysis_libraries.TRPL import MTRPLData, TRPLData
         t = np.linspace(0, 1000, 1001)
         traces = [TRPLData(t, 10*np.exp(-t/50) + 5*np.exp(-t/100) +
                            1*np.exp(-t/300) + 0.1*np.exp(-t/800), name=f't{i}')
@@ -279,8 +281,9 @@ class TestPLQYBasic:
 # ---------------------------------------------------------------------------
 class TestRFBAdditional:
     def test_fit_proton_concentration_callable(self):
-        from fte_analysis_libraries.RFB import fit_proton_concentration
         import inspect
+
+        from fte_analysis_libraries.RFB import fit_proton_concentration
         sig = inspect.signature(fit_proton_concentration)
         assert sig is not None
 
@@ -346,7 +349,7 @@ class TestXYDataPlotPaths:
         plt.close('all')
 
     def test_mxy_plot_linlog(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.exp(-x * i * 0.3), name=f'd{i}') for i in range(3)])
         m.label(['A', 'B', 'C'])

@@ -4,40 +4,28 @@ Created on Thu Mar 19 15:05:55 2020
 
 @author: dreickem
 """
+import math
 import os
+import re
+from importlib.resources import files as _resource_files
 from os import listdir
 from os.path import join
-import re
-import math
-from importlib.resources import files as _resource_files
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit, least_squares
+
 try:
     import thot
 except ImportError:
     thot = None
 
-from . import Spectrum as spc
-from .XYdata import XYData, MXYData
 from typing import Any
-from .General import (
-    linfit,
-    save_ok,
-    q,
-    k,
-    T_RT,
-    h,
-    c,
-    f1240,
-    pi,
-    v_sq,
-    v_loss,
-    qfls
-)
 
+from . import Spectrum as spc
+from .General import T_RT, c, f1240, h, k, linfit, pi, q, qfls, save_ok, v_loss, v_sq
+from .XYdata import MXYData, XYData
 
 system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data'))
 
@@ -51,7 +39,7 @@ def get_Andor_metadata(f: float, showall: bool = False) -> Any:
     metadata = dict(name = name)
     if showall:
         print(name)
-        
+
     # add original filename
     metadata['orig_fn'] = f
 
@@ -142,10 +130,10 @@ def get_Andor_metadata(f: float, showall: bool = False) -> Any:
     # emission filter
     ef = mdat.split('--')[2].split('_')[-1].split('.')[0]
     metadata['em_filter'] = ef
-    
+
     if showall:
         print(ef)
-        
+
     return metadata
 
 def raw_to_asset_with_metadata(container: Any, asset_type: Any, db: Any, show_FN: str = False, show_new_asset: bool = False) -> Any:  # type: ignore
@@ -175,9 +163,9 @@ def raw_to_asset_with_metadata(container: Any, asset_type: Any, db: Any, show_FN
     >>> raw_to_asset_with_metadata()
     """
     # Generate new asset with metadata from raw measurements
-    
+
     raw = db.find_assets( { 'parent' : container._id, 'type': asset_type } )
-    
+
     # Generate new calibration asset with metadata
     for idx, asset in enumerate(raw):
         """
@@ -199,7 +187,7 @@ def raw_to_asset_with_metadata(container: Any, asset_type: Any, db: Any, show_FN
             print('Attention: No known container_name!')
         asset = db.add_asset(asset_prop)
         if show_new_asset:
-            print(asset)    
+            print(asset)
 
 def add_graph(db: Any, fn: str, graph: Any) -> Any:
     """
@@ -219,7 +207,7 @@ def add_graph(db: Any, fn: str, graph: Any) -> Any:
     None.
 
     """
-    
+
     asset_prop = dict(name = 'plt_'+fn, type = 'graph', file = fn)
     asset_filepath = db.add_asset(asset_prop)
     graph.savefig(asset_filepath, dpi=300, bbox_inches = "tight")
@@ -250,23 +238,23 @@ def find(dic: Any, assets: Any, show_details: bool = False) -> Any:
     asts = thot.filter(dic, assets)
     if len(asts) == 0:
         raise RuntimeError(f'{dic} in assets not found!')
-    
+
     elif len(asts) > 1:
         for ast in asts:
             print(ast.metadata['orig_fn'])
         raise RuntimeError(f'{dic} found more than one instance!')
-    
+
     else:
         if show_details:
             print(asts[0].metadata['orig_fn'])
         return asts[0]
-    
-    
+
+
 class ExpParam:
     """
     Experimental parameters for a PLQY measurement run.
     """
-    
+
     def __init__(self, which_sample: Any | None = None, excitation_laser: Any | None = None, PL_left: Any | None = None, PL_right: Any | None = None, PL_peak: Any | None = None, corr_offs_left: Any = 40, corr_offs_right: Any = 50, PL_peak_auto: Any = False, eval_Pb: Any = False) -> None:
         """
         Initialize the object.
@@ -297,12 +285,12 @@ class ExpParam:
         >>> obj.__init__()
         """
 
-        # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right 
+        # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right
 
         self.excitation_laser = excitation_laser
         self.PL_left = PL_left
         self.PL_right = PL_right
-        self.PL_peak = PL_peak        
+        self.PL_peak = PL_peak
         self.corr_offs_left = corr_offs_left
         self.corr_offs_right = corr_offs_right
         self.eval_Pb = eval_Pb
@@ -312,7 +300,7 @@ class ExpParam:
             self.excitation_laser = 657 #nm
             self.PL_left = 700 #nm
             self.PL_right = 950 #nm
-            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right 
+            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right
             self.corr_offs_left = 40 # nm
             self.corr_offs_right = 50 # nm
             self.PL_peak_auto = True # determine automatically
@@ -321,7 +309,7 @@ class ExpParam:
             self.excitation_laser = 657 #nm
             self.PL_left = 700 #nm
             self.PL_right = 950 #nm
-            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right 
+            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right
             self.corr_offs_left = 60 # nm
             self.corr_offs_right = 70 # nm
             self.PL_peak_auto = True # determine automatically
@@ -331,7 +319,7 @@ class ExpParam:
             self.PL_left = 600 #nm
             self.PL_right = 1000 #nm
             self.PL_peak = 700 #nm
-            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right 
+            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right
             self.corr_offs_left = -10 # nm
             self.corr_offs_right = +10 # nm
             self.eval_Pb = False
@@ -340,7 +328,7 @@ class ExpParam:
             self.PL_left = 600 #nm
             self.PL_right = 900 #nm
             #PL_peak = 700 #nm
-            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right 
+            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right
             self.corr_offs_left = -10 # nm
             self.corr_offs_right = +10 # nm
             self.PL_peak_auto = True # determine automatically
@@ -349,7 +337,7 @@ class ExpParam:
             self.excitation_laser = 421 #nm
             self.PL_left = 600 #nm
             self.PL_right = 1000 #nm
-            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right 
+            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right
             self.corr_offs_left = -10 # nm
             self.corr_offs_right = +10 # nm
             self.PL_peak_auto = True # determine automatically
@@ -358,7 +346,7 @@ class ExpParam:
             self.excitation_laser = 421 #nm
             self.PL_left = 450 #nm
             self.PL_right = 830 #nm
-            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right 
+            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right
             self.corr_offs_left = 20 # nm
             self.corr_offs_right = 30 # nm
             self.PL_peak_auto = True # determine automatically
@@ -367,7 +355,7 @@ class ExpParam:
             self.excitation_laser = 421 #nm
             self.PL_left = 590 #nm
             self.PL_right = 1000 #nm
-            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right 
+            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right
             self.corr_offs_left = 20 # nm
             self.corr_offs_right = 30 # nm
             self.PL_peak_auto = True # determine automatically
@@ -376,7 +364,7 @@ class ExpParam:
             self.excitation_laser = 421 #nm
             self.PL_left = 500 #nm
             self.PL_right = 920 #nm
-            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right 
+            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right
             self.corr_offs_left = 20 # nm
             self.corr_offs_right = 30 # nm
             self.PL_peak_auto = True # determine automatically
@@ -385,7 +373,7 @@ class ExpParam:
             self.excitation_laser = 421 #nm
             self.PL_left = 500 #nm
             self.PL_right = 920 #nm
-            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right 
+            # The ip PL signal will be corrected by the fs measurement. The fit is carried out from PL_peak+corr_offs_left to PL_peak+corr_offs_right
             self.corr_offs_left = 20 # nm
             self.corr_offs_right = 30 # nm
             self.PL_peak_auto = True # determine automatically
@@ -410,7 +398,7 @@ class ExpParam:
                 #self.PL_left = 750 #nm
             else:
                 self.PL_left = PL_left
-                    
+
             if PL_right is None:
                 #self.PL_right = 600 #nm
                 #self.PL_right = 900 #nm
@@ -472,7 +460,7 @@ class PLQYDataset:
     """
     Dataset container for absolute PLQY calculation.
     """
-    
+
     def __init__(self, db: Any, La: Any, Lb: Any, Lc: Any, Pa: Any, Pb: Any, Pc: float, fs: Any, sample_name: str, param: Any) -> None:
         """
         Initialize the object.
@@ -504,14 +492,14 @@ class PLQYDataset:
         --------
         >>> obj.__init__()
         """
-        
+
         def load_spectrum(LP: Any) -> Any:
             return spc.PELSpectrum.load(os.path.dirname(LP.file), filepath = os.path.basename(LP.file), take_quants_and_units_from_file = True)
-        
+
         def create_PELspectra_obj(sa: Any) -> Any:
             PEL = spc.PELSpectra(sa)
             PEL.label([])
-        
+
         self.db = db
         self.sample_name = sample_name
         self.param = param
@@ -533,7 +521,7 @@ class PLQYDataset:
 
         self.all = spc.PELSpectra([self.La, self.Lb, self.Lc, self.Pa, self.Pb, self.Pc, self.fs])
         self.all.label(['La', 'Lb', 'Lc', 'Pa', 'Pb', 'Pc', 'fs'])
-        
+
         self.P = spc.PELSpectra([self.Pa, self.Pb, self.Pc])
         self.P.label(['Pa', 'Pb', 'Pc'])
         self.L = spc.PELSpectra([self.La, self.Lb, self.Lc])
@@ -551,7 +539,7 @@ class PLQYDataset:
         all_graph = self.all.plot(*args, return_fig = True, show_plot = False, hline=0, hline_colors='black', **kwargs)  # type: ignore
         add_graph(self.db, self.sample_name+'_all.png', all_graph)
         plt.close( all_graph )
-        
+
 
     def find_PL_peak(self) -> Any:
         """
@@ -572,8 +560,8 @@ class PLQYDataset:
                 self.PL_peak = self.fs.x_of(max(self.fs.y[ra]), start = self.param.PL_left)
         self.Eg = f1240/self.PL_peak #eV
         self.v_sq = v_sq(self.Eg) #V
-    
-        
+
+
     def inb_oob_adjust(self, what: Any = 'inb', adj_factor: Any | None = None, show_adjust_factor: bool = False, save_plots: bool = False, show_plots: bool = True, show_inbeam_correction: bool=False, divisor: float = 1e3) -> Any:
         """
         Inb oob adjust.
@@ -612,26 +600,26 @@ class PLQYDataset:
             sp = self.Pc
         elif what == 'oob':
             sp = self.Pb
-            
+
         def guess_factor(left: float, right: float) -> Any:
 
             fs_ = fs.copy()
             sp_ = sp.copy()
-            
-            delta = fs_.x[1] - fs_.x[0] 
+
+            delta = fs_.x[1] - fs_.x[0]
             fs_.equidist(left = left, right = right, delta = delta)
             sp_.equidist(left = left, right = right, delta = delta)
 
-            def f(fac: float) -> Any: 
+            def f(fac: float) -> Any:
                 pass
         if show_adjust_factor:
             print(f'The inbeam/outofbeam adjust factor is {factor:.2e}')  # type: ignore
-        
+
         sp_orig = sp.copy()
         if what == 'inb':
             #We'll need the original Spectrum later
             self.Pc_orig = sp_orig
-            #self.Pc.y = fs.y * factor 
+            #self.Pc.y = fs.y * factor
             self.Pc_corrfac = factor  # type: ignore
         elif what == 'oob':
             #We'll need the original Spectrum later
@@ -641,17 +629,17 @@ class PLQYDataset:
 
         fssp = spc.PELSpectra([sp_orig, sp])
         fssp.label([what, 'adjusted'])
-        
+
         fssp_lin_graph = fssp.plot(yscale = 'linear', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, hline=0, hline_colors='black', title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = show_plots or show_inbeam_correction)  # type: ignore
         if save_plots:
             add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(linear).png', fssp_lin_graph)
         plt.close( fssp_lin_graph )
-        
+
         fssp_log_graph = fssp.plot(yscale = 'log', left = self.param.PL_left, right = self.param.PL_right, divisor = divisor, title = 'Correction for '+ what, figsize = (7,5), return_fig = True, show_plot = show_plots)  # type: ignore
         if save_plots:
             add_graph(self.db, f'{self.sample_name}_fs_{what}_correction(semilog).png', fssp_log_graph)
         plt.close( fssp_log_graph )
-        
+
     def inb_adjust(self, adj_factor: Any | None = None, show_adjust_factor: bool = False, save_plots: bool = False, show_plots: bool = False, show_inbeam_correction: bool=True, divisor: float = 1e3) -> Any:
             """
         Inb adjust.
@@ -756,15 +744,15 @@ class PLQYDataset:
 
         if save_plots:
             add_graph(self.db, f'{self.sample_name}_absorptance_with_{what}.png', abs_graph)
-        
+
         plt.close( abs_graph )
-        
+
         if return_A:
             return s
-           
 
-        
-        
+
+
+
     def calc_PLQY(self, eval_Pa: Any = False, show: bool = False, show_plots: bool = False, save_plots: bool = False, show_lum: bool = 'log') -> Any:  # type: ignore
         """
         Calculate photoluminescence quantum yield.
@@ -791,7 +779,7 @@ class PLQYDataset:
         --------
         >>> obj.calc_PLQY()
         """
-        
+
         La = self.La.calc_integrated_photonflux(start = self.param.laser_left, stop = self.param.laser_right)
         Lb = self.Lb.calc_integrated_photonflux(start = self.param.laser_left, stop = self.param.laser_right)
         Lc = self.Lc.calc_integrated_photonflux(start = self.param.laser_left, stop = self.param.laser_right)
@@ -821,7 +809,7 @@ class PLQYDataset:
         if save_plots:
             add_graph(self.db, f'{self.sample_name}_L.png', laser_graph)
             add_graph(self.db, f'{self.sample_name}_P.png', PL_graph)
-        
+
         plt.close( laser_graph )
         plt.close( PL_graph )
 
@@ -849,7 +837,7 @@ class PLQYDataset:
         self.v_loss = v_loss(PLQY)
         self.qfls = qfls(self.Eg, PLQY)
 
-        
+
     def abs_pf_spec(self, nsuns: Any = 1) -> Any:
         """
         Calculates the absolute photon flux Spectrum for nsuns excitation and saves it as self.absPFspec
@@ -864,17 +852,17 @@ class PLQYDataset:
 
         nsun_PF = nsuns * sun_PF
         # Factor fac with which relative spectral photon flux has to be multiplied to yield an absolute spectral photon flux
-        fac =  sun_PF * self.PLQY / PF    
+        fac =  sun_PF * self.PLQY / PF
         self.fs_absint_factor = fac
         sp = self.fs.copy()
         sp.y = sp.y * fac
         sp = sp.cut_data_outside(left = self.param.PL_left, right = self.param.PL_right)
-        
+
         PF_new = sp.calc_integrated_photonflux(start = self.param.PL_left, stop = self.param.PL_right)
         #print(f'PF of absolute Spectrum: {PF_new:.1e} 1/(s m2) (PLQY {self.PLQY:.1e})')
         #print(f'sun_PF = {sun_PF:.1e}, Eg = {Eg:.2f} eV, PL peak = {self.PL_peak:.0f} nm')
         self.absolutePFspec = sp
-        
+
     def save_asset(self) -> Any:
         """
         Save asset.
@@ -888,13 +876,13 @@ class PLQYDataset:
         --------
         >>> obj.save_asset()
         """
-        
+
         metadata = dict(A = self.A, PLQY = self.PLQY, Peak = self.PL_peak, Eg = self.Eg, v_sq = self.v_sq, dV = self.v_loss, qfls = self.qfls, adj_fac = self.adj_factor, fs_absint_factor = self.fs_absint_factor)  # type: ignore
         #print(metadata)
         asset_name = f'{self.sample_name}_absolute PL Spectrum'
         asset_prop = dict(name = asset_name + '.csv', type = 'absolute PL Spectrum', metadata = metadata)
         TFN = self.db.add_asset(asset_prop)
-        fn = os.path.basename(TFN) 
+        fn = os.path.basename(TFN)
         #print(fn)
         directory = os.path.dirname(TFN)
         self.absolutePFspec.save(directory, fn, check_existing = False)

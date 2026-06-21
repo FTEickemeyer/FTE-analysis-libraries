@@ -4,9 +4,24 @@ import pandas as pd
 import pytest
 
 from fte_analysis_libraries.General import (
-    findind, linfit, round_sig, str_round_sig, int_arr, interpolated_array,
-    df_interpolate, v_sq, v_loss, qfls, diff_coeff, mobility, is_even, is_odd,
-    idx_range, q, k, T_RT,
+    T_RT,
+    df_interpolate,
+    diff_coeff,
+    findind,
+    idx_range,
+    int_arr,
+    interpolated_array,
+    is_even,
+    is_odd,
+    k,
+    linfit,
+    mobility,
+    q,
+    qfls,
+    round_sig,
+    str_round_sig,
+    v_loss,
+    v_sq,
 )
 
 

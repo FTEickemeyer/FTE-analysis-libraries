@@ -1,10 +1,12 @@
 """Twelfth coverage-boost: PLQY laser branches, General utilities, Spectrum conversions, XYData edges."""
-import warnings
-import tempfile
 import os
+import tempfile
+import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -153,6 +155,7 @@ class TestSpectrumLoaderMethods:
     def test_eqespectrum_load_cicci(self):
         """Line 378: load_cicci uses tab delimiter."""
         import pandas as pd
+
         from fte_analysis_libraries.Spectrum import EQESpectrum
         with tempfile.TemporaryDirectory() as tmp:
             wl = np.linspace(300, 800, 50)
@@ -166,6 +169,7 @@ class TestSpectrumLoaderMethods:
     def test_absorbance_load(self):
         """Line 643: AbsSpectrum.load_absorbance with CSV file."""
         import pandas as pd
+
         from fte_analysis_libraries.Spectrum import AbsSpectrum
         with tempfile.TemporaryDirectory() as tmp:
             wl = np.linspace(400, 800, 50)
@@ -198,15 +202,17 @@ class TestAbsSpectrumCalcVocrad:
 class TestDfToXYWrongType:
     def test_df_to_xy_wrong_type(self):
         """Lines 234-235: df is not DataFrame or Series → prints warning, returns None."""
-        from fte_analysis_libraries.XYdata import XYData
         import pandas as pd
+
+        from fte_analysis_libraries.XYdata import XYData
         result = XYData.from_df("not a dataframe")  # type: ignore
         assert result is None
 
     def test_df_to_xy_no_unit_in_index(self):
         """Line 253: ux = None when index name has no '('."""
-        from fte_analysis_libraries.XYdata import XYData
         import pandas as pd
+
+        from fte_analysis_libraries.XYdata import XYData
         df = pd.DataFrame({'y': [1.0, 2.0, 3.0]}, index=[0.0, 1.0, 2.0])
         df.index.name = 'Time'  # no '(' → ux = None
         sp = XYData.from_df(df, take_quants_and_units_from_df=True)
@@ -369,7 +375,7 @@ class TestXYDataPlotBranches:
 class TestMXYDataRemainingBranches:
     def test_plot_left_update_when_later_spec_starts_earlier(self):
         """Line 2012: second spec starts before first → left updated."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x1 = np.linspace(2, 8, 50)   # starts at 2
         x2 = np.linspace(0, 6, 50)   # starts at 0 < 2 → triggers line 2012
         m = MXYData([XYData(x1, np.sin(x1), name='a'),
@@ -380,7 +386,7 @@ class TestMXYDataRemainingBranches:
 
     def test_plot_nolabel_individual_plotstyle(self):
         """Line 2066: nolabel=True + plotstyle='individual' → ax.plot with **plotstyle."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.sin(x), name='a'), XYData(x, np.cos(x), name='b')])
         m.label(['A', 'B'])

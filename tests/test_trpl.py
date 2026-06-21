@@ -2,7 +2,11 @@
 import numpy as np
 import pytest
 
-from fte_analysis_libraries.TRPL import TRPLData, initial_carrier_conc, one_sun_carrier_conc
+from fte_analysis_libraries.TRPL import (
+    TRPLData,
+    initial_carrier_conc,
+    one_sun_carrier_conc,
+)
 
 
 class TestTRPLDataConstruction:

@@ -1,10 +1,12 @@
 """Fifteenth coverage-boost: Spectrum calc_laser_power, PELSpectra.calc_plqy_param, TRPL mult3, IV edge cases."""
-import warnings
-import tempfile
 import os
+import tempfile
+import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -70,7 +72,7 @@ class TestCalcLaserPower:
 class TestCalcPlqyParamShowErrmsg:
     def test_calc_plqy_param_no_expl(self):
         """Lines 1941-1979: all else branches covered when expl is empty."""
-        from fte_analysis_libraries.Spectrum import PELSpectrum, PELSpectra
+        from fte_analysis_libraries.Spectrum import PELSpectra, PELSpectrum
         wl = np.linspace(500, 800, 100)
         pel = PELSpectra([PELSpectrum(wl, np.ones(100))])
         pel.expl = {}  # type: ignore  # no La/Lb/Lc/Pa/Pb/Pc
@@ -90,7 +92,7 @@ class TestCalcPlqyParamShowErrmsg:
 class TestMTRPLMult3Expfit:
     def test_mult3_expfit(self):
         """Line 1701: MTRPLData.mult3_expfit calls _batch_expfit with 3 exp."""
-        from fte_analysis_libraries.TRPL import TRPLData, MTRPLData
+        from fte_analysis_libraries.TRPL import MTRPLData, TRPLData
         t = np.linspace(0, 500, 501)
         sa = [TRPLData(t, 0.5*np.exp(-t/30) + 0.3*np.exp(-t/100) + 0.2*np.exp(-t/300),
                        name=f'tr_{i}')
@@ -127,8 +129,8 @@ class TestIniGuessRsNegative:
     def test_ini_guess_rs_clamped_to_zero(self):
         """Line 809: Rs < 0 from polyfit → clamped to 0.
         nid=3.0 produces a poorly-conditioned fit where the intercept goes negative."""
+        from fte_analysis_libraries.General import T_RT, k, q
         from fte_analysis_libraries.IV import IVData
-        from fte_analysis_libraries.General import k, T_RT, q
         # Build IV directly (no from_j0) with nid=3 so polyfit gives negative Rs
         kTq = k * T_RT / q
         V = np.linspace(-0.05, 1.0, 400)
@@ -152,8 +154,9 @@ class TestSaveIndividualCheckExisting:
         """Lines 2226-2229: check_existing=True with pre-existing file.
         The code calls save_ok which would prompt, but since we can't interactively
         respond, we verify the code path is reached without error."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
         import pandas as pd
+
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 20)
         m = MXYData([XYData(x, np.sin(x), name='wave_a'),
                      XYData(x, np.cos(x), name='wave_b')])
@@ -170,7 +173,7 @@ class TestSaveIndividualCheckExisting:
 
     def test_save_individual_fns_no_extension_check(self):
         """Line 2222: check_FN_extension=False appends .csv directly."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 20)
         m = MXYData([XYData(x, np.sin(x), name='a')])
         m.label(['A'])

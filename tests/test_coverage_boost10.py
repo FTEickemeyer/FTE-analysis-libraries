@@ -1,8 +1,10 @@
 """Tenth coverage-boost: PLQY.py ExpParam branches, IV.py edge cases, Spectrum.py extras."""
 import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -140,7 +142,7 @@ class TestIniGuessNidRsNegative:
 # ---------------------------------------------------------------------------
 class TestSpectraRemain:
     def _make_spectra(self, n=4):
-        from fte_analysis_libraries.Spectrum import Spectrum, Spectra
+        from fte_analysis_libraries.Spectrum import Spectra, Spectrum
         wl = np.linspace(400, 700, 50)
         sa = [Spectrum(wl, np.ones(50) * float(i+1), name=f'sp_{i}.csv')
               for i in range(n)]
@@ -160,7 +162,7 @@ class TestSpectraRemain:
 # ---------------------------------------------------------------------------
 class TestPELSpectraCalibrateSingle:
     def test_calibrate_single(self):
-        from fte_analysis_libraries.Spectrum import PELSpectrum, PELSpectra
+        from fte_analysis_libraries.Spectrum import PELSpectra, PELSpectrum
         wl = np.linspace(500, 800, 50)
         # PEL spectra
         raw = PELSpectra([PELSpectrum(wl, np.ones(50) * 1000, name='s1')])
@@ -242,13 +244,14 @@ class TestTRPLRemainingBranches:
 # ---------------------------------------------------------------------------
 class TestMXYDataRemainingBranches:
     def _make_m(self, n=2):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         return MXYData([XYData(x, np.sin(x + i), name=f't_{i}') for i in range(n)])
 
     def test_plot_save_plot_kwarg(self):
         """save_plot in kwargs path (lines 2098-2103) skipped if save_ok fails."""
-        import tempfile, os
+        import os
+        import tempfile
         m = self._make_m()
         m.label(['A', 'B'])
         with tempfile.TemporaryDirectory() as tmp:

@@ -1,14 +1,20 @@
 """Tests for Spectrum.py."""
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from fte_analysis_libraries.Spectrum import (
-    Spectrum, EQESpectrum, DiffSpectrum, AbsSpectrum, Spectra, above_bg_photon_flux,
-)
 from fte_analysis_libraries.General import f1240, q
+from fte_analysis_libraries.Spectrum import (
+    AbsSpectrum,
+    DiffSpectrum,
+    EQESpectrum,
+    Spectra,
+    Spectrum,
+    above_bg_photon_flux,
+)
 
 
 class TestSpectrumConstruction:

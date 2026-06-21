@@ -1,10 +1,12 @@
 """Fourteenth coverage-boost: Spectrum EQE branches, XYdata extras, TRPL load."""
-import warnings
-import tempfile
 import os
+import tempfile
+import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -47,7 +49,7 @@ class TestBgFromIpShowplot:
 class TestCalcJscWrongUx:
     def test_calc_jsc_nm_eqe_wrong_sp_ux(self):
         """Lines 272-275: EQE nm, sp has unknown ux → prints warning."""
-        from fte_analysis_libraries.Spectrum import EQESpectrum, DiffSpectrum
+        from fte_analysis_libraries.Spectrum import DiffSpectrum, EQESpectrum
         wl = np.linspace(300, 800, 200)
         y = np.where(wl < 700, 0.8, 0.0)
         eqe = EQESpectrum(wl, y, quants={'x': 'Wavelength', 'y': 'EQE'},
@@ -63,7 +65,7 @@ class TestCalcJscWrongUx:
 
     def test_calc_jsc_ev_eqe_wrong_sp_ux(self):
         """Lines 300-301: EQE eV, sp has unknown ux → prints warning."""
-        from fte_analysis_libraries.Spectrum import EQESpectrum, DiffSpectrum
+        from fte_analysis_libraries.Spectrum import DiffSpectrum, EQESpectrum
         E = np.linspace(1.5, 3.5, 200)
         y = np.where(E > 1.7, 0.8, 0.0)
         eqe = EQESpectrum(E, y, quants={'x': 'Photon energy', 'y': 'EQE'},
@@ -84,7 +86,7 @@ class TestCalcJscWrongUx:
 class TestEQESpectrumMmfEg:
     def test_mmf_eg(self):
         """Lines 189-194: EQESpectrum.mmf_eg static method (100% EQE above Eg)."""
-        from fte_analysis_libraries.Spectrum import EQESpectrum, DiffSpectrum
+        from fte_analysis_libraries.Spectrum import DiffSpectrum, EQESpectrum
         wl = np.linspace(300, 1100, 200)
         y = np.where(wl < 1000, 0.8, 0.0)
         ref_eqe = EQESpectrum(wl, y, quants={'x': 'Wavelength', 'y': 'EQE'},
@@ -113,6 +115,7 @@ class TestTRPLDataLoad:
     def test_load_with_filepath(self):
         """Lines 664-671: normal load with valid filepath."""
         import pandas as pd
+
         from fte_analysis_libraries.TRPL import TRPLData
         with tempfile.TemporaryDirectory() as tmp:
             t = np.linspace(0, 400, 401)
@@ -126,6 +129,7 @@ class TestTRPLDataLoad:
     def test_load_with_time_unit_us(self):
         """Lines 667-668: time_unit='us' multiplies by 1000."""
         import pandas as pd
+
         from fte_analysis_libraries.TRPL import TRPLData
         with tempfile.TemporaryDirectory() as tmp:
             t_us = np.linspace(0, 0.4, 41)  # microseconds
@@ -204,7 +208,7 @@ class TestProductBranchX1MinLtX2Min:
 # ---------------------------------------------------------------------------
 class TestPrintAllNames:
     def _make_m(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 20)
         return MXYData([XYData(x, np.sin(x), name='alpha'),
                         XYData(x, np.cos(x), name='alpha'),  # duplicate
@@ -231,7 +235,7 @@ class TestPrintAllNames:
 class TestMXYDataPlotAxInName:
     def test_plot_with_ax(self):
         """Line 1942: show_plot=False when ax is not None."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.sin(x), name='a'),
                      XYData(x, np.cos(x), name='b')])
@@ -242,7 +246,7 @@ class TestMXYDataPlotAxInName:
 
     def test_plot_with_in_name(self):
         """Line 1952: in_name filter — only plot spectra whose name contains 'wave'."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.sin(x), name='wave_1'),
                      XYData(x, np.cos(x), name='noise_1')])
@@ -257,7 +261,7 @@ class TestMXYDataPlotAxInName:
 class TestMXYDataReverse:
     def test_reverse(self):
         """Lines 2433-2437: MXYData.reverse() reverses each spectrum."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.sin(x), name='a'),
                      XYData(x, np.cos(x), name='b')])
@@ -273,7 +277,7 @@ class TestMXYDataReverse:
 class TestMXYDataIdfacFit:
     def test_batch_idfac_fit_plot_and_return(self):
         """Lines 2553-2555: MXYData.idfac_fit with plot=True, return_all=True."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         light_int = np.array([10.0, 25.0, 50.0, 100.0, 200.0])
         Voc1 = 0.8 + 0.026 * np.log(light_int / 100.0)
         Voc2 = 0.85 + 0.026 * np.log(light_int / 100.0)

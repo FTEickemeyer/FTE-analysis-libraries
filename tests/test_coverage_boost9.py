@@ -1,10 +1,12 @@
 """Ninth coverage-boost: IV.py branches, Spectrum save/load helpers."""
-import warnings
-import tempfile
 import os
+import tempfile
+import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -61,6 +63,7 @@ class TestPerfDataText:
 class TestIVDataLoadCSV:
     def test_load_csv(self):
         import pandas as pd
+
         from fte_analysis_libraries.IV import IVData
         with tempfile.TemporaryDirectory() as tmp:
             V = np.linspace(-0.1, 1.0, 50)
@@ -317,7 +320,7 @@ class TestFitFivepDescending:
 # ---------------------------------------------------------------------------
 class TestSpectraSaveLoadNames:
     def _make_spectra(self, n=3):
-        from fte_analysis_libraries.Spectrum import Spectrum, Spectra
+        from fte_analysis_libraries.Spectrum import Spectra, Spectrum
         wl = np.linspace(400, 700, 50)
         sa = [Spectrum(wl, np.ones(50), name=f'sample_{i}.csv') for i in range(n)]
         return Spectra(sa)
@@ -333,7 +336,7 @@ class TestSpectraSaveLoadNames:
 
     def test_equidist_warns_different_x(self):
         """Spectra.equidist prints warning when not all same x (line 1651-1652)."""
-        from fte_analysis_libraries.Spectrum import Spectrum, Spectra
+        from fte_analysis_libraries.Spectrum import Spectra, Spectrum
         wl1 = np.linspace(400, 700, 50)
         wl2 = np.linspace(300, 600, 50)  # different range
         sa = [Spectrum(wl1, np.ones(50)), Spectrum(wl2, np.ones(50))]

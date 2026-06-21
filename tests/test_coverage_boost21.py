@@ -1,10 +1,12 @@
 """Twenty-first coverage-boost: IV.py loss_plot, loss_barplot."""
-import warnings
-import tempfile
 import os
+import tempfile
+import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 

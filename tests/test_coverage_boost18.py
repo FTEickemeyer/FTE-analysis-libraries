@@ -1,11 +1,13 @@
 """Eighteenth coverage-boost: Spectrum bbt_fit RuntimeError, calc_calfn, General pyperclip."""
-import warnings
-import tempfile
 import os
 import sys
+import tempfile
+import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -19,6 +21,7 @@ class TestBbtFitRuntimeError:
     def test_bbt_fit_no_converge_via_mock(self):
         """Lines 1322-1324: bbt_fit except RuntimeError → uses p0 as fallback."""
         from unittest.mock import patch
+
         import fte_analysis_libraries.Spectrum as spec_module
         from fte_analysis_libraries.Spectrum import PELSpectrum
 
@@ -44,7 +47,11 @@ class TestBbtFitRuntimeError:
 class TestCalcCalfn:
     def test_calc_calfn_basic(self):
         """Lines 1766-1773: PELSpectra.calc_calfn divides calspec by each spectrum."""
-        from fte_analysis_libraries.Spectrum import PELSpectrum, PELSpectra, DiffSpectrum
+        from fte_analysis_libraries.Spectrum import (
+            DiffSpectrum,
+            PELSpectra,
+            PELSpectrum,
+        )
 
         wl = np.linspace(450, 750, 100)
         # raw PL spectrum (avoid zeros)
@@ -71,7 +78,8 @@ class TestCalcCalfn:
 class TestCopyToClipboard:
     def test_copy_to_clipboard_with_mock(self):
         """Lines 894-895: copy_to_clipboard calls pyperclip.copy."""
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
+
         import fte_analysis_libraries.General as gen_module
         # copy_to_clipboard imports pyperclip inside the function
         with patch.dict('sys.modules', {'pyperclip': MagicMock()}):
@@ -140,7 +148,7 @@ class TestPELSpectraLoadAndor:
 class TestPELSpectraCalibrate:
     def test_calibrate_matching_names(self):
         """Lines 1797-1828: calibrate() uses right_cal_fn to match spectra."""
-        from fte_analysis_libraries.Spectrum import PELSpectrum, PELSpectra
+        from fte_analysis_libraries.Spectrum import PELSpectra, PELSpectrum
 
         wl = np.linspace(400, 800, 50)
         # Name format: name--laser--grating--Andor_Xs_Nacc_grating_centerwl_filter.ext
@@ -161,7 +169,7 @@ class TestPELSpectraCalibrate:
 
     def test_calibrate_no_match_warns(self):
         """Line 1826: warning printed when no calibration found."""
-        from fte_analysis_libraries.Spectrum import PELSpectrum, PELSpectra
+        from fte_analysis_libraries.Spectrum import PELSpectra, PELSpectrum
 
         wl = np.linspace(400, 800, 50)
         raw = PELSpectrum(wl, np.ones(50),
@@ -184,7 +192,7 @@ class TestPELSpectraCalibrate:
 class TestChooseForPlqy:
     def _make_plqy_pel(self, samplename='sample1',
                        laser_marker='420BPF', PL_marker='450LPF'):
-        from fte_analysis_libraries.Spectrum import PELSpectrum, PELSpectra
+        from fte_analysis_libraries.Spectrum import PELSpectra, PELSpectrum
         wl = np.linspace(400, 800, 50)
         y = np.exp(-(wl - 600)**2 / 500)
         names = [

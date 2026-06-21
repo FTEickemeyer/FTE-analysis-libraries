@@ -5,28 +5,31 @@ Created on Thu Mar 19 15:05:55 2020
 @author: dreickem
 """
 
-from scipy.optimize import curve_fit, least_squares
-import numpy as np
-import pandas as pd
+import math
 import os
+from importlib.resources import files as _resource_files
 from os import listdir
 from os.path import join
-import math
+
 import matplotlib.pyplot as plt
-from importlib.resources import files as _resource_files
+import numpy as np
+import pandas as pd
+from scipy.optimize import curve_fit, least_squares
+
 system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data'))
 
 
-from .General import findind, int_arr, linfit, save_ok, q, k, T_RT, h, c, f1240, pi
-
-from .XYdata import XYData, MXYData
 from typing import Any
+
+from .General import T_RT, c, f1240, findind, h, int_arr, k, linfit, pi, q, save_ok
+from .XYdata import MXYData, XYData
+
 
 class Spectrum(XYData):
     """
     Container class for Spectrum data and operations.
     """
-    
+
     def __init__(self, x: np.ndarray, y: np.ndarray, quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": "", "y": ""}, name: str = '', plotstyle: str = dict(linestyle = '-', color = 'black', linewidth = 3), check_data: bool = True) -> None:  # type: ignore
         """
         Initialize the object.
@@ -53,18 +56,18 @@ class Spectrum(XYData):
         >>> obj.__init__()
         """
         super().__init__(x, y, quants, units, name, plotstyle, check_data = check_data)
-                  
-    
-    @classmethod  
+
+
+    @classmethod
     def load_andor(cls, directory: str, filepath: str = '', meta_data: np.ndarray | None = None) -> Any:
         """
         Loads a sinlge Andor Spectrum. If a filename is given it will be used, if not the first file in the directory will be used.
         If meta_data is provided, integration time (int_s) and accumulations (acc) will be taken from metadata.
         if not, it will take the integration time and number of accumulations from the filename.
         """
-        
+
         if filepath == '':
-            filepath = listdir(directory)[0]        
+            filepath = listdir(directory)[0]
 
         dat = pd.read_csv(join(directory, filepath))
         x = np.array(dat, dtype = np.float64)[:,0]
@@ -80,37 +83,37 @@ class Spectrum(XYData):
                 acc = filepath.split('--')[3].split('_')[2].split('acc')[0]
                 #acc_raw = filepath.split('--')[3].split('_')[2].split('av')[0]
                 return int(acc)
-    
+
             y = np.array(dat, dtype = np.float64)[:,1] / get_int_time(filepath) / get_accum(filepath)
-        
+
         return cls(x, y, quants = dict(x = 'Wavelength', y = 'Intensity'), units = dict(x = 'nm', y = 'cps'), name = filepath)
-        
-            
+
+
     def nm_to_ev(self) -> Any:
-    
+
         """
         Transforms a single non-differential Spectrum of type Spectrum from wavelength to photon energy. 
         """
-        
+
         x = self.x.copy()
         y = self.y.copy()
         x_eV = h * c / (x[::-1] * 1e-9) / q
         y_eV = y[::-1]
-                
+
         name = self.name
         quants = {"x": "Photon energy", "y": self.qy}
         units = {"x": "eV", "y": self.uy}
-        
+
         if self.__class__.__name__ == 'Spectrum':
             sp_new = Spectrum(x_eV, y_eV, quants = quants, units = units, name = name)
         elif self.__class__.__name__ == 'EQESpectrum':
             sp_new = EQESpectrum(x_eV, y_eV, quants = quants, units = units, name = name)
         elif self.__class__.__name__ == 'AbsSpectrum':
             sp_new = AbsSpectrum(x_eV, y_eV, quants = quants, units = units, name = name)
-            
+
         return sp_new
 
-    
+
     @staticmethod
     def luminosity_fn(y_unit: str = 'Spectral photon flux') -> Any:
         """
@@ -139,7 +142,7 @@ class EQESpectrum(Spectrum):
     """
     Container class for EQESpectrum data and operations.
     """
-    
+
     def __init__(self, x: np.ndarray, y: np.ndarray, quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": "", "y": ""}, name: str = '', plotstyle: str = dict(linestyle = '-', color = 'black', linewidth = 3), check_data: bool = True) -> None:  # type: ignore
         """
         Initialize the object.
@@ -166,7 +169,7 @@ class EQESpectrum(Spectrum):
         >>> obj.__init__()
         """
         super().__init__(x, y, quants, units, name, plotstyle, check_data = check_data)
-        
+
     @staticmethod
     def eqe100(Eg: float, start: float=300, stop: float=4001, step: Any=0.5, name: str = '') -> Any:
         """
@@ -180,7 +183,7 @@ class EQESpectrum(Spectrum):
             name = f'100 % EQE until cut off wavelength {Eg_nm: .0f} nm'
         return EQESpectrum(x = x_arr, y = y_arr, quants = dict(x='Wavelength', y='EQE'), units = dict(x='nm', y='%'), name = name)
 
-    @staticmethod    
+    @staticmethod
     def mmf_eg(Eg: float, ref_EQE: Any, sim_PF: np.ndarray, ref_PF: Any = 'AM15GT', left: float = 300, right: float | None = None, delta: float = 0.5) -> Any:
         """
         Calculates the spectral mismatch factor as a function of Eg in eV.
@@ -202,7 +205,7 @@ class EQESpectrum(Spectrum):
         num = ref_EQE.calc_jsc(left = left, right = right, delta = delta, sp = ref_PF) * self.calc_jsc(left = left, right = right, delta = delta, sp = sim_PF)
         denom = ref_EQE.calc_jsc(left = left, right = right, delta = delta, sp = sim_PF) * self.calc_jsc(left = left, right = right, delta = delta, sp = ref_PF)
         return num / denom
-    
+
     def mmf_test(self, ref_EQE: Any, sim_PF: np.ndarray, ref_PF: Any = 'AM15GT', left: float | None = None, right: float | None = None, delta: float | None = None) -> Any:
         """
         Calculates the spectral mismatsch factor of the EQE Spectrum self.
@@ -216,33 +219,33 @@ class EQESpectrum(Spectrum):
         num = ref_EQE.calc_jsc(left = left, right = right, delta = delta, sp = ref_PF) * self.calc_jsc(left = left, right = right, delta = delta, sp = sim_PF)
         denom = ref_EQE.calc_jsc(left = left, right = right, delta = delta, sp = sim_PF) * self.calc_jsc(left = left, right = right, delta = delta, sp = ref_PF)
         return num / denom
-        
-    
+
+
     def bg_from_ip(self, left: float | None = None, right: float | None = None, showplot: Any = None) -> Any:
         """
         Calculates the bandgap from the inflection point of the EQE Spectrum.
 
         """
-            
+
         if left is None:
             left = min(self.x)
         if right is None:
             right = max(self.x)
-            
+
         dEQE = self.diff(left = left, right = right)
         Eg = dEQE.x[findind(dEQE.y, max(dEQE.y))]
-        
+
         if 'diff' in showplot:  # type: ignore
             dEQE.plot(left = left, right = right, vline = Eg)
-        
+
         if 'orig' in showplot:  # type: ignore
             self.plot(left = left, right = right, vline = Eg)
-        
+
         self.Eg_ip = Eg
-        
+
         return Eg
-        
-    def calc_jsc(self, left: float | None = None, right: float | None = None, delta: float | None = None, sp: Any = 'AM15GT') -> Any:    
+
+    def calc_jsc(self, left: float | None = None, right: float | None = None, delta: float | None = None, sp: Any = 'AM15GT') -> Any:
         """
         Calculate Jsc from overlap of this EQE with the AM1.5G spectrum.
         #It works if self and sp are both functions of nm or eV.
@@ -273,12 +276,12 @@ class EQESpectrum(Spectrum):
                     print('Your ux is {sp.ux}.')
                     print(f'self.name = {self.name}')
                     print(f'sp.name = {sp.name}')
-        
+
             if self.uy == '%':
                 return np.trapezoid(EQE_nm.y/100 * sp.y * q * 1e3/1e4, dx = delta)  # type: ignore
             elif (self.uy == '') or (self.uy =='abs.'):
                 return np.trapezoid(EQE_nm.y * sp.y * q * 1e3/1e4, dx = delta)  # type: ignore
-        
+
         if self.ux == 'eV':
             if delta is None:
                 delta = 0.001
@@ -288,7 +291,7 @@ class EQESpectrum(Spectrum):
             if right is None:
                 right = max(EQE_eV.x)
             EQE_eV.equidist(left = left, right = right, delta = delta)
-            
+
             if sp == 'AM15GT':
                 sp = DiffSpectrum.am15_ev(left = left, right = right, delta = delta)
             else:
@@ -298,8 +301,8 @@ class EQESpectrum(Spectrum):
                     print('Attention (EQESpectrum.calc_jsc): EQE is a function of photon energy in eV but sp is a function of wavelength in nm!')
                 else:
                     print('Attention: EQESpectrum.calc_jsc() requires ux to be either in nm or eV!')
-                    print('Your ux is {sp.ux}.')                
-        
+                    print('Your ux is {sp.ux}.')
+
             if self.uy == '%':
                 return np.trapezoid(EQE_eV.y/100 * sp.y * q * 1e3/1e4, dx = delta)  # type: ignore
             elif (self.uy == '') or (self.uy =='abs.'):
@@ -324,11 +327,11 @@ class EQESpectrum(Spectrum):
         --------
         >>> obj.normalize_to_jsc()
         """
-        
+
         Jsc_EQE = self.calc_jsc()
         self.y = self.y / Jsc_EQE * Jsc
-        
-    
+
+
     def to_ab(self) -> Any:
         """
         To ab.
@@ -344,15 +347,15 @@ class EQESpectrum(Spectrum):
         """
         x = self.x.copy()
         y = self.y.copy() / 100 # absorptance is EQE (in %) / 100
-        
+
         quants = dict(x=self.qx, y='absorptance')
         units = dict(x=self.ux, y='')
         name = self.name
-        
+
         sp_new = AbsSpectrum(x, y, quants = quants, units = units, name = name)
-            
-        return sp_new    
-    
+
+        return sp_new
+
     @staticmethod
     def load_cicci(directory: str, filepath: str) -> Any:
         """
@@ -374,14 +377,14 @@ class EQESpectrum(Spectrum):
         --------
         >>> obj.load_cicci()
         """
-        
+
         return EQESpectrum.load(directory, filepath, delimiter = '\t', header = 0, quants = {"x": "Wavelength", "y": "EQE"}, units = {"x": "nm", "y": "%"})
-    
+
 class AbsSpectrum(Spectrum):
     """
     Absorptance Spectrum. Absorptance is dimensionless from 0 to 1.
     """
-    
+
     def __init__(self, x: np.ndarray, y: np.ndarray, quants: Any = {"x": "Photon energy", "y": "Absorptance"}, units: Any = {"x": "eV", "y": ""}, name: str = 'Absorptance', plotstyle: str = dict(linestyle = '-', color = 'black', linewidth = 3), check_data: bool = True) -> None:  # type: ignore
         """
         Initialize the object.
@@ -408,8 +411,8 @@ class AbsSpectrum(Spectrum):
         >>> obj.__init__()
         """
         super().__init__(x, y, quants, units, name, plotstyle, check_data = check_data)
-        
-        
+
+
     def u_energy_fit(self, Efit_start: Any, Efit_stop: Any) -> Any:
         """
         Calculates the Urbach energy of an absorptance curve and returns the fitcurve as an instance of the class "Spectrum".
@@ -423,7 +426,7 @@ class AbsSpectrum(Spectrum):
         UE_fit = Spectrum(self.x, np.exp(m * self.x + b), quants = {"x": self.qx, "y": "Urbach energy fit"}, units = {"x": self.ux, "y": ""}, name = name)
         UE_fit.UE = U_E  # type: ignore
         return UE_fit
-    
+
     def new_ue(self, UE: float, E_takeover: Any) -> Any:
         """
         New ue.
@@ -449,9 +452,9 @@ class AbsSpectrum(Spectrum):
         b = self.y[idx]
         # UE_fit = Spectrum(self.x, np.exp(m * (self.x - E_takeover)) * b, quants = {"x": self.qx, "y": "Urbach energy fit"}, units = {"x": self.ux, "y": ""})
         UE_fit = Spectrum(self.x, np.exp(m * (self.x - self.x[idx])) * b, quants = {"x": self.qx, "y": "Urbach energy fit"}, units = {"x": self.ux, "y": ""})
-        self.y[0:idx] = UE_fit.y[0:idx] 
-        
-    
+        self.y[0:idx] = UE_fit.y[0:idx]
+
+
     def tauc_plot(self, Efit_start: Any, Efit_stop: Any, left_offs: Any, right_offs: Any, showplot: Any = True, title: str = '', save: bool = False, save_dir: str = '', save_name: str | None = None, return_fig: bool = True) -> Any:
         """
         Plots the Tauc plot, calculates the direct bandgap and Shockley-Queisser limit of Voc.
@@ -466,12 +469,12 @@ class AbsSpectrum(Spectrum):
 
         qy = r'$(\alpha \cdot h \nu)^2$'
         uy = 'a.u.'
-        Tp = Spectrum(self.x, (alpha_eV * self.x)**2, quants = {"x": self.qx, "y": qy}, units = {"x": self.ux, "y": uy}, 
+        Tp = Spectrum(self.x, (alpha_eV * self.x)**2, quants = {"x": self.qx, "y": qy}, units = {"x": self.ux, "y": uy},
                       name = name_Tp)
 
-        Tpfit = Spectrum(self.x, (m * self.x + b), quants = {"x": self.qx, "y": qy}, units = {"x": self.ux, "y": uy}, 
+        Tpfit = Spectrum(self.x, (m * self.x + b), quants = {"x": self.qx, "y": qy}, units = {"x": self.ux, "y": uy},
                          name = name_Tpfit)
-        
+
         sa = Spectra([Tp, Tpfit])
         sa.label([name_Tp, name_Tpfit])
 
@@ -480,11 +483,11 @@ class AbsSpectrum(Spectrum):
                 filepath = 'Tauc plot.csv'
             else:
                 filepath = save_name
-            sa.save(save_dir, filepath) 
-        
+            sa.save(save_dir, filepath)
+
         self.Eg_Tauc = Eg
         self.Vocsq = Vocsq
-        
+
         graph = sa.plot(left = Efit_start + left_offs, right = Efit_stop + right_offs, bottom = 0, top = Tp.y_of(Efit_stop + right_offs) * 1.2, title = title, return_fig = True, show_plot = showplot)  # type: ignore
 
         if return_fig:
@@ -497,7 +500,7 @@ class AbsSpectrum(Spectrum):
         """
         BB = DiffSpectrum.phi_bb(self.x * q, T)  # type: ignore
         r = range(self.x_idx_of(E_start), self.x_idx_of(E_stop)+1)
-        empf = DiffSpectrum(self.x[r], self.y[r] * BB[r] * q, quants = dict(x = 'Photon energy', y = 'Spectral photon flux'), units = dict(x = 'eV', y = '1/[s m2 eV]'))        
+        empf = DiffSpectrum(self.x[r], self.y[r] * BB[r] * q, quants = dict(x = 'Photon energy', y = 'Spectral photon flux'), units = dict(x = 'eV', y = '1/[s m2 eV]'))
         return empf
 
     def calc_vocrad(self, E_start: Any, E_stop: Any, T: float = T_RT, show_table: bool = False) -> None:
@@ -517,30 +520,30 @@ class AbsSpectrum(Spectrum):
         Jrad0 = q * np.trapezoid(empf.y, dx = denergies_eV) *1e-4 /1e-3  # type: ignore
 
         Vocrad = k*T/q * math.log(self.Jradlim/Jrad0 + 1)
-        
-        self.Jrad0 = Jrad0 
+
+        self.Jrad0 = Jrad0
         self.Vocrad = Vocrad
 
         if show_table:
             table_data = [[f'{Vocrad:1.3f}', f'{Jrad0:1.2e}', f'{self.Jradlim:2.1f}', f'{T - 273.15:2.1f}']]
             collabel = [r'$V_{oc, rad} \; (V)$', r'$J_{rad, 0} \; (mA/cm^{2})$', r'$J_{ph} \; (mA/cm^2)$', r'$T \; (°C)$']
-            
+
             #print(table_data)
             # plot table
             fig, ax = plt.subplots()
-    
+
             # Hide axes
-            ax.xaxis.set_visible(False) 
+            ax.xaxis.set_visible(False)
             ax.yaxis.set_visible(False)
-    
+
             # Table
             table = ax.table(cellText=table_data, colLabels=collabel, loc='center', cellLoc='center', colLoc='center')
             fig.patch.set_visible(False)
             ax.axis('off')
             table.set_fontsize(40)
             table.scale(1.1, 2.5)
-            plt.show()        
- 
+            plt.show()
+
     def calc_jradlim(self, illumspec_eV: Any | None = None, start_eV: Any | None = None, handover_eV: Any | None = None) -> None:
         """
         Calculate the radiative recombination limited current density.
@@ -564,21 +567,21 @@ class AbsSpectrum(Spectrum):
         """
         if illumspec_eV is None:
             illumspec_eV = DiffSpectrum.am15_ev(left = min(self.x), right = max(self.x))
-            
+
         # New absorption Spectrum with the same x-values as illumspec_eV (necessary for integration)
         asp = DiffSpectrum(illumspec_eV.x, int_arr(self.x, self.y, illumspec_eV.x))
-                
+
         if handover_eV is not None:
             asp.y[asp.x_idx_of(handover_eV):] = asp.y[asp.x_idx_of(handover_eV)]
-            
+
         if start_eV is not None:
             start_idx = asp.x_idx_of(start_eV)
-        
+
         else:
             start_idx = 0
-        
+
         dx = (asp.x[1] - asp.x[0])
-                
+
         self.Jradlim = np.trapezoid(asp.y[start_idx:] * illumspec_eV.y[start_idx:] * q, dx = dx) * 1e3 / 1e4  # type: ignore
 
     def convert_absorbance_to_absorptance(self) -> Any:
@@ -599,7 +602,7 @@ class AbsSpectrum(Spectrum):
         ab = AbsSpectrum(self.x, new_y, self.quants(), self.units(), self.name)
         ab.qy = 'Absorptance'
         return ab
-    
+
     def convert_absorptance_to_absorbance(self) -> Any:
         """
         Convert absorptance to absorbance.
@@ -680,12 +683,12 @@ class AbsSpectrum(Spectrum):
             print(f'The absorbed photon flux at 1 sun is: {PF_1sun:.2e} 1/(s m²)')
         return PF_1sun
 
-        
-class DiffSpectrum(Spectrum):   
+
+class DiffSpectrum(Spectrum):
     """
     Container class for DiffSpectrum data and operations.
     """
-    
+
     def __init__(self, x: np.ndarray, y: np.ndarray, quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": "", "y": ""}, name: str = '', plotstyle: str = dict(linestyle = '-', color = 'black', linewidth = 3), check_data: bool = True) -> None:  # type: ignore
         """
         Initialize the object.
@@ -712,8 +715,8 @@ class DiffSpectrum(Spectrum):
         >>> obj.__init__()
         """
         super().__init__(x, y, quants, units, name, plotstyle, check_data = check_data)
-            
-            
+
+
     def photonflux_to_irradiance(self) -> Any:
         """
         Converts y from spectral photon flux into spectral irradiance (in W/[m2 nm]).
@@ -734,8 +737,8 @@ class DiffSpectrum(Spectrum):
         else:
             print('Attention: DiffSpectrum.photonflux_to_irradiance works only if uy = 1/[s m2 nm]!')
             print(f'Your uy = {self.uy}')
-    
-    
+
+
     def irradiance_to_photonflux(self, factor: float = 1) -> Any:
         """
         Converts y from spectral irradiance into photon flux (in 1/[s m2 nm]).
@@ -764,7 +767,7 @@ class DiffSpectrum(Spectrum):
             else:
                 print('Attention: DiffSpectrum.irradiance_to_photonflux works only if uy = W/[m2 nm]!')
                 print(f'Your uy = {self.uy}')
-    
+
     def irradiance_to_illuminance(self) -> Any:
         """
         Returns the illuminance Spectrum of the irradiance Spectrum self.
@@ -776,8 +779,8 @@ class DiffSpectrum(Spectrum):
             print('Attention: Function "DiffSpectrum.irradiance_to_illuminance" works only if uy is in W/[m2 nm]!')
             print(f'Your uy is {self.uy}.')
 
-    
-    
+
+
     def illuminance_to_irradiance(self, warning: bool = True) -> Any:
         """
         Returns the irradiance Spectrum of the illuminance Spectrum self.
@@ -790,15 +793,15 @@ class DiffSpectrum(Spectrum):
             cf = Spectrum.luminosity_fn()
             #Inverse photopic luminosity function:
             icf = cf.copy()
-            icf.y = 1/cf.y 
+            icf.y = 1/cf.y
             return self.product(icf, qy = 'Spectral irradiance', uy = 'W/[m2 nm]')
         else:
             print('Attention: Function "DiffSpectrum.illuminance_to_irradiance" works only if uy is in lm/[m2 nm] or in lx/nm!')
             print(f'Your uy is {self.uy}.')
-      
-    
+
+
     def nm_to_ev(self, delta: float = 0.001) -> Any:
-    
+
         """
         Transforms a single differential Spectrum (dS/dlambda) as a function of wavelength (in nm) into 
         a differential Spectrum (dS/dE) as a function of photon energy (in eV). 
@@ -811,12 +814,12 @@ class DiffSpectrum(Spectrum):
         dS(E)/dE = dS(lambda)/dlambda * q/1e-9 * h*c/(E*q)**2 
                  = dS(lambda)/dlambda * h*c/(q*1e-9) * 1/E**2        
         """
-        
+
         x = self.x.copy()
         y = self.y.copy()
         x_eV = h * c / (x[::-1] * 1e-9) / q
         y_eV = y[::-1] * h*c/(q*1e-9) * 1/x_eV**2
-        
+
         # quants = {"x": "Photon energy", "y": "Spectral photon flux"}
         # units = {"x": "eV", "y": "1/[s m2 eV]"}
 
@@ -824,18 +827,18 @@ class DiffSpectrum(Spectrum):
         units = dict(x = 'eV', y = self.uy.replace('nm', 'eV'))
 
         name = self.name
-        
+
         # if self.__class__.__name__ == 'DiffSpectrum':
         #     sp_new = DiffSpectrum(x_eV, y_eV, quants = quants, units = units, name = name)
         # if self.__class__.__name__ == 'PELSpectrum':
         #     sp_new = PELSpectrum(x_eV, y_eV, quants = quants, units = units, name = name)
 
         sp_new = type(self)(x_eV, y_eV, quants = quants, units = units, name = name)
-        sp_new.equidist(delta = delta)    
+        sp_new.equidist(delta = delta)
         return sp_new
-    
+
     def ev_to_nm(self, delta: float = 1) -> Any:
-    
+
         """
         Transforms a single differential Spectrum as a function of photon energy (in eV) into 
         a differential Spectrum as a function of wavelength (in nm).  
@@ -848,23 +851,23 @@ class DiffSpectrum(Spectrum):
         dS(lambda)/dlambda = dS(E)/dE * 1e-9/q * h*c/(lambda*1e-9)**2 
                            = dS(E)/dE * h*c / (q*1e-9) / lambda**2
         """
-        
+
         x = self.x.copy()
         y = self.y.copy()
         x_nm = h * c / (x[::-1] * q) * 1e9
         #y_nm = y[::-1] * h*c / (q * 1e-9) / x[::-1]**2
         y_nm = y[::-1] * h*c / (q * 1e-9) / x_nm**2
-        
+
         quants = dict(x = 'Wavelength', y=self.qy)
         units = dict(x = 'nm', y = self.uy.replace('eV', 'nm'))
         name = self.name
-        
-        sp_new = type(self)(x_nm, y_nm, quants = quants, units = units, name = name)        
-        sp_new.equidist(delta = delta)    
+
+        sp_new = type(self)(x_nm, y_nm, quants = quants, units = units, name = name)
+        sp_new.equidist(delta = delta)
 
         return sp_new
 
-    
+
     @staticmethod
     def load_astmg173(y_unit: str = 'Spectral photon flux', warning: bool = True, Spectrum: Any = 'AM1.5GT') -> Any:
 
@@ -878,7 +881,7 @@ class DiffSpectrum(Spectrum):
         # Directory for Astmg173 Spectrum
 
         ASTMG173 = 'Astmg173.xls'
-        
+
         dat = pd.read_excel(join(system_dir, ASTMG173), header = 1)
         dat_nm = np.array(dat, dtype = np.float64)[:,0] # wavelength data in nm
         if Spectrum == 'AM1.5GT':
@@ -886,106 +889,106 @@ class DiffSpectrum(Spectrum):
         elif Spectrum == 'Etr':
             dat_SF = np.array(dat, dtype = np.float64)[:,1] # spectral irradiance in W/(m2 nm)
         elif Spectrum == 'direct':
-            dat_SF = np.array(dat, dtype = np.float64)[:,3] # spectral irradiance in W/(m2 nm)        
+            dat_SF = np.array(dat, dtype = np.float64)[:,3] # spectral irradiance in W/(m2 nm)
 
         dat_PF = dat_SF * dat_nm * 1e-09 / (h * c) # photon flux (PF) in photons / (s m2 nm)
-        
-        x = dat_nm 
-        
+
+        x = dat_nm
+
         if (y_unit == 'Spectral photon flux') or (y_unit == 'PF'):
-        
+
             y = dat_PF
-    
+
             quants = {"x": "Wavelength", "y": "Spectral photon flux"}
             units = {"x": "nm", "y": "1/[s m2 nm]"}
-            
+
         elif (y_unit == 'Spectral irradiance') or (y_unit == 'Spectral flux') or (y_unit == 'SF'):
-            
+
             y = dat_SF
-    
+
             quants = {"x": "Wavelength", "y": "Spectral irradiance"}
             units = {"x": "nm", "y": "W/[m2 nm]"}
-            
+
         else:
             print('Attention (load_astmg173): y_unit not known!')
-            
+
         if warning:
             print('load_astmg173: Wavelengths are not evenly spaced, use rather the function am15_nm or am15_ev.')
 
         return DiffSpectrum(x, y, quants, units, ASTMG173)
-    
+
     @staticmethod
     def am15_nm(left: float = 280, right: float = 4000, delta: float = 1, y_unit: str = 'Spectral photon flux') -> Any:
         """
         Returns the AM1.5 GT photon flux Spectrum as a function of wavlelength in nm.
         """
-        
+
         AM15 = DiffSpectrum.load_astmg173(y_unit = y_unit, warning = False)
         AM15.equidist(left = left, right = right, delta = delta)
         AM15.name += ' (AM1.5GT)'
-        #am15_nm.plot(left = 300, right = 1000)    
+        #am15_nm.plot(left = 300, right = 1000)
         return AM15
-        
+
     @staticmethod
     def am15_ev(left: float = 0.310, right: float = 4.428, delta: float = 0.001, y_unit: str = 'Spectral photon flux') -> Any:
         """
         Returns the AM1.5 GT photon flux Spectrum as a function of photon energy in eV.
         """
-        
+
         AM15nm = DiffSpectrum.am15_nm(y_unit = y_unit)
         AM15eV = AM15nm.nm_to_ev()
         AM15eV.equidist(left = left, right = right, delta = delta)
         #am15_ev.plot()
         return AM15eV
-    
+
     @staticmethod
     def am15direct_nm(left: float = 280, right: float = 4000, delta: float = 1, y_unit: str = 'Spectral photon flux') -> Any:
         """
         Returns the AM1.5 direct and circumsolar photon flux Spectrum as a function of wavlelength in nm.
         """
-        
+
         AM15direct = DiffSpectrum.load_astmg173(y_unit = y_unit, warning = False, Spectrum = 'direct')
         AM15direct.equidist(left = left, right = right, delta = delta)
         AM15direct.name += ' (AM1.5 direct+circumsolar)'
-        #am15_nm.plot(left = 300, right = 1000)    
+        #am15_nm.plot(left = 300, right = 1000)
         return AM15direct
-        
+
     @staticmethod
     def am15direct_ev(left: float = 0.310, right: float = 4.428, delta: float = 0.001, y_unit: str = 'Spectral photon flux') -> Any:
         """
         Returns the AM1.5 GT photon flux Spectrum as a function of photon energy in eV.
         """
-        
+
         AM15directnm = DiffSpectrum.am15direct_nm(y_unit = y_unit)
         AM15directeV = AM15directnm.nm_to_ev()
         AM15directeV.equidist(left = left, right = right, delta = delta)
         #am15_ev.plot()
         return AM15directeV
-    
+
     @staticmethod
     def etr_nm(left: float = 280, right: float = 4000, delta: float = 1, y_unit: str = 'Spectral photon flux') -> Any:
         """
         Returns the extraterrestrial photon flux Spectrum as a function of wavlelength in nm.
         """
-        
+
         Etr = DiffSpectrum.load_astmg173(y_unit = y_unit, warning = False, Spectrum = 'Etr')
         Etr.equidist(left = left, right = right, delta = delta)
         Etr.name += ' (Extraterrestrial)'
-        #am15_nm.plot(left = 300, right = 1000)    
+        #am15_nm.plot(left = 300, right = 1000)
         return Etr
-        
+
     @staticmethod
     def etr_ev(left: float = 0.310, right: float = 4.428, delta: float = 0.001, y_unit: str = 'Spectral photon flux') -> Any:
         """
         Returns the extraterrestrial photon flux Spectrum as a function of photon energy in eV.
         """
-        
+
         Etrnm = DiffSpectrum.etr_nm(y_unit = y_unit)
         EtreV = Etrnm.nm_to_ev()
         EtreV.equidist(left = left, right = right, delta = delta)
         #am15_ev.plot()
         return EtreV
-    
+
     @staticmethod
     def _load_illuminant_spectrum(filename: str, y_unit: str, delimiter: str=',', header: int=0) -> None:
         """Load an illuminant spectrum from system_dir and return a DiffSpectrum."""
@@ -1025,10 +1028,10 @@ class DiffSpectrum(Spectrum):
         return DiffSpectrum._load_illuminant_spectrum(
             'high CRI LED (YJ-VTC-2835MX-G2) 5000 K.csv', y_unit, delimiter=',', header=0
         )
-    
-    
+
+
     def calc_integrated_photonflux(self, start: float | None = None, stop: float | None = None) -> Any:
-        
+
         """
         Calculates photon flux from self.x=start to self.x=stop. self.x values have to be equidistant. Standard is from min(self.x) to max(self.x).
         """
@@ -1037,25 +1040,25 @@ class DiffSpectrum(Spectrum):
             start_x = min(self.x)
         else:
             start_x = start
-        
+
         if stop is None:
             stop_x = max(self.x)
         else:
             stop_x = stop
-            
+
         index_start = findind(self.x, start_x)
         index_stop = findind(self.x, stop_x)
         r = range(index_start, index_stop+1)
-        
+
         dx = (max(self.x) - min(self.x)) / (len(self.x) - 1)
 
         return np.trapezoid(self.y[r], dx = dx)  # type: ignore
-    
+
     def photonflux(self, start: float | None=None, stop: float | None=None) -> Any:
         """Old alias for calc_integrated_photonflux; prefer that method."""
         return self.calc_integrated_photonflux(start=start, stop=stop)
-    
-    
+
+
     def calc_illuminance(self) -> Any:
         """
         Calculates the illuminance in lx.
@@ -1080,9 +1083,9 @@ class DiffSpectrum(Spectrum):
                 print('Attention (calc_lux): This function works only for spectral irradiances in W/[m2 nm] or photon flux in 1/[s m2 nm],')
                 print('or for spectral illuminance in lm/[m2 nm] or lx/nm!')
         else:
-            print('Attention(calc_lux): This function works only if ux = nm!')            
- 
-    
+            print('Attention(calc_lux): This function works only if ux = nm!')
+
+
     def normalize_to_lux(self, lx: Any) -> Any:
         """
         Normalizes self to lx.
@@ -1090,8 +1093,8 @@ class DiffSpectrum(Spectrum):
         """
         ill = self.calc_illuminance()
         self.y = self.y/ill*lx
-        
-        
+
+
     def calc_irradiance(self) -> Any:
         """
         Calculates the irradiance in W/m2 of an irradiance Spectrum.
@@ -1109,8 +1112,8 @@ class DiffSpectrum(Spectrum):
 
             print('Attention (calc_irradiance): uy has to be either in W/[m2 nm] or W/[m2 eV] and ux in nm or eV, respectively!')
             print(f'Your ux is {self.ux} ({self.qx}) and your uy is {self.uy} ({self.qy})')
-        
-    
+
+
     #Black body spectral photon flux in 1/(s m2 J), energy in Joule
     @staticmethod
     def phi_bb(E: float, T: float) -> Any:
@@ -1165,8 +1168,8 @@ class DiffSpectrum(Spectrum):
         quants = {"x": "Photon energy", "y": "BB fit"}
         units = {"x": "eV", "y": ""}
         name = 'BB Spectrum'
-        return DiffSpectrum(x_eV, BB, quants = quants, units = units, name = name)    
-    
+        return DiffSpectrum(x_eV, BB, quants = quants, units = units, name = name)
+
     def integrated_current(self, EQE: Any | None=None) -> Any:
         """
         Integrated current.
@@ -1189,14 +1192,14 @@ class DiffSpectrum(Spectrum):
         # Works only with photon flux Spectrum
         # EQE in % and as a function fo wavelength
         # if EQE==1 then EQE is assumed 100% throughout the Spectrum
-    
+
         sp = self.copy()
         if EQE is None:
             e = EQESpectrum.eqe100(Eg=0.1)
         else:
             e = EQE.copy()
         left = max(sp.x[0], e.x[0])
-        right = min(sp.x[-1], e.x[-1]) 
+        right = min(sp.x[-1], e.x[-1])
         sp.equidist(left=left, right=right, delta=1)
         e.equidist(left=left, right=right, delta=1)
         sp_times_e = sp*e/100
@@ -1219,10 +1222,10 @@ class DiffSpectrum(Spectrum):
         """
         # Calculates an integrated irradiance plot as a function of wavelength
         # Works only with spectral irradiance
-    
+
         int_irr_y = np.array([np.trapezoid(self.y[0:idx], dx=self.x[1]-self.x[0])*1e3/1e4 for idx in range(len(self.x))])  # type: ignore
         return DiffSpectrum(x=self.x, y=int_irr_y, quants=dict(x='Wavelength', y='Integrated irradiance'), units=dict(x='nm', y='mW/cm2'))
-    
+
 
     def calculate_irradiance_illuminance(self, left: float=400, right: float=720, show: bool=True) -> Any:
         """
@@ -1256,12 +1259,12 @@ class DiffSpectrum(Spectrum):
             print(f'The irradiance is {irr:.3e} mW/cm2')
             print(f'The illuminance is {ill:.0f} lx')
         return irr, ill
-    
-class PELSpectrum(DiffSpectrum):   
+
+class PELSpectrum(DiffSpectrum):
     """
     PL or EL Spectrum.
     """
-    
+
     def __init__(self, x: np.ndarray, y: np.ndarray, quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": "", "y": ""}, name: str = '', plotstyle: str = dict(linestyle = '-', color = 'black', linewidth = 3), check_data: bool = True) -> None:  # type: ignore
         """
         Initialize the object.
@@ -1288,8 +1291,8 @@ class PELSpectrum(DiffSpectrum):
         >>> obj.__init__()
         """
         super().__init__(x, y, quants, units, name, plotstyle, check_data = check_data)
-        
-        
+
+
     def absorptance(self, bb: Any, eV: Any, a_eV: Any) -> Any:
         """
         Calculates the absorptance Spectrum from a PL/EL Spectrum (self) by dividing self with the blackbody Spectrum (BB).
@@ -1303,8 +1306,8 @@ class PELSpectrum(DiffSpectrum):
             ab = AbsSpectrum(self.x, self.y / bb.y, quants = {"x": self.qx, "y": "Absorptance"}, units = {"x": self.ux, "y": ""}, name = 'Absorptance')  # type: ignore
             ab.y = ab.y / ab.y_of(eV) * a_eV
         return ab
-    
-    
+
+
     def bbt_fit(self, Efit_start: Any, Efit_stop: Any, Tguess: Any = 300) -> Any:
         """
         Calculates the high energy tail fit with BB temperature, returns the fitcurve as an instance of the class "Spectrum".
@@ -1316,25 +1319,25 @@ class PELSpectrum(DiffSpectrum):
         r = range(self.x_idx_of(Efit_start), self.x_idx_of(Efit_stop)+1)
         Efit_middle = (Efit_stop + Efit_start) / 2
         A0 = self.y_of(Efit_middle) / f(Efit_middle, Tguess, 1)
-        p0 = (Tguess, A0) 
+        p0 = (Tguess, A0)
         try:
             popt, pcov = curve_fit(f, self.x[r], self.y[r], p0)
         except RuntimeError:
             popt = p0
             print("Fit didn't converge, Tguess taken!")
-        
+
         T = popt[0] #K
         name = f'Fit: $T$ = {T:.1e} K'
         T_fit = Spectrum(self.x, f(self.x, *popt), quants = {"x": self.qx, "y": "Blackbody fit"}, units = {"x": self.ux, "y": self.uy}, name = name)
         T_fit.T = T  # type: ignore
         return T_fit
-        
+
 
 class Spectra(MXYData):
     """
     Container class for Spectra data and operations.
     """
-    
+
     def __init__(self, sa: Any) -> None:
         """
         Initialize the object.
@@ -1349,7 +1352,7 @@ class Spectra(MXYData):
         >>> obj.__init__()
         """
         super().__init__(sa)
-        
+
     @classmethod
     def generate_empty(cls, empty_spectra_list: Any=[]) -> Any:
         """
@@ -1369,9 +1372,9 @@ class Spectra(MXYData):
         --------
         >>> obj.generate_empty()
         """
-        return cls(empty_spectra_list)   
-        
-                
+        return cls(empty_spectra_list)
+
+
     def replace(self, idx: int, sp_new: Any) -> Any:
         """
         Replace.
@@ -1393,7 +1396,7 @@ class Spectra(MXYData):
         >>> obj.replace()
         """
         self.sa[idx] = sp_new
-        
+
     def remain(self, idx_list: Any) -> Any:
         """
         Return a copy trimmed to the interval [left, right].
@@ -1403,7 +1406,7 @@ class Spectra(MXYData):
         for i, idx in enumerate(idx_list):
             new = new_sa.sa[idx].copy()
             sa.append(new)
-            
+
         new_sa.sa = sa
         new_sa.names_to_label(split_ch = '.csv')
         return new_sa
@@ -1442,12 +1445,12 @@ class Spectra(MXYData):
         spectra_eV = []
         for i, spectrum_nm in enumerate(self.sa):
             spectra_eV.append(spectrum_nm.nm_to_ev())
-            
+
         spa_new = self.copy()
         spa_new.sa = spectra_eV
-    
+
         return spa_new
-            
+
     def save(self, save_dir: str, filepath: str) -> None:  # type: ignore
         """
         Save.
@@ -1463,44 +1466,44 @@ class Spectra(MXYData):
         --------
         >>> obj.save()
         """
-        
+
         if not(self.all_spectra_have_same_x_range()):
-            
+
             print('Warning: Data have not the same x range, data is not saved!')
 
         else:
-            
+
             alldata = np.zeros((self.n_x, self.n_y + 1), dtype = float) # Initialize array
             alldata[:,0] = self.sa[0].x
-            
+
             x_col_name = self.sa[0].qx
             if self.sa[0].ux != "":
                 x_col_name = x_col_name + f' ({self.sa[0].ux})'
-            
-            columns = [x_col_name] 
-            
+
+            columns = [x_col_name]
+
             for i, dat in enumerate(self.sa):
                 alldata[:,i + 1] = dat.y
                 y_col_name = self.sa[i].qy
                 if self.sa[i].uy != "":
                     y_col_name = y_col_name + f' ({self.sa[i].uy})'
-                columns.append(y_col_name) 
-                
+                columns.append(y_col_name)
+
             df = pd.DataFrame(data=alldata[0:,0:], columns = columns)
-                            
+
             TFN = join(save_dir, filepath)
             if save_ok(TFN):
                 df.to_csv(join(save_dir, filepath), header = True, index = False)
-                
+
     @staticmethod
     def load_multiple(directory: str, filepath: str, delimiter: str = ',', header: int = 'infer', quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": "", "y": ""}, take_quants_and_units_from_file: str = False) -> Any:  # type: ignore
 
         """
         Loads multiple Spectra, all Spectra in one file filepath.
         """
-        
+
         dat = pd.read_csv(join(directory, filepath), delimiter = delimiter, header = header)
-        
+
         npdat = np.array(dat, dtype = np.float64)
         x = npdat[:,0]
 
@@ -1509,7 +1512,7 @@ class Spectra(MXYData):
 
             y = np.array(dat, dtype = np.float64)[:,i+1]
             sp = Spectrum(x, y, quants, units, filepath)
-       
+
             if take_quants_and_units_from_file:
 
                 col0 = list(dat)[0]
@@ -1523,11 +1526,11 @@ class Spectra(MXYData):
                     sp.uy = col1.split(' (')[1].split(')')[0]
 
             sa.append(sp)
-            
+
             new_spectra = Spectra(sa)
 
         return new_spectra
-    
+
     @classmethod
     def load_individual(cls, directory: str, FNs: str = [], delimiter: str = ',', header: int = 'infer', quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": "", "y": ""}, take_quants_and_units_from_file: str = False, check_data: bool = False) -> Any:  # type: ignore
 
@@ -1537,11 +1540,11 @@ class Spectra(MXYData):
         if len(FNs) == 0:
             FNs = listdir(directory)  # type: ignore
         sa = []
-        
+
         for i, filepath in enumerate(FNs):
-            
+
             dat = pd.read_csv(join(directory, filepath), delimiter = delimiter, header = header)
-            
+
             npdat = np.array(dat, dtype = np.float64)
             x = npdat[:,0]
             y = npdat[:,1]
@@ -1554,7 +1557,7 @@ class Spectra(MXYData):
                 sp = DiffSpectrum(x, y, quants, units, filepath, check_data = False)
             elif cls.__name__ == 'PELSpectra':
                 sp = PELSpectrum(x, y, quants, units, filepath, check_data = False)
-       
+
             if take_quants_and_units_from_file:
 
                 col0 = list(dat)[0]
@@ -1567,13 +1570,13 @@ class Spectra(MXYData):
                 if ' (' in col1:
                     sp.uy = col1.split(' (')[1].split(')')[0]
 
-            sa.append(sp)    
-            
+            sa.append(sp)
+
         result = cls(sa)
-    
+
         return result
-       
-                
+
+
     def save_names(self, save_dir: str, filepath: str) -> Any:
         """
         Save names.
@@ -1600,8 +1603,8 @@ class Spectra(MXYData):
             for i, sp in enumerate(self.sa):
                 names.append(sp.name)
             with open(join(save_dir, filepath), 'w') as f:
-                f.write("\n".join(names))    
-                
+                f.write("\n".join(names))
+
     def load_names(self, directory: str, filepath: str) -> Any:
         """
         Load names.
@@ -1628,20 +1631,20 @@ class Spectra(MXYData):
             FN_list = FNstring.split("\n")
         for i, sp in enumerate(self.sa):
             sp.name = FN_list[i]
-            
-    
+
+
     def all_spectra_have_same_x_range(self) -> Any:
         """
         Returns True if all Spectra have the same x-range, otherwise False.
         """
         same_range = True
-        
+
         for i, spec in enumerate(self.sa):
             if not(np.array_equal(spec.x, self.sa[0].x)):
                 same_range = False
         return same_range
-    
-    
+
+
     def equidist(self, left: float, right: float, delta: float, kind: str='cubic') -> None:  # type: ignore
         """
         Change x values so that they are equidistant with a delta of delta for all Spectra in the same way. 
@@ -1650,25 +1653,25 @@ class Spectra(MXYData):
         """
         if not(Spectra.all_spectra_have_same_x_range(self)):
             print('Warning: Not all Spectra have the same x-range!')
-            
+
         for i, spec in enumerate(self.sa):
             spec.equidist(left = left, right = right, delta = delta, kind=kind)
-            
+
             self.n_y = len(self.sa)
             self.n_x = len(self.sa[0].x)
-           
+
     @classmethod
     def load_andor(cls, directory: str, meta_data: np.ndarray | None = None, sel_list: Any | None = None) -> Any:
-    
+
         """
         Loads all Andor Spectra in the directory.
         """
-    
+
         FNs = listdir(directory)
-        
+
         if sel_list is not None:
             FNs = [FNs[idx] for idx in sel_list]
-        
+
         sa = []
         for i, filepath in enumerate(FNs):
             if cls.__name__ == 'Spectra':
@@ -1677,15 +1680,15 @@ class Spectra(MXYData):
                 sa.append(DiffSpectrum.load_andor(directory, filepath, meta_data = meta_data))
             if cls.__name__ == 'PELSpectra':
                 sa.append(PELSpectrum.load_andor(directory, filepath, meta_data = meta_data))
-                
+
         return cls(sa)
-    
+
 
 class AbsSpectra(Spectra):
     """
     Container class for AbsSpectra data and operations.
     """
-    
+
     def __init__(self, sa: Any) -> None:
         """
         Initialize the object.
@@ -1701,12 +1704,12 @@ class AbsSpectra(Spectra):
         """
         super().__init__(sa)
 
-            
+
 class DiffSpectra(Spectra):
     """
     Container class for DiffSpectra data and operations.
     """
-    
+
     def __init__(self, sa: Any) -> None:
         """
         Initialize the object.
@@ -1721,13 +1724,13 @@ class DiffSpectra(Spectra):
         >>> obj.__init__()
         """
         super().__init__(sa)
-        
-    
+
+
 class PELSpectra(DiffSpectra):
     """
     Container class for PELSpectra data and operations.
     """
-    
+
     def __init__(self, sa: Any) -> None:
         """
         Initialize the object.
@@ -1742,8 +1745,8 @@ class PELSpectra(DiffSpectra):
         >>> obj.__init__()
         """
         super().__init__(sa)
-        
-    
+
+
     def calc_calfn(self, calspec: Any) -> Any:
         """
         Calculate calfn.
@@ -1767,46 +1770,46 @@ class PELSpectra(DiffSpectra):
         for i, sp in enumerate(self.sa):
             # make sure that there are no negatve values and no 0 values
             sp.y = np.array([abs(z) if z !=0 else np.average(sp.y) for z in sp.y], dtype = float)
-            calib.append(PELSpectrum(sp.x, int_arr(calspec.x, calspec.y, sp.x) / sp.y, 
-                                  quants = {"x": "Wavelength", "y": "Calibration factor"}, 
+            calib.append(PELSpectrum(sp.x, int_arr(calspec.x, calspec.y, sp.x) / sp.y,
+                                  quants = {"x": "Wavelength", "y": "Calibration factor"},
                                   units = {"x": "nm", "y": "1/[cps s m2 nm]"}, name = sp.name))
         return PELSpectra(calib)
 
-            
+
     def calibrate_single(self, calib: Any) -> Any:
-        
+
         """
         Calibrates all PL Spectra with the calibration function calib.
         """
-    
+
         calibrated = []
         for i, rawPLspectrum in enumerate(self.sa):
-            calibrated_spectrum = PELSpectrum(rawPLspectrum.x, rawPLspectrum.y * int_arr(calib.x, calib.y, rawPLspectrum.x), 
+            calibrated_spectrum = PELSpectrum(rawPLspectrum.x, rawPLspectrum.y * int_arr(calib.x, calib.y, rawPLspectrum.x),
                                            quants = {"x": "Wavelength", "y": "Spectral photon flux"}, units = {"x": "nm", "y": "1/[s m2 nm]"}, name = rawPLspectrum.name)
             calibrated.append(calibrated_spectrum)
-            
+
         return PELSpectra(calibrated)
 
     def calibrate(self, calib: Any, check: Any = False) -> Any:
-        
+
         """
         Calibrates all PL Spectra with the respective calibration function calib.
         check: True if the calibration function should be printed for each Spectrum. 
         """
 
         def right_cal_fn(rawPLsp: Any, calsp: Any) -> Any:
-            
+
             result = False
             PLn = rawPLsp.name
             caln = calsp.name
             # if ip or fs in both
-            if caln.split('--')[1] in PLn.split('--')[1]: 
+            if caln.split('--')[1] in PLn.split('--')[1]:
                 # same grating
-                if caln.split('--Andor')[1].split('_')[3] == PLn.split('--Andor')[1].split('_')[3]: 
+                if caln.split('--Andor')[1].split('_')[3] == PLn.split('--Andor')[1].split('_')[3]:
                     # same center wavelength
-                    if caln.split('--Andor')[1].split('_')[4] == PLn.split('--Andor')[1].split('_')[4]: 
+                    if caln.split('--Andor')[1].split('_')[4] == PLn.split('--Andor')[1].split('_')[4]:
                         # same filter
-                        if caln.split('--Andor')[1].split('_')[-1] == PLn.split('--Andor')[1].split('_')[-1]:                     
+                        if caln.split('--Andor')[1].split('_')[-1] == PLn.split('--Andor')[1].split('_')[-1]:
                             result = True
             return result
 
@@ -1816,7 +1819,7 @@ class PELSpectra(DiffSpectra):
 
             for j, calsp in enumerate(calib.sa):
                 if right_cal_fn(rawPLsp, calsp):
-                    calibrated_spectrum = PELSpectrum(rawPLsp.x, rawPLsp.y * int_arr(calsp.x, calsp.y, rawPLsp.x), 
+                    calibrated_spectrum = PELSpectrum(rawPLsp.x, rawPLsp.y * int_arr(calsp.x, calsp.y, rawPLsp.x),
                                                    quants = {"x": "Wavelength", "y": "Spectral photon flux"}, units = {"x": "nm", "y": "1/[s m2 nm]"}, name = rawPLsp.name)
                     calibrated.append(calibrated_spectrum)
                     calib_ok = True
@@ -1824,9 +1827,9 @@ class PELSpectra(DiffSpectra):
                         print(f'{rawPLsp.name}: {calsp.name}')
             if not(calib_ok):
                 print(f'Warning: No adequate calibration function found for {rawPLsp.name}.')
-            
+
         return PELSpectra(calibrated)
-        
+
     def choose_for_plqy(self, name: str, laser_marker: Any, PL_marker: Any) -> Any:
         """
         All Spectra with name in its name will be put into a new instance of Spectra.
@@ -1842,11 +1845,11 @@ class PELSpectra(DiffSpectra):
         sa = []
         sa_idx = 0
         expl = {}  # type: ignore
-        
+
         for i, sp in enumerate(self.sa):
-                                        
+
             if 'ip_laser' in sp.name:
-                
+
                 if laser_marker in sp.name:
 
                     sa.append(sp)
@@ -1858,10 +1861,10 @@ class PELSpectra(DiffSpectra):
                     sa.append(sp)
                     expl.update(Pa = sa_idx)
                     sa_idx += 1
-                    
-            
+
+
             if name == sp.name.split('--')[0]:
-                
+
                 if laser_marker in sp.name:
 
                     if 'outofbeam' in sp.name:
@@ -1872,9 +1875,9 @@ class PELSpectra(DiffSpectra):
                         sa.append(sp)
                         expl.update(Lc = sa_idx)
                         sa_idx += 1
-                        
+
                 if PL_marker in sp.name:
-                    
+
                     if 'outofbeam' in sp.name:
                         sa.append(sp)
                         expl.update(Pb = sa_idx)
@@ -1883,23 +1886,23 @@ class PELSpectra(DiffSpectra):
                         sa.append(sp)
                         expl.update(Pc = sa_idx)
                         sa_idx += 1
-                        
+
                 if '--fs--' in sp.name:
                     sa.append(sp)
                     expl.update(P_fs = sa_idx)
                     sa_idx += 1
-        
+
         PLQY_sa = PELSpectra(sa)
         PLQY_sa.expl =expl  # type: ignore
-        
+
         lab = [None] * len(expl)
         #embed()
         for i, (l, v) in enumerate(expl.items()):
             lab[v] = l
-            
+
         PLQY_sa.label(lab)
         return PLQY_sa
-    
+
     def calc_plqy_param(self, laser_marker: Any, left_laser: Any, right_laser: Any, PL_marker: Any, left_PL: Any, right_PL: Any, eval_Pa: Any = False, eval_Pb: Any = True, show_errmsg: bool = True) -> Any:
         """
         Calculate plqy parameters.
@@ -1934,7 +1937,7 @@ class PELSpectra(DiffSpectra):
         --------
         >>> obj.calc_plqy_param()
         """
-        
+
         if 'La' in self.expl:  # type: ignore
             La = self.sa[self.expl['La']].photonflux(start = left_laser, stop = right_laser)  # type: ignore
         else:
@@ -1972,19 +1975,19 @@ class PELSpectra(DiffSpectra):
 
         if 'Pc' in self.expl:  # type: ignore
             Pc = self.sa[self.expl['Pc']].photonflux(start = left_PL, stop = right_PL)  # type: ignore
-    
+
         else:
             Pc = 0
             if show_errmsg:
                 print('Attention: No Pc signal!')
-         
+
         Pb = Pb - Pa
         Pc = Pc - Pa
         A = 1 - Lc/Lb
         PLQY = (Pc - (1 - A) * Pb) / (La * A)
 
         return (PLQY, A, La, Lb, Lc, Pa, Pb, Pc)
-    
+
     def guess_factor(self, left: float, right: float) -> Any:
         """
         Returns the inbeam-free space adjustment factor.
@@ -1992,21 +1995,21 @@ class PELSpectra(DiffSpectra):
         self.sa[1] has to be the fs Spectrum.
         Both Spectra have to have the same x array.
         """
-        
+
         scpy = self.copy()
-        delta = self.sa[0].x[1] - self.sa[0].x[0] 
+        delta = self.sa[0].x[1] - self.sa[0].x[0]
         scpy.equidist(left = left, right = right, delta = delta)
 
-        #r = range(findind(self.sa[0].x, left), findind(self.sa[0].x, right)+1)        
+        #r = range(findind(self.sa[0].x, left), findind(self.sa[0].x, right)+1)
 
-        def f(fac: float) -> Any: 
+        def f(fac: float) -> Any:
             diff = scpy.sa[0].y - fac * scpy.sa[1].y
             return math.sqrt(1/len(diff) * np.dot(diff, diff))
-            
+
         result = least_squares(fun = f, x0 = [1])
-        
+
         return result.x[0]
-        
+
     def udata_plot(self, overlap: Any, yscale: str = 'log', left: float | None = None, right: float | None = None, save: bool = False, save_dir: str = '', save_name: str | None = None, return_fig: bool = False, show_plot: bool = True) -> Any:
         """
         Udata plot.
@@ -2053,26 +2056,26 @@ class PELSpectra(DiffSpectra):
         uf.plotstyle = dict(linestyle = '--', color = 'lawngreen', linewidth = 5)
         sp.plotstyle = dict(linestyle = '-', color = 'red', linewidth = 3)
         bb.plotstyle = dict(linestyle = '-', color = 'blue', linewidth = 3)
-        
+
         sa = Spectra([ab, uf, sp, bb])
         sa.label(['Absorptance', 'Exponential fit', 'Luminescence', 'Blackbody radiation'])
-        
+
         graph = sa.plot(yscale = yscale, left = left, right = right, bottom = ab.y_of(left), top = ab.y_of(overlap) * 4, plotstyle = 'not auto', return_fig = return_fig, show_plot = show_plot)  # type: ignore
-        
+
         if save:
             if save_name is None:
                 filepath = 'Urbach_data.csv'
             else:
                 filepath = save_name
-            sa.save(save_dir, filepath) 
-            
+            sa.save(save_dir, filepath)
+
         if return_fig:
             return(graph)
-            
-            
 
-            
-            
+
+
+
+
 
 def above_bg_photon_flux(bg: float, illumspec_eV: Any | None = None) -> Any:
     """
@@ -2088,10 +2091,10 @@ def above_bg_photon_flux(bg: float, illumspec_eV: Any | None = None) -> Any:
     Above bandgap photon flux in 1/[s m2].
 
     """
-        
+
     if illumspec_eV is None:
         illumspec_eV = DiffSpectrum.am15_ev()
-        
+
     return illumspec_eV.photonflux(start = bg, stop = illumspec_eV.x[-1])
 
 
@@ -2105,26 +2108,26 @@ def calc_laser_power(laser_nm: np.ndarray, bg_eV: Any | None = None, pf: Any | N
         Nsun: Number of suns
         example: calc_laser_power(660, bg_eV = f1240/800, A = 1e-6, details = True)
         """
-        if (A is None) and (not(laser_nm in [405, 420, 660])):
+        if (A is None) and (laser_nm not in [405, 420, 660]):
             print('Attention (calc_laser_power(): laser_nm has to be either 405, 420 or 660.')
         if Nsun is None:
             Nsun = 1
         if bg_eV is not None:
             pf = above_bg_photon_flux(bg_eV)
-        if A is None:            
+        if A is None:
             #FWHM laser beam diameters
             if laser_nm == 405:
                 A = pi/4 * 533.5e-6 * 715.0e-6 #m2 for 403 nm laser
             elif laser_nm == 420:
                 #A = pi/4 * 418e-6 * 495e-6 #m2 for 422 nm laser, old lab CH G1 522
-                A = pi/4 * 1598.87e-6*1876.48e-6 #m2 for 422 nm laser, new lab CH B1 365, measured October 2023                
+                A = pi/4 * 1598.87e-6*1876.48e-6 #m2 for 422 nm laser, new lab CH B1 365, measured October 2023
             elif laser_nm == 660:
                 #A = pi/4 * 693.0e-6 * 891.0e-6  #m2 for 657 nm laser, old lab CH G1 522
-                A = pi/4 * 1909.56e-6 * 2329.96e-6  #m2 for 657 nm laser, new lab CH B1 365, measured October 2023       
+                A = pi/4 * 1909.56e-6 * 2329.96e-6  #m2 for 657 nm laser, new lab CH B1 365, measured October 2023
             d = math.sqrt(4*A/pi)*1e6  # type: ignore
             if details:
                 print(f'The size of the eliptical laser spot equals a circular diameter of {d:.0f} um')
-            
+
         #Photon energy in J
         PE = f1240/laser_nm * q
 

@@ -1,10 +1,12 @@
 """Thirteenth coverage-boost: EQESpectrum methods, AbsSpectrum.tauc_plot save, TRPL.dlifetime, XYData edges."""
-import warnings
-import tempfile
 import os
+import tempfile
+import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -93,7 +95,7 @@ class TestCalcJscSp:
 
     def test_calc_jsc_with_sp_eqe_eV(self):
         """Lines 295-306: EQE in eV with sp in eV."""
-        from fte_analysis_libraries.Spectrum import EQESpectrum, DiffSpectrum
+        from fte_analysis_libraries.Spectrum import DiffSpectrum, EQESpectrum
         E = np.linspace(1.3, 3.5, 200)
         y = np.where(E > 1.7, 0.8, 0.0)
         eqe = EQESpectrum(E, y, quants={'x': 'Photon energy', 'y': 'EQE'},
@@ -104,7 +106,7 @@ class TestCalcJscSp:
 
     def test_calc_jsc_sp_warn_nm_ux_not_nm(self):
         """Lines 270-275: EQE is nm but sp is eV → prints warning."""
-        from fte_analysis_libraries.Spectrum import EQESpectrum, DiffSpectrum
+        from fte_analysis_libraries.Spectrum import DiffSpectrum, EQESpectrum
         wl = np.linspace(300, 800, 200)
         y = np.where(wl < 700, 0.8, 0.0)
         eqe = EQESpectrum(wl, y, quants={'x': 'Wavelength', 'y': 'EQE'},
@@ -121,7 +123,7 @@ class TestCalcJscSp:
 
     def test_calc_jsc_sp_warn_ev_ux_not_ev(self):
         """Lines 295-301: EQE is eV but sp is nm → prints warning."""
-        from fte_analysis_libraries.Spectrum import EQESpectrum, DiffSpectrum
+        from fte_analysis_libraries.Spectrum import DiffSpectrum, EQESpectrum
         E = np.linspace(1.5, 3.5, 200)
         y = np.where(E > 1.7, 0.8, 0.0)
         eqe = EQESpectrum(E, y, quants={'x': 'Photon energy', 'y': 'EQE'},
@@ -236,7 +238,7 @@ class TestIdfacFitPlotrange:
 class TestMTRPLDlifetime:
     def test_mtrpl_dlifetime(self):
         """Lines 1758-1762: MTRPLData.dlifetime calls dlifetime on each trace."""
-        from fte_analysis_libraries.TRPL import TRPLData, MTRPLData
+        from fte_analysis_libraries.TRPL import MTRPLData, TRPLData
         t = np.linspace(0.1, 400, 400)  # avoid 0 for log
         sa = [TRPLData(t, np.exp(-t / tau) + 0.001, name=f'tau{tau}')
               for tau in [80.0, 120.0]]
@@ -273,6 +275,7 @@ class TestXYDataLoadEmptyDir:
     def test_load_with_empty_dir_and_full_path(self):
         """Line 684: filepath_or_directory=='' and filepath is a file path."""
         import pandas as pd
+
         from fte_analysis_libraries.XYdata import XYData
         with tempfile.TemporaryDirectory() as tmp:
             x = np.linspace(0, 5, 20)

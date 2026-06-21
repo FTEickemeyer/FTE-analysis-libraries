@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 # PLQY depends on thot for experiment management; we test only the pure math functions
-from fte_analysis_libraries.General import v_loss, v_sq, qfls, k, T_RT, q
+from fte_analysis_libraries.General import T_RT, k, q, qfls, v_loss, v_sq
 
 
 class TestVLoss:

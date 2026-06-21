@@ -6,25 +6,34 @@ Created on Thu Mar 19 15:01:16 2020
 """
 
 # Import standard libraries and modules
-import os
-from os.path import join
-import math
-import platform
-from importlib.resources import files as _resource_files
-import warnings
 import io
-
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-from scipy.signal import butter,filtfilt, savgol_filter
-from scipy.interpolate import interp1d
-
-from .General import findind, findind_exact, int_arr, save_ok, q, k, T_RT, linfit, idx_range
-from . import General as gen
+import math
+import os
+import platform
+import warnings
+from importlib.resources import files as _resource_files
+from os.path import join
 from typing import Any
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.figure import Figure
+from scipy.interpolate import interp1d
+from scipy.signal import butter, filtfilt, savgol_filter
+
+from . import General as gen
+from .General import (
+    T_RT,
+    findind,
+    findind_exact,
+    idx_range,
+    int_arr,
+    k,
+    linfit,
+    q,
+    save_ok,
+)
 
 system_dir = str(_resource_files('fte_analysis_libraries').joinpath('System_data'))
 
@@ -73,7 +82,7 @@ class XYData:
     """
     Container for a single (x, y) data set with units and plotting helpers.
     """
-    
+
     def __init__(self, x: np.ndarray, y: np.ndarray, quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": None, "y": None}, name: str = '', plotstyle: Any = None, check_data: bool = True) -> None:
         """
         x is a numpy array e.g. the wavelengths or photon energies
@@ -106,7 +115,7 @@ class XYData:
             if not(ok):
                 print('To switch off this message use check_data = False')
 
-        
+
     def _align_with(self, other: Any) -> tuple[Any, Any]:
         """Return grid-aligned copies of self and other over their overlapping x range."""
         s, o = self.copy(), other.copy()
@@ -200,7 +209,7 @@ class XYData:
             s = self.copy()
             s.y = s.y / other
         return s
-            
+
     @classmethod
     def from_df(cls, df: Any, y_col: int= 0, take_quants_and_units_from_df: bool= True, **kwargs) -> Any:
         """
@@ -226,7 +235,7 @@ class XYData:
         """
         #The index is taken as
         #y_col can be either an integer to denote the y_colth column or a column name
-    
+
         if not isinstance(df, pd.core.frame.DataFrame):
             if isinstance(df, pd.core.series.Series):
                 df = df.to_frame()
@@ -234,7 +243,7 @@ class XYData:
                 print(f'Attention df has to be a DataFrame or a Series! However, it is of type {type(df)}')
                 return
         x = df.index.values
-    
+
         if isinstance(y_col, int):
             y_col = df.columns[y_col]
             y = df[y_col].values
@@ -243,7 +252,7 @@ class XYData:
         else:
             y = x*0
             print('Attention (df_to_xy): y_col is not a valid column!')
-    
+
         if take_quants_and_units_from_df:
             qx_ux = df.index.name.split(' (')
             qx = qx_ux[0]
@@ -258,10 +267,10 @@ class XYData:
             else:
                 uy = None
             return cls(x, y, quants= [qx, qy], units= [ux, uy], **kwargs)
-            
+
         else:
             return cls(x, y, **kwargs)
-                
+
     def to_df(self) -> Any:
         """
         Export the XYData as a pandas DataFrame with labelled columns.
@@ -282,7 +291,7 @@ class XYData:
         if self.ux is not None and self.ux != '':
             index_name += f' ({self.ux})'
         return pd.DataFrame({index_name: self.x, col_name: self.y}).set_index(index_name)
-    
+
     def data_check(self) -> Any:
         """
         Validate x/y arrays and optionally sort or trim the data.
@@ -298,7 +307,7 @@ class XYData:
         """
         #Checks if the x-values are in ascending order and if there are nan values.
         #Returns True if data is ok and False if not.
-        #Recommended usage: 
+        #Recommended usage:
         #ok = object.data_check()
         #if not(ok): ...
         ok = True
@@ -315,8 +324,8 @@ class XYData:
             print(f'Attention (data {self.name}): There are nan values in array x or y!')
             print('To remove nan values use function remove_nan().')
         return ok
-        
-        
+
+
     @classmethod
     def generate_empty(cls) -> Any:
         """
@@ -334,7 +343,7 @@ class XYData:
         x = np.array([])
         y = np.array([])
         return cls(x, y)
-        
+
     def copy(self) -> Any:
         """
         Return a deep copy of this object.
@@ -357,7 +366,7 @@ class XYData:
         name = self.name[:]
         plotstyle = self.plotstyle.copy()
         return type(self)(x, y, quants = dict(x = qx, y = qy), units = dict(x = ux, y = uy), name = name, plotstyle = plotstyle, check_data = False)
-        
+
     def y_of(self, x_value: Any, interpolate: Any = False) -> Any:
         """
         Interpolate and return the y value at a given x position.
@@ -385,7 +394,7 @@ class XYData:
             print('Attention: x_value is larger than maximum, y of maximum x used!')
             y = self.y_of(max(self.x))
         else:
-            
+
             if interpolate:
                 f_interp = interp1d(self.x, self.y, 'cubic', bounds_error=False, fill_value=0)
                 y = f_interp(x_value)
@@ -394,15 +403,15 @@ class XYData:
                 y = self.y[idx]
 
         return float(y)
-    
-    
+
+
     def x_idx_of(self, x_value: Any) -> Any:
         """
         Works only for ascending arrays!
         """
         idx = findind(self.x, x_value)
         return idx
-    
+
     def x_of(self, y_value: Any, start: float | None = None,  interpolate: Any = False) -> Any:
         """
         Find the first x_value > start  where self.y = y_value
@@ -412,7 +421,7 @@ class XYData:
             idx_start = 0
         else:
             idx_start = findind(self.x, start)
-        
+
         if interpolate:
             # It is important that self.y is monotonous.
             # Make sure that there are no duplicate y-values:
@@ -423,15 +432,15 @@ class XYData:
             #idx_arr = [0]+[idx+1 for idx in range(len(y_arr)-1) if (y_arr[idx+1] != y_arr[idx])]
             x_arr_new = np.array([x_arr[idx_arr[idx]] for idx in range(len(idx_arr))])
             y_arr_new = np.array([y_arr[idx_arr[idx]] for idx in range(len(idx_arr))], dtype = np.float64)
-     
+
             f_interp = interp1d(y_arr_new, x_arr_new, 'cubic', bounds_error=False, fill_value=0)
-            x = f_interp(y_value)                
+            x = f_interp(y_value)
         else:
             x = self.x[idx_start + findind_exact(self.y[idx_start:], y_value)]
 
         return float(x)
 
-    
+
     def normalize(self, x_lim: Any | None = None, norm_val: float = 1) -> None:
         """
         Normalise y so that its maximum (or a chosen point) equals norm_val.
@@ -453,16 +462,16 @@ class XYData:
             idx_min = self.x_idx_of(x_lim[0])
             idx_max = self.x_idx_of(x_lim[1])
             r = range(idx_min, idx_max+1)
-            
+
         if r != range(0,0):
             self.y = self.y / max(self.y[r]) * norm_val
-        
+
     def equidist(self, left: float | None = None, right: float | None = None, delta: float = 0.1, kind: str = 'cubic') -> None:
         """
         Resample y onto an equidistant x grid.
         If left (right) = None then the new left (right) value is the old one.
         """
-        
+
         if left is None:
             #min_x = math.ceil(min(self.x))
             min_x = min(self.x)
@@ -470,15 +479,15 @@ class XYData:
             min_x = left
         if right is None:
             max_x = max(self.x)
-        else: 
+        else:
             max_x = right
-        
-        
+
+
         #new_x = np.arange(min_x, max_x, delta) # does not give exactly evenly spaced x-values
         new_x = np.linspace(min_x, max_x, int(round((max_x-min_x)/delta)+1))
         self.y = int_arr(self.x, self.y, new_x, kind = kind)
         self.x = new_x
-    
+
     def quants(self) -> Any:
         """
         Return the (x_quantity, y_quantity) axis label strings.
@@ -493,7 +502,7 @@ class XYData:
         >>> obj.quants()
         """
         return dict(x=self.qx, y=self.qy)
-    
+
     def units(self) -> Any:
         """
         Return the (x_unit, y_unit) string tuple.
@@ -508,7 +517,7 @@ class XYData:
         >>> obj.units()
         """
         return dict(x=self.ux, y=self.uy)
-    
+
     def qy_uy(self, qy: Any, uy: Any) -> None:
         """
         Return the (y_quantity, y_unit) strings for the y axis.
@@ -526,10 +535,10 @@ class XYData:
         """
         self.qy = qy
         self.uy = uy
-        
-    def plot(self, title: str = 'self.name', ax: Any | None= None, xscale: str = 'linear', yscale: str = 'linear', 
+
+    def plot(self, title: str = 'self.name', ax: Any | None= None, xscale: str = 'linear', yscale: str = 'linear',
              left: float | None = None, right: float | None = None, bottom: float | None = None, divisor: float | None = None, top: float | None = None,
-             plot_table: bool = False, cell_text: Any | None = None, row_labels: Any | None = None, 
+             plot_table: bool = False, cell_text: Any | None = None, row_labels: Any | None = None,
              hline: Any | None = None, hline_colors: Any | None = None, vline: Any | None = None, vline_colors: Any | None = None, figsize: Any=(9,6), return_fig: bool = False, show_plot: bool = True, create_image_stream: bool= False) -> None:
         """
         Plots the x and y data.
@@ -541,7 +550,7 @@ class XYData:
                     e.g. by %matplotlib qt in jupyterlab (%matplotlib inline doesn't work').
                     if show_plot == False and retrun_fig == True: It is important to close the figure with matplotlib.pyplot.plt.close(Figure), otherwise it will be shown.
         """
-        
+
         if ax is not None:
             show_plot = False
 
@@ -559,22 +568,22 @@ class XYData:
             ax.set_xlim(left = left)
         if right is not None:
             ax.set_xlim(right = right)
-            
+
         if bottom is not None:
             if top is None:
                 bottom_, top = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
                 #top = max(self.y) + 0.1 * abs(max(self.y))
             ax.set_ylim(bottom = bottom, top = top)
-            
+
         if top is not None:
             if bottom is None:
                 bottom, top_ = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
                 #bottom = min(self.y) - 0.1 * abs(min(self.y))
             ax.set_ylim(bottom = bottom, top = top)
-            
+
         if (bottom is None) and (top is None):
             bottom, top = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
-            ax.set_ylim(bottom = bottom, top = top)   
+            ax.set_ylim(bottom = bottom, top = top)
 
         ax.plot(self.x, self.y, **self.plotstyle)
 
@@ -582,12 +591,12 @@ class XYData:
             ax.set_xlabel(f'{self.qx} ({self.ux})')
         else:
             ax.set_xlabel(f'{self.qx}')
-            
+
         if self.uy is not None and self.uy != '':
             ax.set_ylabel(f'{self.qy} ({self.uy})')
         else:
             ax.set_ylabel(f'{self.qy}')
-            
+
         if title == 'self.name':
             ax.set_title(self.name)
         else:
@@ -599,9 +608,9 @@ class XYData:
             the_table.auto_set_font_size(False)
             the_table.set_fontsize(12)
             the_table.scale(1, 5)
-            
+
         _draw_hlines_vlines(ax, hline, hline_colors, vline, vline_colors)
-            
+
         if create_image_stream:
             image_stream = io.BytesIO()
             plt.savefig(image_stream)
@@ -612,11 +621,11 @@ class XYData:
         #plt.legend()
         if show_plot:
             plt.show()
-            
+
         if return_fig:
             return fig  # type: ignore
 
-        
+
     def plot_linfit(self, von: Any | None = None, bis: Any | None = None, residue: Any = False, return_data: bool = False) -> Any:
         """
         Plot data with a linear fit overlaid and residuals optionally shown.
@@ -641,7 +650,7 @@ class XYData:
         --------
         >>> obj.plot_linfit()
         """
-        
+
         if von is None:
             von = min(self.x)
         if bis is None:
@@ -667,16 +676,16 @@ class XYData:
             both.plot()
             if return_data:
                 return both
-    
+
     @classmethod
-    def load(cls, filepath_or_directory: str, filepath: str = '', delimiter: str = ',', columns: Any=(0, 1), header: Any = 'infer', 
+    def load(cls, filepath_or_directory: str, filepath: str = '', delimiter: str = ',', columns: Any=(0, 1), header: Any = 'infer',
              quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": "", "y": ""}, take_quants_and_units_from_file: bool = False,  check_data: bool = True, name: str | None=None) -> Any:
 
         """
         Loads a single xy data. If a filename is given it will be used, if not the first file in the directory will be used.
         colunns: tuple which indicates which column is x and which is y.
         """
-        
+
         if (filepath == '') and os.path.isdir(filepath_or_directory):
             filepath = os.listdir(filepath_or_directory)[0]
             file = join(filepath_or_directory, filepath)
@@ -690,32 +699,32 @@ class XYData:
             warnings.warn("Attention: Not a valid file or directory!")
             return
 
-            
+
         #print(file)
         windows_long_file_prefix = '\\\\?\\'
-        
+
         if (
             ( platform.system() == 'Windows' ) and
             ( len( file ) > 255 ) and
             ( not file.startswith( windows_long_file_prefix ) )
         ):
             file = windows_long_file_prefix + file
-        
+
         dat = pd.read_csv(file, delimiter = delimiter, header = header)
-        
+
         #The conversion to np.float64 should be done after the conversion into an should be done
         #after the np.array() function. Then it is possible to also read in data where some columns
         #contain text.
         x = np.array(dat)[:,columns[0]].astype(np.float64)
         y = np.array(dat)[:,columns[1]].astype(np.float64)
-        
+
         qx = quants["x"]
         qy = quants["y"]
         ux = units["x"]
         uy = units["y"]
-                
+
         if take_quants_and_units_from_file:
-            
+
             col0 = list(dat)[0]
             qx = col0.split(' (')[0]
             if ' (' in col0:
@@ -725,12 +734,12 @@ class XYData:
             qy = col1.split(' (')[0]
             if ' (' in col1:
                 uy = col1.split(' (')[1].split(')')[0]
-                
+
         if name is None:
             name = filepath
-        
+
         return cls(x, y, quants = dict(x = qx, y = qy), units = dict(x = ux, y = uy), name = name,  check_data = check_data)
-    
+
     def save(self, save_dir: str, filepath: str, check_existing: Any = True) -> None:
         """
         Save the data to a CSV file, prompting before overwriting.
@@ -748,10 +757,10 @@ class XYData:
         --------
         >>> obj.save()
         """
-        
+
         x_col_name = self.qx
         y_col_name = self.qy
-        
+
         if self.ux != "":
             x_col_name = x_col_name + f' ({self.ux})'
 
@@ -765,7 +774,7 @@ class XYData:
                 df.to_csv(TFN, header = True, index = False)
         else:
             df.to_csv(TFN, header = True, index = False)
-    
+
     def lowpass_filter(self, test: Any = False, yscale: str = 'log', left: float | None = None, right: float | None = None, T: float = 5.0, fs: Any = 30.0, cutoff: Any = 0.7, order: Any = 2, filter_only_from_left_to_right: Any = False) -> Any:
         """
         Apply a Butterworth low-pass filter to remove high-frequency noise.
@@ -800,24 +809,24 @@ class XYData:
         --------
         >>> obj.lowpass_filter()
         """
-    
+
         # Filter requirements.
         #T = 5.0         # Sample Period
         #fs = 30.0       # sample rate, Hz
         #cutoff = 0.7      # desired cutoff frequency of the filter, Hz ,      slightly higher than actual 1.2 Hz
         nyq = 0.5 * fs  # Nyquist Frequency
         #order = 2       # sin wave can be approx represented as quadratic
-    
+
         def butter_lowpass_filter(data: Any, cutoff: Any, fs: Any, order: Any) -> Any:
             normal_cutoff = cutoff / nyq
-            # Get the filter coefficients 
+            # Get the filter coefficients
             b, a = butter(order, normal_cutoff, btype='low', analog=False)
             y = filtfilt(b, a, data)
             return y
-    
+
         # Filter the data, and plot both the original and filtered signals.
         data = self.y.copy()
-    
+
         if filter_only_from_left_to_right:
             r = range(findind(self.x, left), findind(self.x, right)+1)
             y = self.y.copy()
@@ -825,7 +834,7 @@ class XYData:
 
         else:
             y = butter_lowpass_filter(data, cutoff, fs, order)
-        
+
         if test == True:
             xy_filt = self.copy()
             xy_filt.y = y
@@ -841,7 +850,7 @@ class XYData:
                 mxy.plot(yscale = yscale, title = 'Check if filter is ok')
         elif test == False:
             self.y = y
-            
+
     def savgol(self, n1: int = 51, n2: int = 1, name: str | None = None) -> Any:
         """
         Smooth y data with a Savitzky-Golay filter.
@@ -864,15 +873,15 @@ class XYData:
         --------
         >>> obj.savgol()
         """
-            
+
         sgf = self.copy()
         sgf.y = savgol_filter(self.y, n1, n2)
 
         if name is not None:
             sgf.name = name
-                
-        return sgf 
-    
+
+        return sgf
+
     def residual(self, other: Any, left: float | None = None, right: float | None = None, relative: Any = False) -> Any:
         """
         Return the (weighted) residual between data and a reference array.
@@ -898,20 +907,20 @@ class XYData:
         >>> obj.residual()
         """
         #Attention: selv and other have to have the same x_values!
-        
+
         d = self.copy()
-        
+
         if left is None:
             left = min(self.x)
         if right is None:
             right = max(self.x)
-    
+
         le = findind(self.x, left)
         ri = findind(self.x, right)
-    
+
         ra = range(le, ri+1)
         x = self.x[ra]
-    
+
         d.x = x
         #d.y = self.y[ra]/other.y[ra] - 1
         d.y = self.y[ra]-other.y[ra]
@@ -924,7 +933,7 @@ class XYData:
         #d.qy = 'self/other - 1'
         d.uy = ''
         return d
-    
+
     @staticmethod
     def chisquare(data: Any, fit: Any, left: float | None = None, right: float | None = None) -> Any:
         """
@@ -955,16 +964,16 @@ class XYData:
             left = min(data.x)
         if right is None:
             right = max(data.x)
-    
+
         le = findind(data.x, left)
         ri = findind(data.x, right)
-    
+
         ra = range(le, ri+1)
 
         res = data.residual(fit, left = left, right = right)
         #return np.sum(np.array([res.y[i]**2/fit.y[i] for i in range(len(data.y))]))/len(data.y)
         return np.sum(res.y**2/ np.abs(fit.y[ra]))/len(data.y[ra])
-            
+
     def diff(self, left: float | None = None, right: float | None = None) -> Any:
         """
         Compute the numerical derivative dy/dx.
@@ -985,10 +994,10 @@ class XYData:
         --------
         >>> obj.diff()
         """
-        
+
         self_asc = self.copy()
         self_asc.strictly_ascending()
-        
+
         if left is None:
             left = min(self_asc.x)
         if right is None:
@@ -999,15 +1008,15 @@ class XYData:
 
         ra = range(le, ri+1)
         x = self_asc.x[ra]
-        
+
         dydx = np.gradient(self_asc.y[ra], x)
         name = f'First derivative of: {self.name}'
         quants = dict(x = self_asc.qx, y = f'd({self.qy})/d({self.qx})')
         units = dict(x = self_asc.ux, y = f'{self.uy}/{self.ux}')
-                
+
         return type(self_asc)(x, dydx, quants = quants, units = units, name = name)
-    
-           
+
+
     def max_within(self, left: float | None = None, right: float | None = None) -> Any:
         """
         Return the maximum y value within [left, right].
@@ -1019,16 +1028,16 @@ class XYData:
         l = left
         r = right
 
-        if (left is None) or (left < min(self.x)): 
+        if (left is None) or (left < min(self.x)):
             l = min(self.x)
         if (right is None) or (right > max(self.x)):
             r = max(self.x)
 
         ra = range(findind(self.x, l), findind(self.x, r)+1)
-        
-        return max(self.y[ra])    
-    
-    
+
+        return max(self.y[ra])
+
+
     def min_within(self, left: float | None = None, right: float | None = None, absolute: Any = False) -> Any:
         """
         Return the minimum y value within [left, right].
@@ -1040,19 +1049,19 @@ class XYData:
         l = left
         r = right
 
-        if (left is None) or (left < min(self.x)): 
+        if (left is None) or (left < min(self.x)):
             l = min(self.x)
         if (right is None) or (right > max(self.x)):
             r = max(self.x)
 
         ra = range(findind(self.x, l), findind(self.x, r)+1)
-        
+
         if absolute:
             return min(np.absolute(self.y[ra]))
         else:
             return min(self.y[ra])
-        
-    
+
+
     def bottom_top_for_plot(self, left: float | None=None, right: float | None=None, yscale: str='log', divisor: float | None=None) -> Any:
         """
         Returns the minimum and maximum y-value within left < x < right.
@@ -1062,46 +1071,46 @@ class XYData:
         """
         return _bottom_top_for_plot(self, left, right, yscale, divisor)
 
-    
+
     def zero_data(self, left: float | None = None, right: float | None = None) -> None:
         """
         Sets the y-values to zero from x = left to x = right.
         """
-    
+
         l = left
         r = right
-    
-        if (left is None) or (left < min(self.x)): 
+
+        if (left is None) or (left < min(self.x)):
             l = min(self.x)
         if (right is None) or (right > max(self.x)):
             r = max(self.x)
-    
+
         ra = range(findind(self.x, l), findind(self.x, r)+1)
         new = self.copy()
         new.y[ra] = 0
-    
+
         return new
-    
+
     def cut_data_outside(self, left: float | None = None, right: float | None = None) -> Any:
         """
         Remove data points outside [left, right].
         """
-    
+
         l = left
         r = right
-    
-        if (left is None) or (left < min(self.x)): 
+
+        if (left is None) or (left < min(self.x)):
             l = min(self.x)
         if (right is None) or (right > max(self.x)):
             r = max(self.x)
-    
+
         ra = range(findind(self.x, l), findind(self.x, r)+1)
         new = self.copy()
         new.x = new.x[ra]
         new.y = new.y[ra]
-    
+
         return new
-    
+
     def reverse(self) -> Any:
         """
         Reverse.
@@ -1117,7 +1126,7 @@ class XYData:
         """
         self.x = self.x[::-1]
         self.y = self.y[::-1]
-        
+
     def swap_axes(self) -> Any:
         """
         Swap axes.
@@ -1138,7 +1147,7 @@ class XYData:
         new_qy = self.qx
         new_ux = self.uy
         new_uy = self.ux
-        
+
         self_copy.x = new_x
         self_copy.y = new_y
         self_copy.qx = new_qx
@@ -1147,7 +1156,7 @@ class XYData:
         self_copy.uy = new_uy
 
         return self_copy
-        
+
     def remove_nan(self) -> Any:
         """
         Remove nan.
@@ -1164,7 +1173,7 @@ class XYData:
         # Removes all numpy.nan values in self.x and self.y (only gives sensible result if there is a nan in both x[i] and y[i])
         x_raw = self.x
         y_raw = self.y
-        
+
         x_list = np.logical_not(np.isnan(x_raw))
         y_list = np.logical_not(np.isnan(y_raw))
         logic_list = [x_list[idx] and y_list[idx] for idx in range(len(x_list))]
@@ -1172,7 +1181,7 @@ class XYData:
         self.y = y_raw[logic_list]
         #if len(self.x) != len(self.y):
         #    print('Attention: XYData.remove_nan() gave an x-array and a y-array with different sizes. The reason could be that, e.g. x[i] = nan but y[i] = number')
-        
+
     def idfac_fit(self, left: float | None = None, right: float | None = None, plot: bool = False, plotrange: list | None = [None, None], return_fit: bool = True) -> Any:
         """
         Fit the diode ideality factor from a semi-log JV curve.
@@ -1199,41 +1208,41 @@ class XYData:
         --------
         >>> obj.idfac_fit()
         """
-        
+
         if (left is None) or (left < min(self.x)):
             left = min(self.x)
         if (right is None) or (right > max(self.x)):
             right = max(self.x)
-        
+
         ra = range(findind(self.x, left), findind(self.x, right)+1)
-            
+
         m, b = np.polyfit(np.log10(self.x[ra]), self.y[ra], 1)
         nid = q/(k * T_RT * math.log(10)) * m
-        
+
         fit = XYData(self.x, m*np.log10(self.x) + b, quants = {"x": "Light intensity", "y": "Voc"}, units = {"x": "mW/cm2", "y": "V"}, name = 'fit')
         fit.nid = nid  # type: ignore
-        
+
         if plot:
             if (plotrange[0] is None) or (plotrange[0] < min(self.x)):  # type: ignore
                 plot_left = min(self.x) * 0.5
             else:
                 plot_left = plotrange[0]  # type: ignore
-                
+
             if (plotrange[1] is None) or (plotrange[1] > max(self.x)):  # type: ignore
                 plot_right = max(self.x) * 1.1
             else:
                 plot_right = plotrange[1]  # type: ignore
-                
+
             self.plotstyle = dict(linestyle = 'None', marker = 'o', color = 'green', markersize = 20)
             fit.plotstyle = dict(linestyle = '-', color = 'green', linewidth = 5)
             da = MXYData([self, fit])
             da.label([self.name, f'm = ln(10) $\\cdot$ kT/q $\\cdot$ {fit.nid:.2f}'])  # type: ignore
             da.plot(xscale = 'log', left = plot_left, right = plot_right, bottom = 0.9 * self.min_within(left=plot_left, right=plot_right), top = 1.1 * self.max_within(left=plot_left, right=plot_right), plotstyle = 'individual')
-        
-        if return_fit:    
+
+        if return_fit:
             return fit
 
-        
+
     def product(self, s2: Any, qy: Any | None = None, uy: Any | None = None, delta: float = 1) -> Any:
         """
         Product.
@@ -1259,58 +1268,58 @@ class XYData:
         >>> obj.product()
         """
         # Calculates the product self.y*s2.y at the right wavelengths and returns a new instance of class of the same class as self
-    
-        #Determine the global minimum x-value 
+
+        #Determine the global minimum x-value
         x1_min = min(self.x)
         x2_min = min(s2.x)
         if x1_min < x2_min:
             x_min = x2_min
         else:
             x_min = x1_min
-        
-        #Determine the global maximum x-value 
+
+        #Determine the global maximum x-value
         x1_max = max(self.x)
         x2_max = max(s2.x)
         if x1_max < x2_max:
             x_max = x1_max
         else:
             x_max = x2_max
-        
+
         d1 = self.copy()
         d2 = s2.copy()
-            
+
         d1.equidist(left = x_min, right = x_max, delta = delta)
         d2.equidist(left = x_min, right = x_max, delta = delta)
-        
+
         result = d1.copy()
         result.y = d1.y * d2.y
-        
+
         if qy is not None:
             result.qy = qy
         if uy is not None:
             result.uy = uy
-        
+
         return result
-    
+
     def all_values_greater_min(self, min_val: Any | None=None) -> Any:
         """
         Return True if all y values exceed the given minimum.
         """
         self.y = np.array([self.y[i] if (self.y[i] > min_val) else min_val for i in range(len(self.y))], dtype = np.float64)
-    
+
     def shift_x(self, x: np.ndarray) -> Any:
         """
         Shifts the x-values by x
         """
         self.x = self.x + x
-        
+
     def shift_y(self, y: np.ndarray) -> Any:
         """
         Shifts the y-values by y
         """
         self.y = self.y + y
 
-        
+
     def idx_range(self, left: float | None = None, right: float | None = None) -> Any:
         """
         Return the index range [i_left, i_right] for a value interval in a sorted array.
@@ -1333,7 +1342,7 @@ class XYData:
         """
         # Returns the x-index range which goes from x = left to x = right
         return idx_range(self.x, left = left, right = right)
-    
+
     def polyfit(self, order: Any = 1, left: float | None = None, right: float | None = None, new_x_arr: np.ndarray | None = None, new_meshsize: np.ndarray | None = None) -> Any:
         """
         Fit a polynomial of specified degree to the data.
@@ -1398,7 +1407,7 @@ class XYData:
         r = range(n, len(self.x)-n)  # type: ignore
         self.x = self.x[r]
         self.y = self.y[r]
-        
+
     def del_edge_zero_data(self) -> Any:
         """
         Del edge zero data.
@@ -1429,16 +1438,16 @@ class XYData:
         threshold: The threshold value from which on a spike is detected as such
         """
         sp = self.copy()
-    
+
         def modified_z_score(intensity: Any) -> Any:
             median_int = np.median(intensity)
             mad_int = np.median([np.abs(intensity - median_int)])
             modified_z_scores = 0.6745 * (intensity - median_int) / mad_int
             return modified_z_scores
-    
+
         spikes = abs(np.array(modified_z_score(np.diff(sp.y)))) > threshold
-    
-        y_out = sp.y.copy() # So we don’t overwrite self 
+
+        y_out = sp.y.copy() # So we don’t overwrite self
         l_spikes = len(spikes)
         for i in np.arange(l_spikes):
             if spikes[i] != 0: # If we have an spike in position i
@@ -1455,11 +1464,11 @@ class XYData:
                 w2 = w[spikes[w] == 0] # From such interval, we choose the ones which are not spikes
                 if len(w2) != 0:
                     y_out[i] = np.mean(sp.y[w2]) # and we average their values
-    
+
         sp.y = y_out
-        
-        return sp    
-    
+
+        return sp
+
     def monotoneous_ascending(self) -> Any:
         """
         Monotoneous ascending.
@@ -1505,13 +1514,13 @@ class XYData:
                 else:
                     self.x = np.delete(self.x, idx+1)
                     self.y = np.delete(self.y, idx+1)
-    
-    
+
+
 class MXYData:
     """
     Container for a collection of XYData objects (multi-spectrum).
     """
-    
+
     def __init__(self, sa: Any) -> None:
         """
         Initialize the object.
@@ -1532,7 +1541,7 @@ class MXYData:
             self.n_x = len(sa[0].x)
         else:
             self.n_x = 0
-        
+
     def __mul__(self, other: Any) -> None:
         """
         Multiply element-wise with another object or scalar.
@@ -1550,7 +1559,7 @@ class MXYData:
         for i, sp in enumerate(self.sa):
             new_sa.append(sp * other)
         return type(self)(new_sa)  # type: ignore
-    
+
     def __iter__(self) -> None:
         """
         Iterate over elements.
@@ -1560,7 +1569,7 @@ class MXYData:
         >>> obj.__iter__()
         """
         return iter(self.sa)
-        
+
     def qx_ux(self, qx: Any, ux: Any) -> None:
         """
         Qx ux.
@@ -1598,7 +1607,7 @@ class MXYData:
         for i, sp in enumerate(self.sa):
             sp.qy = qy
             sp.uy = uy
-            
+
     def copy(self) -> Any:
         """
         Copy.
@@ -1621,7 +1630,7 @@ class MXYData:
         ms.n_y = self.n_y
         ms.n_x = self.n_x
         return ms
-        
+
     def append(self, data: Any) -> Any:
         """
         Append another XYData to this collection.
@@ -1642,7 +1651,7 @@ class MXYData:
         """
         self.sa.append(data)
         self.label_defined = False
-        
+
     @staticmethod
     def combine(mxy1: Any, mxy2: Any) -> Any:
         """
@@ -1650,7 +1659,7 @@ class MXYData:
         """
         if type(mxy1) != type(mxy2):
             print('MXYData.combine(mxy1, mxy2): mxy1 and mxy2 are of different type!')
-        #Make sure that there are no dependencies of new_mxy on mxy1 and mxy2 
+        #Make sure that there are no dependencies of new_mxy on mxy1 and mxy2
         mxy1_ = mxy1.copy()
         mxy2_ = mxy2.copy()
         sa = mxy1_.sa + mxy2_.sa
@@ -1659,7 +1668,7 @@ class MXYData:
             new_mxy.label(mxy1_.lab + mxy2_.lab)
             new_mxy.label_defined = True
         return new_mxy
-        
+
     def delete(self, data: Any) -> Any:
         """
         Delete.
@@ -1684,7 +1693,7 @@ class MXYData:
                 self.sa.pop(i)
             else:
                 i += 1
-                
+
     @classmethod
     def generate_empty(cls) -> Any:
         """
@@ -1701,7 +1710,7 @@ class MXYData:
         """
         return cls([])
 
-        
+
     def label(self, lab: Any) -> None:
         """
         Label.
@@ -1717,7 +1726,7 @@ class MXYData:
         """
         self.lab = lab
         self.label_defined = True
-        
+
     def no_label(self) -> Any:
         """
         No label.
@@ -1732,7 +1741,7 @@ class MXYData:
         >>> obj.no_label()
         """
         self.label_defined = False
-                
+
     def replace(self, idx: int, sp_new: Any) -> Any:
         """
         Replace.
@@ -1754,7 +1763,7 @@ class MXYData:
         >>> obj.replace()
         """
         self.sa[idx] = sp_new
-        
+
     def remain(self, idx_list: Any) -> Any:
         """
         Return a copy trimmed to the interval [left, right].
@@ -1770,7 +1779,7 @@ class MXYData:
         rem_sa = type(self)(sa)
         rem_sa.label(lab)
         return rem_sa
-    
+
     def set_plotstyle(self, linestyle: Any | None = None, marker: Any | None = None, color: Any | None = None, markersize: Any | None = None, linewidth: Any | None = None) -> Any:
         """
         Set plotstyle.
@@ -1798,19 +1807,19 @@ class MXYData:
         >>> obj.set_plotstyle()
         """
         for idx, sp in enumerate(self.sa):
-            
+
             if linestyle is not None:
                 sp.plotstyle['linestyle'] = linestyle
-            
+
             if marker is not None:
                 sp.plotstyle['marker'] = marker
-            
+
             if color is not None:
                 sp.plotstyle['color'] = color
-            
+
             if markersize is not None:
                 sp.plotstyle['markersize'] = markersize
-            
+
             if linewidth is not None:
                 sp.plotstyle['linewidth'] = linewidth
 
@@ -1840,8 +1849,8 @@ class MXYData:
                 lab.append(sp.name.split(split_ch)[0])
         self.label(lab)
         self.label_defined = True
-        
-        
+
+
     def print_all_names(self, split_ch: str | None = None, unique_only: Any = False, print_all: Any = True, print_idx: Any = True, return_list: bool = False) -> Any:
         """
         Print all names.
@@ -1876,7 +1885,7 @@ class MXYData:
             else:
                 next_name = sp.name.split(split_ch)[0]
             if unique_only:
-                if not(next_name in all_names):
+                if next_name not in all_names:
                     all_names.append(next_name)
                     if print_all:
                         if print_idx:
@@ -1894,7 +1903,7 @@ class MXYData:
                 idx += 1
         if return_list:
             return all_names
-    
+
     def print_names_containing(self, name: str) -> Any:
         """
         Print names containing.
@@ -1916,12 +1925,12 @@ class MXYData:
         for i, sp in enumerate(self.sa):
             if name in sp.name:
                 print(sp.name)
-        
-    
-    def plot(self, title: str = '', ax: Any | None= None, xscale: str = 'linear', yscale: str = 'linear', left: float | None = None, right: float | None = None, 
+
+
+    def plot(self, title: str = '', ax: Any | None= None, xscale: str = 'linear', yscale: str = 'linear', left: float | None = None, right: float | None = None,
              bottom: float | None = None, divisor: float | None = None, top: float | None = None, plotstyle: str = 'auto', showindex: bool = False, in_name: Any = [], not_in_name: Any | None = None,
              plot_table: bool = False, cell_text: Any | None = None, row_labels: Any | None = None, col_labels: Any | None = None,
-             bbox: Any = [0.3, 0.25, 0.1, 0.5], figsize: Any=(9,6), hline: Any | None = None, hline_colors: Any | None = None, vline: Any | None = None, vline_colors: Any | None = None, nolabel: Any = False, 
+             bbox: Any = [0.3, 0.25, 0.1, 0.5], figsize: Any=(9,6), hline: Any | None = None, hline_colors: Any | None = None, vline: Any | None = None, vline_colors: Any | None = None, nolabel: Any = False,
              return_fig: bool = False, generate_image_stream: bool=False, show_plot: bool = True, ylabel: Any | None=None, xlabel: Any | None=None, create_image_stream: bool= False, **kwargs) -> None:
 
         """
@@ -1937,7 +1946,7 @@ class MXYData:
         example for kwargs:
         kwargs = dict(fontsize = 24, legend = False, save_plot = True, plot_save_dir = save_dir, plot_FN = 'IV5 - transp. limit.png')
         """
-        
+
         if ax is not None:
             show_plot = False
 
@@ -1945,46 +1954,46 @@ class MXYData:
         if in_name != []:
 
             def in_name_in_spec(in_name: Any, spec: Any) -> Any:
-                
+
                 result = False
-    
+
                 if in_name == []:
                     result = True
                 else:
                     for i, name in enumerate(in_name):
-                        
+
                         if name in spec.name:
                             result = True
                             break
-    
+
                 return result
-            
+
             idx_list = []
-            for idx, sp in enumerate(self.sa):                
+            for idx, sp in enumerate(self.sa):
                 if in_name_in_spec(in_name, sp):
                     idx_list.append(idx)
-    
+
             self = self.remain(idx_list)
-            
-        if not(not_in_name is None):
-            
+
+        if not_in_name is not None:
+
             def not_in_name_in_spec(not_in_name: Any, spec: Any) -> Any:
-                
+
                 result = False
-    
+
                 for i, name in enumerate(not_in_name):
-                    
+
                     if name in spec.name:
                         result = True
                         break
-    
+
                 return result
-            
+
             idx_list = []
-            for idx, sp in enumerate(self.sa):                
+            for idx, sp in enumerate(self.sa):
                 if not(not_in_name_in_spec(not_in_name, sp)):
                     idx_list.append(idx)
-    
+
             self = self.remain(idx_list)
 
         if ax is None:
@@ -1998,13 +2007,13 @@ class MXYData:
             for key, value in kwargs.items():
                 if key == 'fontsize':
                     plt.rcParams.update({'font.size': value})
-        
+
         #if plot_table:
         #    ax = fig.add_subplot(111)
-        
+
         ax.set_xscale(xscale)
         ax.set_yscale(yscale)
-        
+
         if left is None:
             left = self.sa[0].x[0]
             for sp in self.sa:
@@ -2016,24 +2025,24 @@ class MXYData:
                 if sp.x[-1] > right:
                     right = sp.x[-1]
         ax.set_xlim(left, right)
-        
+
         if bottom is not None:
             if top is None:
                 bottom_, top = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
                 #top = max(self.sa[0].y) + 0.1 * abs(max(self.sa[0].y))
             ax.set_ylim(bottom = bottom, top = top)
-            
+
         if top is not None:
             if bottom is None:
                 bottom, top_ = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
                 #bottom = min(self.sa[0].y) - 0.1 * abs(min(self.sa[0].y))
             ax.set_ylim(bottom = bottom, top = top)
-            
+
         if (bottom is None) and (top is None):
             bottom, top = self.bottom_top_for_plot(left = left, right = right, yscale = yscale, divisor = divisor)
-            ax.set_ylim(bottom = bottom, top = top)        
-            
-            
+            ax.set_ylim(bottom = bottom, top = top)
+
+
         for i, spec in enumerate(self.sa):
             x = spec.x.copy()
             if xscale == 'log':
@@ -2041,12 +2050,12 @@ class MXYData:
             y = spec.y.copy()
             if yscale == 'log':
                 y = np.abs(y)
-                                            
+
             if hasattr(spec, 'plotrange'):
                 r = range(spec.x_idx_of(spec.plotrange[0]), spec.x_idx_of(spec.plotrange[1])+1)
             else:
-                r = range(0,len(x))    
-        
+                r = range(0,len(x))
+
             if self.label_defined and not(nolabel):
                 if plotstyle == 'auto':
                     if showindex == True:
@@ -2064,9 +2073,9 @@ class MXYData:
                     ax.plot(x[r], y[r])
                 else:
                     ax.plot(x[r], y[r], **spec.plotstyle)
-    
+
         sp = self.sa[0]
-        
+
         if xlabel is None:
             if sp.ux is not None and sp.ux != '':
                 ax.set_xlabel(f'{sp.qx} ({sp.ux})')
@@ -2074,7 +2083,7 @@ class MXYData:
                 ax.set_xlabel(f'{sp.qx}')
         else:
             ax.set_xlabel(xlabel)
-            
+
         if ylabel is None:
 
             if sp.uy is not None and sp.uy != '':
@@ -2083,17 +2092,17 @@ class MXYData:
                 ax.set_ylabel(f'{sp.qy}')
         else:
             ax.set_ylabel(ylabel)
-        
+
         if title != '':
             ax.set_title(title)
-            
+
         if plot_table:
             the_table = ax.table(cellText = cell_text, rowLabels = row_labels, colLabels = col_labels, loc='bottom',
                                   bbox = bbox)  #bbox = [x0, y0, width, height])
             the_table.auto_set_font_size(False)
             the_table.set_fontsize(10)
             the_table.scale(1, 5)
-            
+
         if 'save_plot' in kwargs:
             if kwargs['save_plot']:
                 save_dir = kwargs['plot_save_dir']
@@ -2101,9 +2110,9 @@ class MXYData:
                 TFN = join(save_dir, filepath)
                 if save_ok(TFN):
                     plt.savefig(TFN)
-                    
+
         _draw_hlines_vlines(ax, hline, hline_colors, vline, vline_colors)
-        
+
         if create_image_stream:
             image_stream = io.BytesIO()
             plt.savefig(image_stream)
@@ -2113,12 +2122,12 @@ class MXYData:
 
         if show_plot:
             plt.show()
-        
-        
+
+
         if return_fig:
             return fig  # type: ignore
 
-    
+
     def save(self, save_dir: str, title: str, label: Any | None = None) -> None:
         """
         Save.
@@ -2141,7 +2150,7 @@ class MXYData:
         for i, xy_dat in enumerate(self.sa):
             filepath = title + ' - ' + label[i] + '.csv'
             xy_dat.save(save_dir, filepath)
-            
+
     def save_in_one_file(self, fp: Any) -> None:
         """
         Save all datasets to a single CSV file.
@@ -2175,7 +2184,7 @@ class MXYData:
             df.to_csv(fp)
         else:
             print('Not saved: Not all XYData have the same x!')
-            
+
     def save_individual(self, save_dir: str | None = None, FNs: str | None = None, check_existing: Any = True, check_FN_extension: Any = True) -> None:
         """
         Save each dataset to its own CSV file.
@@ -2195,24 +2204,24 @@ class MXYData:
         --------
         >>> obj.save_individual()
         """
-        
+
         quitted = False
         if save_dir is None:
             save_dir = os.getcwd()
         for i, sp in enumerate(self.sa):
-                    
+
             x_col_name = sp.qx
             if sp.ux != "":
                 x_col_name = x_col_name + f' ({sp.ux})'
             y_col_name = sp.qy
             if sp.uy != "":
                 y_col_name = y_col_name + f' ({sp.uy})'
-                                    
+
             if FNs is None:
                 filepath = sp.name
             else:
                 filepath = FNs[i]
-                
+
             TFN = join(save_dir, filepath)
             df = pd.DataFrame({x_col_name : sp.x, y_col_name : sp.y})
             #filepath = filepath.split('.'+filepath.split('.')[-1])[0] + '.csv'
@@ -2222,15 +2231,15 @@ class MXYData:
                 filepath = filepath + '.csv'
 
             if check_existing:
-            
+
                 ok_to_save, quitted = save_ok(TFN, quitted)
                 if ok_to_save and not(quitted):
 
                     df.to_csv(join(save_dir, filepath), header = True, index = False)
-                    
+
             else:
                     df.to_csv(join(save_dir, filepath), header = True, index = False)
-            
+
     @classmethod
     def load_individual(cls, directory: str, delimiter: str = ',', header: Any = 'infer', quants: Any = {"x": "x", "y": "y"}, units: Any = {"x": "", "y": ""}, take_quants_and_units_from_file: bool = False) -> Any:
 
@@ -2239,17 +2248,17 @@ class MXYData:
         """
         FNs = os.listdir(directory)
         sa = []
-        
+
         for i, filepath in enumerate(FNs):
-            
+
             dat = pd.read_csv(join(directory, filepath), delimiter = delimiter, header = header)
-                        
+
             x = np.array(dat)[:,0].astype(np.float64)
             y = np.array(dat)[:,1].astype(np.float64)
 
             if cls.__name__ == 'MXYData':
                 sp = XYData(x, y, quants, units, filepath)
-       
+
             if take_quants_and_units_from_file:
 
                 col0 = list(dat)[0]
@@ -2262,12 +2271,12 @@ class MXYData:
                 if ' (' in col1:
                     sp.uy = col1.split(' (')[1].split(')')[0]
 
-            sa.append(sp)    
-            
+            sa.append(sp)
+
         result = cls(sa)
-    
+
         return result
-            
+
     def max_within(self, left: float | None = None, right: float | None = None) -> Any:
         """
         Returns the maximum y-value within left < x < right.
@@ -2282,8 +2291,8 @@ class MXYData:
         for i, sp in enumerate(self.sa):
             l = left
             r = right
-                
-            if (left is None) or (left < min(sp.x)): 
+
+            if (left is None) or (left < min(sp.x)):
                 l = min(sp.x)
             if (right is None) or (right > max(sp.x)):
                 r = max(sp.x)
@@ -2296,7 +2305,7 @@ class MXYData:
                     maximum = m
 
         return maximum
-    
+
 
     def min_within(self, left: float | None = None, right: float | None = None, absolute: Any = False) -> Any:
         """
@@ -2313,14 +2322,14 @@ class MXYData:
             l = left
             r = right
 
-                
-            if (left is None) or (left < min(sp.x)): 
+
+            if (left is None) or (left < min(sp.x)):
                 l = min(sp.x)
             if (right is None) or (right > max(sp.x)):
                 r = max(sp.x)
 
             ra = range(findind(sp.x, l), findind(sp.x, r)+1)
-            
+
             if ra != range(0,0):
 
                 if absolute:
@@ -2331,7 +2340,7 @@ class MXYData:
                     minimum = m
 
         return minimum
-    
+
     def bottom_top_for_plot(self, left: float | None = None, right: float | None = None, yscale: str = 'log', divisor: float | None = None) -> Any:
         """
         Returns the minimum and maximum y-value within left < x < right.
@@ -2341,7 +2350,7 @@ class MXYData:
         """
 
         top = self.max_within(left = left, right = right)
-        
+
         if yscale == 'log':
             top *= 1.1
             bottom = self.min_within(left = left, right = right, absolute = True)
@@ -2357,11 +2366,11 @@ class MXYData:
             delta = top - bottom
             top = top + delta/10
             bottom = bottom - delta/10
-        
+
         return bottom, top
 
 
-    def normalize(self, x_lim: Any | None = None, norm_val: float = 1) -> None:    
+    def normalize(self, x_lim: Any | None = None, norm_val: float = 1) -> None:
         """
         Normalize.
         
@@ -2379,7 +2388,7 @@ class MXYData:
 
         for i, sp in enumerate(self.sa):
             sp.normalize(x_lim = x_lim, norm_val = norm_val)
-            
+
     def equidist(self, left: float | None = None, right: float | None = None, delta: float = 0.1, kind: str = 'cubic') -> None:
         """
         Equidist.
@@ -2402,29 +2411,29 @@ class MXYData:
 
         for i, sp in enumerate(self.sa):
             sp.equidist(left = left, right = right, delta = delta, kind = kind)
-        
-            
+
+
     def all_values_greater_min(self, min_val: Any | None=None) -> Any:
         """
         Looks for values < min_val and sets them to min_val.
         """
         for idx, sp in enumerate(self.sa):
             sp.all_values_greater_min(min_val = min_val)
-            
+
     def cut_data_outside(self, left: float | None = None, right: float | None = None) -> Any:
         """
         Cuts the data outside x = [left, right].
         """
-  
-        new_sa = []          
+
+        new_sa = []
         for idx, sp in enumerate(self.sa):
             new_xy = sp.cut_data_outside(left = left, right = right)
             new_sa.append(new_xy)
-        
+
         new_mxy = type(self)(new_sa)
-        
+
         return new_mxy
-    
+
     def reverse(self) -> Any:
         """
         Reverse the x values in all Spectra.
@@ -2433,9 +2442,9 @@ class MXYData:
         new = self.copy()
         for idx, sp in enumerate(new.sa):
             new.sa[idx].reverse()
-            
+
         return new
-    
+
     def del_first_and_last_n_data_points(self, n: float=1) -> Any:
         """
         Del first and last n data points.
@@ -2456,7 +2465,7 @@ class MXYData:
         """
         for idx, sp in enumerate(self.sa):
             sp.del_first_and_last_n_data_points(n=n)
-            
+
     def del_edge_zero_data(self) -> Any:
         """
         Del edge zero data.
@@ -2472,8 +2481,8 @@ class MXYData:
         """
         for idx, sp in enumerate(self.sa):
             sp.del_edge_zero_data()
-            
-            
+
+
     def rm_cosray(self, m: float = 3, threshold: Any = 5) -> Any:
         """
         Rm cosray.
@@ -2499,8 +2508,8 @@ class MXYData:
             sp_new = sp.rm_cosray(m = m, threshold = threshold)
             new.replace(idx, sp_new)
         return new
-    
-    
+
+
     def idfac_fit(self, left: float | None = None, right: float | None = None, plot: bool = True, plotrange: list | None = [None, None], return_all: bool = False) -> Any:
         """
         Idfac fit.
@@ -2527,47 +2536,47 @@ class MXYData:
         --------
         >>> obj.idfac_fit()
         """
-    
+
         all_data = []
         all_data_label = []
         save_names = []
         for i, sp in enumerate(self.sa):
-    
+
             sp.plotstyle = dict(linestyle = 'None', marker = 'o', color = gen.colors[i], markersize = 20)
             all_data.append(sp)
             label = sp.name.split('.csv')[0]
             all_data_label.append(label)
             save_names.append(label)
-    
+
             all_data.append(all_data[-1].idfac_fit(left = left, right = right))
             #fit[i].plotstyle = dict(linestyle = '-', color = colors[i], linewidth = 5)
             all_data[-1].plotstyle = dict(linestyle = '-', color = gen.colors[i], linewidth = 5)
             all_data_label.append(f'm = ln(10) $\\cdot$ kT/q $\\cdot$ {all_data[-1].nid:.2f}')
             save_names.append(label+'_fit')
-    
+
         da = MXYData(all_data)
         #da.label([FNs[0], FNs[1], f'm = ln(10) $\cdot$ kT/q $\cdot$ {fit[0].nid:.2f}', f'm = ln(10) $\cdot$ kT/q $\cdot$ {fit[1].nid:.2f}'])
-    
+
         da.label(all_data_label)
         if plot:
             da.plot(xscale = 'log', plotstyle = 'individual', figsize = (10,7))
         if return_all:
             return da
-        
+
     def shift_x(self, x: np.ndarray) -> Any:
         """
         Shifts the x-values by x
         """
         for sp in self.sa:
             sp.shift_x(x)
-            
+
     def shift_y(self, y: np.ndarray) -> Any:
         """
         Shifts the y-values by y
         """
         for sp in self.sa:
             sp.shift_y(y)
-            
+
     def average(self) -> Any:
         """
         Average.
@@ -2588,7 +2597,7 @@ class MXYData:
             av += sp
         av /= len(self.sa)
         return av
-    
+
     def diff(self, left: float | None = None, right: float | None = None) -> Any:
         """
         Diff.
@@ -2615,7 +2624,7 @@ class MXYData:
             sa.append(sp.diff(left=left, right=right))
         new.sa = sa
         return new
-    
+
     def remove_nan(self) -> Any:
         """
         Remove nan.
@@ -2631,7 +2640,7 @@ class MXYData:
         """
         for sp in self.sa:
             sp.remove_nan()
-            
+
     def strictly_ascending(self) -> Any:
         """
         Strictly ascending.
@@ -2648,12 +2657,12 @@ class MXYData:
         for sp in self.sa:
             sp.strictly_ascending()
 
-                
+
 class XYZData:
     """
     Container class for XYZData data and operations.
     """
-    
+
     def __init__(self, x: np.ndarray, y: np.ndarray, z: np.ndarray , quants: Any = {"x": "x", "y": "y", "z": "z"}, units: Any = {"x": "", "y": "", "z": ""}, name: str = '', plotstyle: Any = None) -> None:
         """
         x is a numpy array e.g. the wavelengths or photon energies
@@ -2684,24 +2693,24 @@ class XYZData:
         """
         Load data from a CSV or text file.
         """
-        
+
         if filepath == '':
             filepath = os.listdir(directory)[0]
         dat = pd.read_csv(join(directory, filepath), delimiter = delimiter, header = header)
-        
+
         x = np.array(dat)[:,0].astype(np.float64)
         y = np.array(dat)[:,1].astype(np.float64)
         z = np.array(dat)[:,2].astype(np.float64)
-        
+
         qx = quants["x"]
         qy = quants["y"]
         qz = quants["z"]
         ux = units["x"]
         uy = units["y"]
         uz = units["z"]
-                
+
         if take_quants_and_units_from_file:
-            
+
             col0 = list(dat)[0]
             qx = col0.split(' (')[0]
             if ' (' in col0:
@@ -2711,10 +2720,10 @@ class XYZData:
             qy = col1.split(' (')[0]
             if ' (' in col1:
                 uy = col1.split(' (')[1].split(')')[0]
-                
+
             col2 = list(dat)[2]
             qz = col2.split(' (')[0]
             if ' (' in col2:
                 uz = col2.split(' (')[1].split(')')[0]
-        
+
         return cls(x, y, z, quants = dict(x = qx, y = qy, z = qz), units = dict(x = ux, y = uy, z = uz), name = filepath)

@@ -1,10 +1,12 @@
 """Eighth coverage-boost: Spectrum.py DiffSpectrum calc_*, PELSpectrum, Spectra I/O."""
-import warnings
-import tempfile
 import os
+import tempfile
+import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -164,8 +166,8 @@ class TestCalculateIrradianceIlluminance:
 # ---------------------------------------------------------------------------
 class TestPELSpectrumAbsorptance:
     def _make_pel(self, E):
-        from fte_analysis_libraries.Spectrum import PELSpectrum, DiffSpectrum
-        from fte_analysis_libraries.General import k, T_RT, q
+        from fte_analysis_libraries.General import T_RT, k, q
+        from fte_analysis_libraries.Spectrum import DiffSpectrum, PELSpectrum
         A = 1e20
         y = A * E**2 * np.exp(-(E * q) / (k * T_RT))
         return PELSpectrum(E, y,
@@ -201,6 +203,7 @@ class TestPELSpectrumAbsorptance:
 class TestSpectraLoadMultiple:
     def test_load_multiple(self):
         import pandas as pd
+
         from fte_analysis_libraries.Spectrum import Spectra
         with tempfile.TemporaryDirectory() as tmp:
             wl = np.linspace(300, 800, 101)
@@ -216,6 +219,7 @@ class TestSpectraLoadMultiple:
 
     def test_load_multiple_with_quants(self):
         import pandas as pd
+
         from fte_analysis_libraries.Spectrum import Spectra
         with tempfile.TemporaryDirectory() as tmp:
             wl = np.linspace(300, 800, 50)
@@ -258,6 +262,7 @@ class TestSpectraLoadIndividual:
 
     def test_load_individual_absspectra(self):
         import pandas as pd
+
         from fte_analysis_libraries.Spectrum import AbsSpectra
         with tempfile.TemporaryDirectory() as tmp:
             wl = np.linspace(400, 700, 50)
@@ -268,6 +273,7 @@ class TestSpectraLoadIndividual:
 
     def test_load_individual_diffspectra(self):
         import pandas as pd
+
         from fte_analysis_libraries.Spectrum import DiffSpectra
         with tempfile.TemporaryDirectory() as tmp:
             wl = np.linspace(400, 700, 50)
@@ -278,6 +284,7 @@ class TestSpectraLoadIndividual:
 
     def test_load_individual_pelspectra(self):
         import pandas as pd
+
         from fte_analysis_libraries.Spectrum import PELSpectra
         with tempfile.TemporaryDirectory() as tmp:
             wl = np.linspace(400, 700, 50)

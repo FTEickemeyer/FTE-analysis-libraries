@@ -1,11 +1,13 @@
 """Seventeenth coverage-boost: General str_round_sig, beep, scattered_boxplot; Spectrum udata_plot save_name."""
-import warnings
-import tempfile
 import os
 import sys
+import tempfile
+import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -53,8 +55,9 @@ class TestBeep:
 # ---------------------------------------------------------------------------
 class TestScatteredBoxplot:
     def _run(self, data, **kwargs):
-        from fte_analysis_libraries.General import scattered_boxplot
         from unittest.mock import patch
+
+        from fte_analysis_libraries.General import scattered_boxplot
         fig, ax = plt.subplots()
         with patch.object(ax, 'boxplot'):
             scattered_boxplot(ax, data, **kwargs)
@@ -78,8 +81,9 @@ class TestScatteredBoxplot:
 
     def test_showfliers_unknown_raises(self):
         """Line 841: unknown showfliers → NotImplementedError."""
-        from fte_analysis_libraries.General import scattered_boxplot
         from unittest.mock import patch
+
+        from fte_analysis_libraries.General import scattered_boxplot
         fig, ax = plt.subplots()
         with patch.object(ax, 'boxplot'):
             try:
@@ -104,8 +108,9 @@ class TestScatteredBoxplot:
 
     def test_wrong_positions_length_raises(self):
         """Line 805-806: len(positions) != N → ValueError."""
-        from fte_analysis_libraries.General import scattered_boxplot
         from unittest.mock import patch
+
+        from fte_analysis_libraries.General import scattered_boxplot
         fig, ax = plt.subplots()
         data = [np.random.randn(10), np.random.randn(10), np.random.randn(10)]
         with patch.object(ax, 'boxplot'):
@@ -117,8 +122,9 @@ class TestScatteredBoxplot:
 
     def test_non_numeric_positions_raises(self):
         """Line 809-810: positions with non-numeric values → TypeError."""
-        from fte_analysis_libraries.General import scattered_boxplot
         from unittest.mock import patch
+
+        from fte_analysis_libraries.General import scattered_boxplot
         fig, ax = plt.subplots()
         data = [np.random.randn(10), np.random.randn(10)]
         with patch.object(ax, 'boxplot'):
@@ -130,8 +136,9 @@ class TestScatteredBoxplot:
 
     def test_wrong_widths_length_raises(self):
         """Lines 817-818: len(widths) != N → ValueError."""
-        from fte_analysis_libraries.General import scattered_boxplot
         from unittest.mock import patch
+
+        from fte_analysis_libraries.General import scattered_boxplot
         fig, ax = plt.subplots()
         data = [np.random.randn(10), np.random.randn(10), np.random.randn(10)]
         with patch.object(ax, 'boxplot'):
@@ -148,7 +155,7 @@ class TestScatteredBoxplot:
 class TestUdataPlotSaveName:
     def test_udata_plot_with_save_name(self):
         """Line 2066: filepath = save_name when save=True and save_name is not None."""
-        from fte_analysis_libraries.Spectrum import PELSpectra, DiffSpectrum
+        from fte_analysis_libraries.Spectrum import DiffSpectrum, PELSpectra
         wl = np.linspace(1.0, 3.0, 200)
         ab = DiffSpectrum(wl, 0.5 + 0.4 * np.exp(-(wl - 2.0)**2 / 0.1),
                           quants={'x': 'Photon energy', 'y': 'Absorptance'},

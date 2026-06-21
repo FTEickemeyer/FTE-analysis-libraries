@@ -1,14 +1,16 @@
 """Tests for XYdata.py — XYData and MXYData classes."""
+import os
+import tempfile
+
+import matplotlib
 import numpy as np
 import pandas as pd
 import pytest
-import os
-import tempfile
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from fte_analysis_libraries.XYdata import XYData, MXYData
+from fte_analysis_libraries.XYdata import MXYData, XYData
 
 FIXTURES = os.path.join(os.path.dirname(__file__), 'fixtures')
 

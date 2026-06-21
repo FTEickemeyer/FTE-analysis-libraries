@@ -1,8 +1,10 @@
 """Fourth coverage-boost: TRPL show branches, IV show branches, Spectrum methods."""
 import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -195,7 +197,7 @@ class TestEQESpectrumMethods:
         assert abs(jsc_after - 20.0) < 0.1
 
     def test_to_ab(self):
-        from fte_analysis_libraries.Spectrum import EQESpectrum, AbsSpectrum
+        from fte_analysis_libraries.Spectrum import AbsSpectrum, EQESpectrum
         eqe = EQESpectrum.eqe100(Eg=1.5)
         ab = eqe.to_ab()
         assert isinstance(ab, AbsSpectrum)
@@ -257,8 +259,8 @@ class TestGeneralIdxRange:
 # ---------------------------------------------------------------------------
 class TestDiffSpectrumPhiBB:
     def test_phi_bb_positive(self):
+        from fte_analysis_libraries.General import T_RT, k
         from fte_analysis_libraries.Spectrum import DiffSpectrum
-        from fte_analysis_libraries.General import k, T_RT
         E_J = np.linspace(1.5, 3.0, 100) * 1.602e-19  # eV → J
         bb = DiffSpectrum.phi_bb(E_J, T_RT)
         assert all(bb > 0)
@@ -269,7 +271,7 @@ class TestDiffSpectrumPhiBB:
 # ---------------------------------------------------------------------------
 class TestXYDataLoadOld:
     def test_plot_functions_exist(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         assert hasattr(XYData, 'plot')
         assert hasattr(MXYData, 'plot')
 

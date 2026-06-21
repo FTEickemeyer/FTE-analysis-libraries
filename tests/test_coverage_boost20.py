@@ -1,8 +1,10 @@
 """Twentieth coverage-boost: TRPL plot_animation and plot_animation_QFLS."""
 import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -35,8 +37,10 @@ def _fake_func_animation(fig, func, frames=None, interval=None,
 # ---------------------------------------------------------------------------
 class TestPlotAnimation:
     def _run(self, p1, p2, **kwargs):
-        import matplotlib.animation as anim_module
         from unittest.mock import patch
+
+        import matplotlib.animation as anim_module
+
         from fte_analysis_libraries.TRPL import plot_animation
 
         with patch.object(anim_module, 'FuncAnimation', _fake_func_animation):
@@ -71,8 +75,10 @@ class TestPlotAnimation:
 # ---------------------------------------------------------------------------
 class TestPlotAnimationQLFS:
     def _run(self, p1, p2, **kwargs):
-        import matplotlib.animation as anim_module
         from unittest.mock import patch
+
+        import matplotlib.animation as anim_module
+
         from fte_analysis_libraries.TRPL import plot_animation_QFLS
 
         with patch.object(anim_module, 'FuncAnimation', _fake_func_animation):

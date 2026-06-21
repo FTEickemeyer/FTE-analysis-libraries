@@ -1,10 +1,12 @@
 """Seventh coverage-boost: TRPL auto-detect branches, k1k2_model_fit, XYdata edges."""
-import warnings
-import tempfile
 import os
+import tempfile
+import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -163,8 +165,9 @@ class TestTRPLShiftToMaxPlotDetails:
 # ---------------------------------------------------------------------------
 class TestMTRPLDataLoadIndividual:
     def test_load_individual_basic(self):
-        from fte_analysis_libraries.TRPL import MTRPLData
         import pandas as pd
+
+        from fte_analysis_libraries.TRPL import MTRPLData
         with tempfile.TemporaryDirectory() as tmp:
             for i in range(2):
                 t = np.linspace(0, 500, 501)
@@ -175,8 +178,9 @@ class TestMTRPLDataLoadIndividual:
             assert len(m.sa) == 2
 
     def test_load_individual_with_quants(self):
-        from fte_analysis_libraries.TRPL import MTRPLData
         import pandas as pd
+
+        from fte_analysis_libraries.TRPL import MTRPLData
         with tempfile.TemporaryDirectory() as tmp:
             t = np.linspace(0, 300, 301)
             y = np.exp(-t / 80)
@@ -192,7 +196,7 @@ class TestMTRPLDataLoadIndividual:
 # ---------------------------------------------------------------------------
 class TestMTRPLBatchShowparam:
     def _make_batch(self, n=2):
-        from fte_analysis_libraries.TRPL import TRPLData, MTRPLData
+        from fte_analysis_libraries.TRPL import MTRPLData, TRPLData
         taus = [80.0, 150.0]
         sa = []
         for tau in taus[:n]:
@@ -208,7 +212,7 @@ class TestMTRPLBatchShowparam:
         assert len(result.sa) == 2
 
     def test_batch_mult2_expfit_showparam(self):
-        from fte_analysis_libraries.TRPL import TRPLData, MTRPLData
+        from fte_analysis_libraries.TRPL import MTRPLData, TRPLData
         t = np.linspace(0, 500, 501)
         sa = [TRPLData(t, 0.7*np.exp(-t/80) + 0.3*np.exp(-t/250), name=f'tr_{i}')
               for i in range(2)]
@@ -244,7 +248,7 @@ class TestBottomTopForPlotDivisor:
 
     def test_mxy_bottom_top_log_zero_no_divisor(self):
         """MXYData.bottom_top_for_plot lines 2348-2351: no divisor."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.zeros(50)), XYData(x, np.exp(-x))])
         bottom, top = m.bottom_top_for_plot(yscale='log')
@@ -252,7 +256,7 @@ class TestBottomTopForPlotDivisor:
 
     def test_mxy_bottom_top_log_zero_with_divisor(self):
         """MXYData.bottom_top_for_plot lines 2352-2353: with divisor."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.zeros(50)), XYData(x, np.exp(-x))])
         bottom, top = m.bottom_top_for_plot(yscale='log', divisor=500.0)
@@ -264,8 +268,9 @@ class TestBottomTopForPlotDivisor:
 # ---------------------------------------------------------------------------
 class TestXYZDataLoad:
     def test_load_basic(self):
-        from fte_analysis_libraries.XYdata import XYZData
         import pandas as pd
+
+        from fte_analysis_libraries.XYdata import XYZData
         with tempfile.TemporaryDirectory() as tmp:
             x = np.linspace(0, 5, 20)
             df = pd.DataFrame({'x': x, 'y': np.sin(x), 'z': np.cos(x)})
@@ -275,8 +280,9 @@ class TestXYZDataLoad:
             assert len(obj.x) == 20
 
     def test_load_with_quants_from_file(self):
-        from fte_analysis_libraries.XYdata import XYZData
         import pandas as pd
+
+        from fte_analysis_libraries.XYdata import XYZData
         with tempfile.TemporaryDirectory() as tmp:
             x = np.linspace(0, 5, 10)
             df = pd.DataFrame({
@@ -292,8 +298,9 @@ class TestXYZDataLoad:
 
     def test_load_first_file_in_dir(self):
         """load() with empty filepath → uses first file in directory."""
-        from fte_analysis_libraries.XYdata import XYZData
         import pandas as pd
+
+        from fte_analysis_libraries.XYdata import XYZData
         with tempfile.TemporaryDirectory() as tmp:
             df = pd.DataFrame({'x': [1.0, 2.0], 'y': [3.0, 4.0], 'z': [5.0, 6.0]})
             df.to_csv(os.path.join(tmp, 'first.csv'), index=False)
@@ -306,7 +313,7 @@ class TestXYZDataLoad:
 # ---------------------------------------------------------------------------
 class TestMXYDataPlotBranches:
     def _make_m(self, n=2):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         return MXYData([XYData(x, np.sin(x + i), name=f'trace_{i}') for i in range(n)])
 

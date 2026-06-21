@@ -3,7 +3,9 @@ import numpy as np
 import pytest
 
 from fte_analysis_libraries.RFB import (
-    calc_conc_functions, calc_df_conc, conc_V_SO4,
+    calc_conc_functions,
+    calc_df_conc,
+    conc_V_SO4,
 )
 
 

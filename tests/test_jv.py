@@ -1,13 +1,15 @@
 """Tests for IV.py — IVData, FiveParam, PerfData."""
+import os
+
+import matplotlib
 import numpy as np
 import pytest
-import os
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from fte_analysis_libraries.IV import IVData, FiveParam, PerfData
-from fte_analysis_libraries.General import q, k, T_RT
+from fte_analysis_libraries.General import T_RT, k, q
+from fte_analysis_libraries.IV import FiveParam, IVData, PerfData
 
 FIXTURES = os.path.join(os.path.dirname(__file__), 'fixtures')
 

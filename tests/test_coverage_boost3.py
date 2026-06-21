@@ -1,10 +1,12 @@
 """Third round of coverage-boost tests: IV fitting, XYData paths, TRPL k-fits, General."""
-import warnings
 import os
 import tempfile
+import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -130,6 +132,7 @@ class TestIVTableParam:
 class TestXYDataFromDf:
     def test_from_df_with_series(self):
         import pandas as pd
+
         from fte_analysis_libraries.XYdata import XYData
         s = pd.Series([1.0, 2.0, 3.0], index=[0.1, 0.2, 0.3])
         d = XYData.from_df(s, take_quants_and_units_from_df=False)
@@ -137,6 +140,7 @@ class TestXYDataFromDf:
 
     def test_from_df_by_column_name(self):
         import pandas as pd
+
         from fte_analysis_libraries.XYdata import XYData
         df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]}, index=[0.1, 0.2, 0.3])
         df.index.name = 'x (s)'
@@ -145,6 +149,7 @@ class TestXYDataFromDf:
 
     def test_from_df_invalid_column(self):
         import pandas as pd
+
         from fte_analysis_libraries.XYdata import XYData
         df = pd.DataFrame({'A': [1, 2, 3]}, index=[0.1, 0.2, 0.3])
         df.index.name = 'x (s)'
@@ -154,6 +159,7 @@ class TestXYDataFromDf:
 
     def test_from_df_quants_from_df_simple(self):
         import pandas as pd
+
         from fte_analysis_libraries.XYdata import XYData
         df = pd.DataFrame({'Intensity': [1.0, 2.0, 3.0]}, index=[400.0, 500.0, 600.0])
         df.index.name = 'Wavelength (nm)'  # must have unit so split(' (') has 2 parts
@@ -163,6 +169,7 @@ class TestXYDataFromDf:
 
     def test_from_df_quants_from_df_with_units(self):
         import pandas as pd
+
         from fte_analysis_libraries.XYdata import XYData
         df = pd.DataFrame({'Intensity (counts)': [1.0, 2.0]}, index=[400.0, 500.0])
         df.index.name = 'Wavelength (nm)'
@@ -209,7 +216,7 @@ class TestXYDataHlineVline:
 # ---------------------------------------------------------------------------
 class TestBottomTopLogScale:
     def test_mxy_bottom_top_log_zero(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(1, 10, 50)
         y = np.abs(np.sin(x))  # will have zeros near sin nodes
         y[y < 0.001] = 0.0     # force some exact zeros
@@ -225,7 +232,7 @@ class TestBottomTopLogScale:
 # ---------------------------------------------------------------------------
 class TestMXYDataBatchMethods:
     def _make_m(self, n=3):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 10, 100)
         return MXYData([XYData(x, np.abs(np.sin(x * (i+1))), name=f'd{i}')
                         for i in range(n)])
@@ -243,7 +250,7 @@ class TestMXYDataBatchMethods:
             assert len(sp.x) == 90
 
     def test_del_edge_zero_batch(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 10, 100)
         y = np.zeros(100)
         y[10:90] = np.abs(np.sin(x[10:90]))
@@ -256,7 +263,7 @@ class TestMXYDataBatchMethods:
         assert len(result.sa) == 2
 
     def test_in_name_filter_plot(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         # Don't set labels — filter by name, no_label so no IndexError
         m = MXYData([
@@ -267,7 +274,7 @@ class TestMXYDataBatchMethods:
         plt.close('all')
 
     def test_not_in_name_filter_plot(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([
             XYData(x, np.ones(50), name='alpha_trace'),
@@ -309,8 +316,10 @@ class TestXYZData:
 # ---------------------------------------------------------------------------
 class TestMXYDataSaveLoad:
     def test_load_individual(self):
-        import tempfile, os
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        import os
+        import tempfile
+
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         with tempfile.TemporaryDirectory() as tmp:
             # Write two CSV files
             for i in range(2):
@@ -322,8 +331,10 @@ class TestMXYDataSaveLoad:
             assert len(m.sa) == 2
 
     def test_save_individual(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
-        import tempfile, os
+        import os
+        import tempfile
+
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         with tempfile.TemporaryDirectory() as tmp:
             x = np.linspace(0, 5, 20)
             m = MXYData([XYData(x, np.ones(20), name='trace_A'),
@@ -399,8 +410,9 @@ class TestGeneralAdditional:
         assert idx == 2
 
     def test_how_long_no_crash(self):
-        from fte_analysis_libraries.General import how_long
         import time
+
+        from fte_analysis_libraries.General import how_long
         def dummy(): time.sleep(0)
         total = how_long(dummy)
         assert total >= 0
@@ -459,7 +471,7 @@ class TestSpectrumAdditional:
             pass  # method may have edge-case issues; just exercise the code
 
     def test_spectra_remain(self):
-        from fte_analysis_libraries.Spectrum import Spectrum, Spectra
+        from fte_analysis_libraries.Spectrum import Spectra, Spectrum
         items = [Spectrum(np.linspace(400, 700, 50), np.ones(50), name=f'sp_{i}')
                  for i in range(4)]
         sa = Spectra(items)
@@ -472,7 +484,7 @@ class TestSpectrumAdditional:
 # ---------------------------------------------------------------------------
 class TestMXYDataIdfacFit:
     def test_idfac_fit_batch(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         # Create two semilog JV-like traces (V vs log(J))
         V = np.linspace(0.3, 0.8, 50)
         J1 = np.exp(V / (1.5 * 0.02585))  # nid=1.5, Vth=0.02585

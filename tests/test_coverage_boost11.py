@@ -1,10 +1,12 @@
 """Eleventh coverage-boost: XYdata.py save/plot extras, Spectrum.py save branches."""
-import warnings
-import tempfile
 import os
+import tempfile
+import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -16,7 +18,7 @@ warnings.filterwarnings('ignore')
 # ---------------------------------------------------------------------------
 class TestMXYDataPlotEdges:
     def _make_m_diff_x(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x1 = np.linspace(0, 5, 50)
         x2 = np.linspace(1, 8, 50)  # different range
         return MXYData([XYData(x1, np.sin(x1), name='a'),
@@ -24,7 +26,7 @@ class TestMXYDataPlotEdges:
 
     def test_plot_fontsize_kwarg(self):
         """fontsize kwarg in MXYData.plot (lines 1999-2000)."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.sin(x), name='a'), XYData(x, np.cos(x), name='b')])
         m.label(['A', 'B'])
@@ -40,7 +42,7 @@ class TestMXYDataPlotEdges:
 
     def test_plot_bottom_only(self):
         """Lines 2022-2024: bottom set but top=None → auto top from data."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.exp(-x))])
         m.plot(show_plot=False, bottom=0.01)
@@ -48,7 +50,7 @@ class TestMXYDataPlotEdges:
 
     def test_plot_top_only(self):
         """Lines 2027-2030: top set but bottom=None → auto bottom from data."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.exp(-x))])
         m.plot(show_plot=False, top=1.5)
@@ -56,7 +58,7 @@ class TestMXYDataPlotEdges:
 
     def test_plot_plotrange_attribute(self):
         """Line 2046: spec.plotrange attribute used to slice x range."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 10, 100)
         sp = XYData(x, np.sin(x), name='a')
         sp.plotrange = [2.0, 8.0]  # restrict plotting range
@@ -66,7 +68,7 @@ class TestMXYDataPlotEdges:
 
     def test_plot_individual_showindex(self):
         """Lines 2058, 2066: individual plotstyle + showindex covers those branches."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.sin(x), name='a'), XYData(x, np.cos(x), name='b')])
         m.label(['A', 'B'])
@@ -80,7 +82,7 @@ class TestMXYDataPlotEdges:
 # ---------------------------------------------------------------------------
 class TestMXYDataSaveExtras:
     def _make_m(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 20)
         m = MXYData([XYData(x, np.sin(x), name='wave_a'),
                      XYData(x, np.cos(x), name='wave_b')])
@@ -105,7 +107,7 @@ class TestMXYDataSaveExtras:
 
     def test_save_in_one_file_different_x(self):
         """save_in_one_file with different x → prints warning (line 2177)."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x1 = np.linspace(0, 5, 20)
         x2 = np.linspace(1, 6, 20)  # different x range
         m = MXYData([XYData(x1, np.sin(x1), name='a'),
@@ -119,7 +121,7 @@ class TestMXYDataSaveExtras:
 
     def test_save_in_one_file_unit_labels(self):
         """Lines 2171-2172: unit appended to column name when uy != ''."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 20)
         sp = XYData(x, np.sin(x), quants={'x': 'Time', 'y': 'Voltage'},
                     units={'x': 's', 'y': 'mV'}, name='wave')
@@ -163,7 +165,7 @@ class TestMXYDataSaveExtras:
 class TestSpectraNamesToLabel:
     def test_names_to_label_no_split(self):
         """split_ch=None → just appends sp.name (line 1432)."""
-        from fte_analysis_libraries.Spectrum import Spectrum, Spectra
+        from fte_analysis_libraries.Spectrum import Spectra, Spectrum
         wl = np.linspace(400, 700, 50)
         sa = Spectra([Spectrum(wl, np.ones(50), name='sample_A')])
         sa.names_to_label(split_ch=None)
@@ -177,8 +179,10 @@ class TestSpectraNamesToLabel:
 class TestSpectraSave:
     def test_save_different_x_range(self):
         """Line 1469: different x ranges → prints warning, does not save."""
-        from fte_analysis_libraries.Spectrum import Spectrum, Spectra
-        import tempfile, os
+        import os
+        import tempfile
+
+        from fte_analysis_libraries.Spectrum import Spectra, Spectrum
         wl1 = np.linspace(400, 700, 50)
         wl2 = np.linspace(300, 600, 50)
         sa = Spectra([Spectrum(wl1, np.ones(50)), Spectrum(wl2, np.ones(50))])
@@ -188,8 +192,10 @@ class TestSpectraSave:
 
     def test_save_with_units(self):
         """Lines 1478, 1486: unit suffix appended to column names."""
-        from fte_analysis_libraries.Spectrum import Spectrum, Spectra
-        import tempfile, os
+        import os
+        import tempfile
+
+        from fte_analysis_libraries.Spectrum import Spectra, Spectrum
         wl = np.linspace(400, 700, 301)
         sp1 = Spectrum(wl, np.ones(301),
                        quants={'x': 'Wavelength', 'y': 'PL'},
@@ -211,7 +217,7 @@ class TestSpectraSave:
 # ---------------------------------------------------------------------------
 class TestPELSpectraGuessFactor:
     def test_guess_factor(self):
-        from fte_analysis_libraries.Spectrum import PELSpectrum, PELSpectra
+        from fte_analysis_libraries.Spectrum import PELSpectra, PELSpectrum
         wl = np.linspace(500, 800, 100)
         # sp1 ≈ 2 * sp2 → factor should be ≈ 2
         sp1 = PELSpectrum(wl, np.sin(wl/50) + 2.0, name='ip')
@@ -227,7 +233,7 @@ class TestPELSpectraGuessFactor:
 class TestMXYDataSavePlot:
     def test_plot_save_plot(self):
         """save_plot kwarg in MXYData.plot (lines 2097-2103)."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.sin(x), name='a')])
         m.label(['A'])

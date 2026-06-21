@@ -1,8 +1,10 @@
 """Fifth coverage-boost: XYdata branches, TRPL from_param branches, Spectrum methods."""
 import warnings
+
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -59,13 +61,13 @@ class TestXYDataIdfacFitPlot:
 # ---------------------------------------------------------------------------
 class TestMXYDataUtilities:
     def _make_m(self, n=3):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         return MXYData([XYData(x, np.ones(50) * (i+1), name=f'trace_{i}')
                         for i in range(n)])
 
     def test_combine_labeled(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m1 = MXYData([XYData(x, np.ones(50), name='a')])
         m2 = MXYData([XYData(x, np.ones(50)*2, name='b')])
@@ -77,8 +79,8 @@ class TestMXYDataUtilities:
 
     def test_combine_different_types_warning(self):
         """Combining different types prints warning but doesn't raise."""
-        from fte_analysis_libraries.XYdata import XYData, MXYData
         from fte_analysis_libraries.Spectrum import Spectra, Spectrum
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(400, 700, 50)
         m1 = MXYData([XYData(x, np.ones(50), name='a')])
         m2 = Spectra([Spectrum(x, np.ones(50)*2, name='b')])
@@ -99,7 +101,7 @@ class TestMXYDataUtilities:
         m.print_all_names(split_ch='_')
 
     def test_print_all_names_unique(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([
             XYData(x, np.ones(50), name='group_A'),
@@ -141,7 +143,7 @@ class TestMXYDataUtilities:
         plt.close('all')
 
     def test_names_to_label_split(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.ones(50), name='sample_A_001'),
                      XYData(x, np.ones(50)*2, name='sample_B_002')])
@@ -174,16 +176,18 @@ class TestTRPLFromParamBranches:
                          N_points=10, k1=1e7, k2=1e-10, pulse_len=None)
 
     def test_from_param_show_progress(self):
-        from fte_analysis_libraries.TRPL import TRPLData, TRPLParam
         import numpy as np
+
+        from fte_analysis_libraries.TRPL import TRPLData, TRPLParam
         p = self._make_params()
         p.n0 = np.ones(p.N_points) * 1e15
         d = TRPLData.from_param(p, time_delta=0.1e-9, show_progress=True)
         assert d.y.max() == 1.0
 
     def test_from_param_normalize_ns(self):
-        from fte_analysis_libraries.TRPL import TRPLData, TRPLParam
         import numpy as np
+
+        from fte_analysis_libraries.TRPL import TRPLData, TRPLParam
         p = self._make_params()
         p.n0 = np.ones(p.N_points) * 1e15
         d = TRPLData.from_param(p, time_delta=0.1e-9,
@@ -197,8 +201,10 @@ class TestTRPLFromParamBranches:
 # ---------------------------------------------------------------------------
 class TestMXYDataLoadIndividual:
     def test_load_individual_with_quants(self):
-        import tempfile, os
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        import os
+        import tempfile
+
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         with tempfile.TemporaryDirectory() as tmp:
             import pandas as pd
             for i in range(2):
@@ -220,7 +226,7 @@ class TestMXYDataLoadIndividual:
 # ---------------------------------------------------------------------------
 class TestMXYDataImageStream:
     def test_plot_generate_image_stream(self):
-        from fte_analysis_libraries.XYdata import XYData, MXYData
+        from fte_analysis_libraries.XYdata import MXYData, XYData
         x = np.linspace(0, 5, 50)
         m = MXYData([XYData(x, np.ones(50), name='a'),
                      XYData(x, np.ones(50)*2, name='b')])

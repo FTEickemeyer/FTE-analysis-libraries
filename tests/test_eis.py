@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-from fte_analysis_libraries.Electrochemistry import Z_in_4th_quadrant, EIS_predict
+from fte_analysis_libraries.Electrochemistry import EIS_predict, Z_in_4th_quadrant
 
 
 class TestZIn4thQuadrant:
