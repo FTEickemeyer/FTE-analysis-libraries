@@ -18,6 +18,9 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+if not hasattr(np, 'trapezoid'):  # NumPy < 2.0 compatibility
+    np.trapezoid = np.trapz  # type: ignore[attr-defined]
 from matplotlib import rcParams
 from scipy.interpolate import interp1d
 
