@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 Created on Sat Mar 21 09:41:51 2020
 
@@ -510,8 +510,8 @@ def EIS_get_data(TFNs: str, f_range: Any | None = None, Z_4th_quadrant: Any = Tr
         
         if show_title:
             plt.title(title)
-        plt.xlabel('$Z^{\\prime}(\\omega) \, [\\Omega \, cm^2]$')
-        plt.ylabel('$-Z^{\\prime \\prime}(\\omega) \, [\\Omega \, cm^2]$')
+        plt.xlabel('$Z^{\\prime}(\\omega) \\, [\\Omega \\, cm^2]$')
+        plt.ylabel('$-Z^{\\prime \\prime}(\\omega) \\, [\\Omega \\, cm^2]$')
         plt.show()
         
         #Plot Bode plot
@@ -528,7 +528,7 @@ def EIS_get_data(TFNs: str, f_range: Any | None = None, Z_4th_quadrant: Any = Tr
 
         ax[0].tick_params(axis='both', which='major', labelsize=16)
         ax[0].grid(False)
-        ax[0].set_ylabel('$\\vert Z(\\omega) \\vert \, [\\Omega \, cm^2]$')
+        ax[0].set_ylabel('$\\vert Z(\\omega) \\vert \\, [\\Omega \\, cm^2]$')
         if show_title:
             ax[0].set_title(title)
         ax[1].tick_params(axis='both', which='major', labelsize=16)
@@ -729,8 +729,8 @@ def multiple_Nyquist_and_Bode_plot(f_list: Any, Z_list: Any, f_range: Any | None
     
         ax.tick_params(axis='both', which='major', labelsize=textsize)
         ax.grid(False)
-        plt.xlabel('$Z^{\\prime}(\\omega) \, [\\Omega \, cm^2]$', fontsize = textsize)
-        plt.ylabel('$-Z^{\\prime \\prime}(\\omega) \, [\\Omega \, cm^2]$', fontsize = textsize)
+        plt.xlabel('$Z^{\\prime}(\\omega) \\, [\\Omega \\, cm^2]$', fontsize = textsize)
+        plt.ylabel('$-Z^{\\prime \\prime}(\\omega) \\, [\\Omega \\, cm^2]$', fontsize = textsize)
         if show_label:
             plt.legend(fontsize = textsize, bbox_to_anchor=(1,1), loc="upper left")
         plt.show()
@@ -767,7 +767,7 @@ def multiple_Nyquist_and_Bode_plot(f_list: Any, Z_list: Any, f_range: Any | None
         ax[0].tick_params(axis='both', which='major', labelsize=textsize)
         ax[0].grid(False)
         ax[0].set_xlabel('f [Hz]', fontsize = textsize)
-        ax[0].set_ylabel('$\\vert Z(\\omega) \\vert \, [\\Omega \, cm^2]$', fontsize = textsize)
+        ax[0].set_ylabel('$\\vert Z(\\omega) \\vert \\, [\\Omega \\, cm^2]$', fontsize = textsize)
         ax[1].tick_params(axis='both', which='major', labelsize=textsize)
         ax[1].set_xlabel('f [Hz]', fontsize = textsize)
         ax[1].set_ylabel('$-\\phi_Z(\\omega)$ [°]', fontsize = textsize)
@@ -933,7 +933,7 @@ def multiple_capacitance_plot(f_list: Any, Z_list: Any, f_range: Any | None = No
     ax[0].tick_params(axis='both', which='major', labelsize=textsize)
     ax[0].grid(False)
     #ax[0].set_xlabel('f [Hz]', fontsize = textsize)
-    #ax[0].set_ylabel('$\\vert Z(\\omega) \\vert \, [\\Omega \, cm^2]$', fontsize = textsize)
+    #ax[0].set_ylabel('$\\vert Z(\\omega) \\vert \\, [\\Omega \\, cm^2]$', fontsize = textsize)
     ax[1].tick_params(axis='both', which='major', labelsize=textsize)
     #ax[1].set_xlabel('f [Hz]', fontsize = textsize)
     #ax[1].set_ylabel('$-\\phi_Z(\\omega)$ [°]', fontsize = textsize)
@@ -994,7 +994,7 @@ def import_biologic_mpt_data(file: Any, use_cols: bool) -> Any:
     if ext == '.mpt':
         encoding = "latin-1" # Biologic
         # find header lines
-        header_pattern = 'Nb header lines : (\d+)'
+        header_pattern = r'Nb header lines : (\d+)'
         header_lines = None
         with open( file, encoding = encoding ) as f:
             for line in f:

@@ -108,7 +108,7 @@ def get_Andor_metadata(f: float, showall: bool = False) -> Any:
         print(it)
 
     # accumulations
-    acc_pattern = '(\d+)acc'
+    acc_pattern = r'(\d+)acc'
     acc_match = re.search(acc_pattern, mdat.lower())
     acc = int(acc_match.group(1))  # type: ignore
     metadata['acc'] = acc
@@ -116,23 +116,23 @@ def get_Andor_metadata(f: float, showall: bool = False) -> Any:
         print(acc)
 
     # grating
-    lmm_pattern = '(\d+)lmm'
+    lmm_pattern = r'(\d+)lmm'
     lmm_match = re.search(lmm_pattern, mdat.lower())
     lmm = int(lmm_match.group(1))  # type: ignore
     metadata['grating'] = lmm
     if showall:
         print(lmm)
 
-    center_pattern = 'center(\d+)'
+    center_pattern = r'center(\d+)'
     center_match = re.search(center_pattern, mdat.lower())
     center = int(center_match.group(1))  # type: ignore
     metadata['grating_center_nm'] = center
     if showall:
         print(center)
-    
+
     # slit (is only used for the new Andor system)
     if 'slit' in mdat.lower():
-        slit_pattern = '(\d+)'+ 'umslit'
+        slit_pattern = r'(\d+)'+ 'umslit'
         slit_match = re.search(slit_pattern, mdat.lower())
         sl = int(slit_match.group(1))  # type: ignore
         metadata['slit_um'] = sl

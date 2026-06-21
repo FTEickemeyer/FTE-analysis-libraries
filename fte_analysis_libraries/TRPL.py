@@ -89,20 +89,18 @@ def initial_carrier_conc(wavelength: np.ndarray, film_thickness: Any, fluence: f
 # These are the important functions for the numerical simulation of the carrier density and TRPL
 
 def EulerHeatConstBCSparse(u0: Any, x: np.ndarray, dt: Any, nr_times: Any, t0: Any, mu: Any, k1: float, k2: float, k3: Any, SL: Any, SR: Any, n_exc: Any = 0) -> Any:
-    """ This function solves the equation :
-            n_t = D n_xx -k1 n - k2 n^2 - k3 n^3
-    by using the Euler method. The function takes 
-    an initial condition u0, a domain  x, 
-    a time step dt, the number of times to run the loop, 
-    the initial time, t0, and the physical parameters as input.
+    """Solve n_t = D n_xx - k1 n - k2 n^2 - k3 n^3 using the Euler method.
+
+    Takes an initial condition u0, a domain x, a time step dt, the number
+    of iterations nr_times, the initial time t0, and the physical parameters.
     """
     # Important Constants, etc.
-    
+
     time = t0
     dx = x[1] - x[0]
     numUnknowns = len(u0)
     r = dt/(dx**2)
-        
+
     D = k * T_RT / q * mu
     mainDiagonal = -2*np.ones(numUnknowns)
     mainDiagonal[0] = -2 + 2*(-SL)*dx/D  # -SL so that SL is positive
@@ -127,12 +125,10 @@ def EulerHeatConstBCSparse(u0: Any, x: np.ndarray, dt: Any, nr_times: Any, t0: A
 
 
 def EulerHeatConstBCSparse_simple(u0: Any, x: np.ndarray, dt: Any, nr_times: Any, t0: Any, mu: Any, k1: float, SL: Any, SR: Any, n_exc: Any = 0) -> Any:
-    """ This function solves the equation :
-            n_t = D n_xx -k1 n # no bimol. and no Auger recombination
-    by using the Euler method. The function takes 
-    an initial condition u0, a domain  x, 
-    a time step dt, the number of times to run the loop, 
-    the initial time, t0, and the physical parameters as input.
+    """Solve n_t = D n_xx - k1 n (no bimolecular/Auger) using the Euler method.
+
+    Takes an initial condition u0, a domain x, a time step dt, the number
+    of iterations nr_times, the initial time t0, and the physical parameters.
     """
     # Important Constants, etc.
     
@@ -734,17 +730,17 @@ class TRPLData(XYData):
             Start time in ns. The default is 0.
         stop : float, optional
             Stop time in ns. The default is None.
-        p0 : 4-tuple 
-            starting parameters, p0[0:1]: exponential prefactor, p0[2:3]: time in ns. 
+        p0 : 4-tuple
+            Starting parameters: p0[0:1] exponential prefactor, p0[2:3] time in ns.
             The default is (1, 1e-1, 10, 100).
 
         Returns
         -------
         mexpfit : TRPLData
             Fit curve. In addition the optimized fit parameters popt, start, and stop are returned as parameters.
-            
-        Example (taken from mul3_expfit, not yet tested)
-        -------
+
+        Examples
+        --------
         #param = TRPLParam(finaltime = 500e-9, mu = 0.1, k1 = 1e7)
         #example = TRPLData.from_param(param, show_progress = True)
         #example.equidist(right = 50, delta = 1)
@@ -797,30 +793,18 @@ class TRPLData(XYData):
             Start time in ns. The default is 0.
         stop : float, optional
             Stop time in ns. The default is None.
-        p0 : 8-tuple 
-            starting parameters, p0[0:2]: exponential prefactor, p0[3:5]: time in ns. 
+        p0 : 8-tuple
+            Starting parameters: p0[0:2] exponential prefactor, p0[3:5] time in ns.
             The default is (1, 1e-1, 1e-2, 5, 20, 100).
 
         Returns
         -------
         mexpfit : TRPLData
             Fit curve. In addition the optimized fit parameters popt, start, and stop are returned as parameters.
-            
-        Example
-        -------
-        #param = TRPLParam(finaltime = 500e-9, mu = 0.1, k1 = 1e7)
-        #example = TRPLData.from_param(param, show_progress = True)
-        #example.equidist(right = 50, delta = 1)
-        p0 = (0.4, 0.4, 0.1, 10, 30, 100)
-        ns = np.arange(501)
-        example = TRPLData.gen_m3ed(ns, p0)
-        #example.plot(yscale = 'log', left = 2, right = 500, divisor = 1e3, figsize = (7, 5))
-        ex_fit = example.mult3_expfit(start = 0, stop = 500)
-        both = MTRPLData([example, ex_fit])
-        both.label(['orig', 'fit'])
-        both.plot(yscale = 'log', left = 2, right = 500, divisor = 1e3, figsize = (7, 5))
-        d = example.delta(ex_fit, left = 2, right = 400)
-        d.plot()
+
+        Examples
+        --------
+        >>> p0 = (0.4, 0.4, 0.1, 10, 30, 100)
         '''
         f = lambda t, a1, a2, a3, tau1, tau2, tau3 : a1 * np.e**(-t/tau1) + a2 * np.e**(-t/tau2) + a3 * np.e**(-t/tau3)
         
@@ -861,32 +845,18 @@ class TRPLData(XYData):
             Start time in ns. The default is 0.
         stop : float, optional
             Stop time in ns. The default is None.
-        p0 : 8-tuple 
-            starting parameters, p0[0:3]: exponential prefactor, p0[4:7]: time in ns. 
+        p0 : 8-tuple
+            Starting parameters: p0[0:3] exponential prefactor, p0[4:7] time in ns.
             The default is (1, 1e-1, 1e-2, 1e-3, 5, 20, 100, 500).
 
         Returns
         -------
         mexpfit : TRPLData
             Fit curve. In addition the optimized fit parameters popt, start, and stop are returned as parameters.
-            
-        Example
-        -------
-        #param = TRPLParam(finaltime = 500e-9, mu = 0.1, k1 = 1e7)
-        #example = TRPLData.from_param(param, show_progress = True)
-        #example.equidist(right = 50, delta = 1)
-        p0 = (0.4, 0.4, 0.1, 10, 30, 100)
-        ns = np.arange(501)
-        example = TRPLData.gen_m3ed(ns, p0)
-        #example.plot(yscale = 'log', left = 2, right = 500, divisor = 1e3, figsize = (7, 5))
-        p0 = (0.1, 0.01, 0.01, 0.8, 20, 30, 50, 50)
-        ex_fit = example.mult4_expfit(start = 2, stop = 500, p0 = p0)
-        both = MTRPLData([example, ex_fit])
-        both.label(['orig', 'fit'])
-        both.plot(yscale = 'log', left = 2, right = 500, divisor = 1e3, figsize = (7, 5))
-        d = example.delta(ex_fit, left = 2, right = 400)
-        d.plot()
 
+        Examples
+        --------
+        >>> p0 = (0.1, 0.01, 0.01, 0.8, 20, 30, 50, 50)
         '''
         f = lambda t, a1, a2, a3, a4, tau1, tau2, tau3, tau4 : a1 * np.e**(-t/tau1) + a2 * np.e**(-t/tau2) + a3 * np.e**(-t/tau3) + a4 * np.e**(-t/tau4)
         

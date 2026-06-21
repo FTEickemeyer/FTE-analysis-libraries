@@ -896,7 +896,7 @@ def copy_to_clipboard(text: Any) -> Any:
     
 def win_long_fp(fp: Any) -> Any:
     """
-    Prepend \\?\ to a path to enable Windows long-path support.
+    Prepend \\?\\ to a path to enable Windows long-path support.
     
     Parameters
     ----------
