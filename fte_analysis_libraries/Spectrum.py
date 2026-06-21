@@ -275,9 +275,9 @@ class EQESpectrum(Spectrum):
                     print(f'sp.name = {sp.name}')
         
             if self.uy == '%':
-                return np.trapz(EQE_nm.y/100 * sp.y * q * 1e3/1e4, dx = delta)  # type: ignore
+                return np.trapezoid(EQE_nm.y/100 * sp.y * q * 1e3/1e4, dx = delta)  # type: ignore
             elif (self.uy == '') or (self.uy =='abs.'):
-                return np.trapz(EQE_nm.y * sp.y * q * 1e3/1e4, dx = delta)  # type: ignore
+                return np.trapezoid(EQE_nm.y * sp.y * q * 1e3/1e4, dx = delta)  # type: ignore
         
         if self.ux == 'eV':
             if delta is None:
@@ -301,9 +301,9 @@ class EQESpectrum(Spectrum):
                     print('Your ux is {sp.ux}.')                
         
             if self.uy == '%':
-                return np.trapz(EQE_eV.y/100 * sp.y * q * 1e3/1e4, dx = delta)  # type: ignore
+                return np.trapezoid(EQE_eV.y/100 * sp.y * q * 1e3/1e4, dx = delta)  # type: ignore
             elif (self.uy == '') or (self.uy =='abs.'):
-                return np.trapz(EQE_eV.y * sp.y * q * 1e3/1e4, dx = delta)  # type: ignore
+                return np.trapezoid(EQE_eV.y * sp.y * q * 1e3/1e4, dx = delta)  # type: ignore
 
 
     def normalize_to_jsc(self, Jsc: float) -> Any:
@@ -514,7 +514,7 @@ class AbsSpectrum(Spectrum):
             raise AttributeError("calc_jradlim() must be called before calc_vocrad() to set self.Jradlim.")
         empf = self.emission_pf(E_start, E_stop, T = T)
         denergies_eV = self.x[1] - self.x[0]
-        Jrad0 = q * np.trapz(empf.y, dx = denergies_eV) *1e-4 /1e-3  # type: ignore
+        Jrad0 = q * np.trapezoid(empf.y, dx = denergies_eV) *1e-4 /1e-3  # type: ignore
 
         Vocrad = k*T/q * math.log(self.Jradlim/Jrad0 + 1)
         
@@ -579,7 +579,7 @@ class AbsSpectrum(Spectrum):
         
         dx = (asp.x[1] - asp.x[0])
                 
-        self.Jradlim = np.trapz(asp.y[start_idx:] * illumspec_eV.y[start_idx:] * q, dx = dx) * 1e3 / 1e4  # type: ignore
+        self.Jradlim = np.trapezoid(asp.y[start_idx:] * illumspec_eV.y[start_idx:] * q, dx = dx) * 1e3 / 1e4  # type: ignore
 
     def convert_absorbance_to_absorptance(self) -> Any:
         """
@@ -1049,7 +1049,7 @@ class DiffSpectrum(Spectrum):
         
         dx = (max(self.x) - min(self.x)) / (len(self.x) - 1)
 
-        return np.trapz(self.y[r], dx = dx)  # type: ignore
+        return np.trapezoid(self.y[r], dx = dx)  # type: ignore
     
     def photonflux(self, start: float | None=None, stop: float | None=None) -> Any:
         """Old alias for calc_integrated_photonflux; prefer that method."""
@@ -1068,13 +1068,13 @@ class DiffSpectrum(Spectrum):
         if self.ux == 'nm':
             if self.uy == 'W/[m2 nm]':
                 new = self.product(cf, qy = 'Spectral illuminance', uy = 'lm/[m2 nm]')
-                return np.trapz(new.y, dx = new.x[1]-new.x[0])  # type: ignore
+                return np.trapezoid(new.y, dx = new.x[1]-new.x[0])  # type: ignore
             elif self.uy == '1/[s m2 nm]':
                 self_sf = self.photonflux_to_irradiance()
                 new = self_sf.product(cf, qy = 'Spectral illuminance', uy = 'lm/[m2 nm]')
-                return np.trapz(new.y, dx = new.x[1]-new.x[0])  # type: ignore
+                return np.trapezoid(new.y, dx = new.x[1]-new.x[0])  # type: ignore
             elif self.uy == ('lm/[m2 nm]') or (self.uy == 'lx/nm'):
-                return np.trapz(self.y, dx = self.x[1]-self.x[0])  # type: ignore
+                return np.trapezoid(self.y, dx = self.x[1]-self.x[0])  # type: ignore
 
             else:
                 print('Attention (calc_lux): This function works only for spectral irradiances in W/[m2 nm] or photon flux in 1/[s m2 nm],')
@@ -1104,7 +1104,7 @@ class DiffSpectrum(Spectrum):
 
         """
         if ((self.uy == 'W/[m2 nm]') and (self.ux =='nm')) or ((self.uy == 'W/[m2 eV]') and (self.ux =='eV')):
-            return np.trapz(self.y, dx = self.x[1]-self.x[0])*1e-1  # type: ignore
+            return np.trapezoid(self.y, dx = self.x[1]-self.x[0])*1e-1  # type: ignore
         else:
 
             print('Attention (calc_irradiance): uy has to be either in W/[m2 nm] or W/[m2 eV] and ux in nm or eV, respectively!')
@@ -1200,7 +1200,7 @@ class DiffSpectrum(Spectrum):
         sp.equidist(left=left, right=right, delta=1)
         e.equidist(left=left, right=right, delta=1)
         sp_times_e = sp*e/100
-        int_curr_y = q*np.array([np.trapz(sp_times_e.y[0:idx], dx=1)*1e3/1e4 for idx in range(len(sp_times_e.x))])  # type: ignore
+        int_curr_y = q*np.array([np.trapezoid(sp_times_e.y[0:idx], dx=1)*1e3/1e4 for idx in range(len(sp_times_e.x))])  # type: ignore
         return DiffSpectrum(x=sp_times_e.x, y=int_curr_y, quants=dict(x='Wavelength', y='Integrated current density'), units=dict(x='nm', y='mA/cm2'))
 
 
@@ -1220,7 +1220,7 @@ class DiffSpectrum(Spectrum):
         # Calculates an integrated irradiance plot as a function of wavelength
         # Works only with spectral irradiance
     
-        int_irr_y = np.array([np.trapz(self.y[0:idx], dx=self.x[1]-self.x[0])*1e3/1e4 for idx in range(len(self.x))])  # type: ignore
+        int_irr_y = np.array([np.trapezoid(self.y[0:idx], dx=self.x[1]-self.x[0])*1e3/1e4 for idx in range(len(self.x))])  # type: ignore
         return DiffSpectrum(x=self.x, y=int_irr_y, quants=dict(x='Wavelength', y='Integrated irradiance'), units=dict(x='nm', y='mW/cm2'))
     
 
