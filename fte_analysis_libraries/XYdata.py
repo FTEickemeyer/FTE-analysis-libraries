@@ -1227,7 +1227,7 @@ class XYData:
             self.plotstyle = dict(linestyle = 'None', marker = 'o', color = 'green', markersize = 20)
             fit.plotstyle = dict(linestyle = '-', color = 'green', linewidth = 5)
             da = MXYData([self, fit])
-            da.label([self.name, f'm = ln(10) $\cdot$ kT/q $\cdot$ {fit.nid:.2f}'])  # type: ignore
+            da.label([self.name, f'm = ln(10) $\\cdot$ kT/q $\\cdot$ {fit.nid:.2f}'])  # type: ignore
             da.plot(xscale = 'log', left = plot_left, right = plot_right, bottom = 0.9 * self.min_within(left=plot_left, right=plot_right), top = 1.1 * self.max_within(left=plot_left, right=plot_right), plotstyle = 'individual')
         
         if return_fit:    
@@ -2542,7 +2542,7 @@ class MXYData:
             all_data.append(all_data[-1].idfac_fit(left = left, right = right))
             #fit[i].plotstyle = dict(linestyle = '-', color = colors[i], linewidth = 5)
             all_data[-1].plotstyle = dict(linestyle = '-', color = gen.colors[i], linewidth = 5)
-            all_data_label.append(f'm = ln(10) $\cdot$ kT/q $\cdot$ {all_data[-1].nid:.2f}')
+            all_data_label.append(f'm = ln(10) $\\cdot$ kT/q $\\cdot$ {all_data[-1].nid:.2f}')
             save_names.append(label+'_fit')
     
         da = MXYData(all_data)

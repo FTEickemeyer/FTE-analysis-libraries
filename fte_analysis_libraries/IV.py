@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 Created on Sat Mar 21 09:41:51 2020
 
@@ -156,9 +156,9 @@ class PerfData:
         >>> obj.jmpp_text()
         """
         if uA:
-            text = f'$J_{{mpp}} = {self.Jmpp*1000:.2f} \; \mu A/cm^2$'  # type: ignore
+            text = f'$J_{{mpp}} = {self.Jmpp*1000:.2f} \\; \\mu A/cm^2$'  # type: ignore
         else:
-            text = f'$J_{{mpp}} = {self.Jmpp:.2f} \; mA/cm^2$'
+            text = f'$J_{{mpp}} = {self.Jmpp:.2f} \\; mA/cm^2$'
         return text        
     
     def vmpp_text(self) -> Any:
@@ -174,7 +174,7 @@ class PerfData:
         --------
         >>> obj.vmpp_text()
         """
-        return f'$V_{{mpp}} = {self.Vmpp:.3f} \; V$'
+        return f'$V_{{mpp}} = {self.Vmpp:.3f} \\; V$'
     
     def pmpp_text(self) -> Any:
         """
@@ -189,7 +189,7 @@ class PerfData:
         --------
         >>> obj.pmpp_text()
         """
-        return f'$P_{{mpp}} = {self.Pmpp:.2f} \; mW/cm^2$'
+        return f'$P_{{mpp}} = {self.Pmpp:.2f} \\; mW/cm^2$'
     
     def pce_text(self) -> Any:
         """
@@ -204,7 +204,7 @@ class PerfData:
         --------
         >>> obj.pce_text()
         """
-        return f'$PCE = {self.PCE:.1f}\%$'
+        return f'$PCE = {self.PCE:.1f}\\%$'
     
     def ff_text(self) -> Any:
         """
@@ -219,7 +219,7 @@ class PerfData:
         --------
         >>> obj.ff_text()
         """
-        return f'$FF = {self.FF:.1f}\%$'
+        return f'$FF = {self.FF:.1f}\\%$'
     
     def voc_text(self) -> Any:
         """
@@ -234,7 +234,7 @@ class PerfData:
         --------
         >>> obj.voc_text()
         """
-        return f'$V_{{oc}} = {self.Voc:.3f} \; V$'
+        return f'$V_{{oc}} = {self.Voc:.3f} \\; V$'
 
     def jsc_text(self, uA: Any = False) -> Any:
         """
@@ -255,9 +255,9 @@ class PerfData:
         >>> obj.jsc_text()
         """
         if uA:
-            text = f'$J_{{sc}} = {self.Jsc*1000:.2f} \; \mu A/cm^2$'  # type: ignore
+            text = f'$J_{{sc}} = {self.Jsc*1000:.2f} \\; \\mu A/cm^2$'  # type: ignore
         else:
-            text = f'$J_{{sc}} = {self.Jsc:.2f} \; mA/cm^2$'
+            text = f'$J_{{sc}} = {self.Jsc:.2f} \\; mA/cm^2$'
         return text
 
     def nid_text(self) -> Any:
@@ -288,7 +288,7 @@ class PerfData:
         --------
         >>> obj.rs_text()
         """
-        return f'$R_{{s}} = {self.Rs*1e3:.2e} \; \Omega \cdot cm^2$'  # type: ignore
+        return f'$R_{{s}} = {self.Rs*1e3:.2e} \\; \\Omega \\cdot cm^2$'  # type: ignore
     
     def rsh_text(self) -> Any:
         """
@@ -303,7 +303,7 @@ class PerfData:
         --------
         >>> obj.rsh_text()
         """
-        return f'$R_{{sh}} = {self.Rsh*1e3:.2e} \; \Omega \cdot cm^2$'  # type: ignore
+        return f'$R_{{sh}} = {self.Rsh*1e3:.2e} \\; \\Omega \\cdot cm^2$'  # type: ignore
     
     def cell_area_text(self) -> Any:
         """
@@ -319,7 +319,7 @@ class PerfData:
         >>> obj.cell_area_text()
         """
         if not(self.cell_area is None):
-            return f'Cell area $= {self.cell_area:.5f} \; cm^2$'
+            return f'Cell area $= {self.cell_area:.5f} \\; cm^2$'
         else:
             return ''
     
@@ -342,9 +342,9 @@ class PerfData:
         >>> obj.light_int_text()
         """
         if uW:
-            return f'Light intensity $= {self.light_int*1000:.2f} \; uW/cm^2$'
+            return f'Light intensity $= {self.light_int*1000:.2f} \\; uW/cm^2$'
         else:
-            return f'Light intensity $= {self.light_int:.2f} \; mW/cm^2$'
+            return f'Light intensity $= {self.light_int:.2f} \\; mW/cm^2$'
         
     @staticmethod
     def sq_limit(bg: float, illumspec_PF_eV: Any | None = None, light_int: float = 100, show: bool = False) -> Any:
@@ -368,8 +368,8 @@ class PerfData:
         -------
         fp : instance of PerfData.
         
-        Example
-        -------
+        Examples
+        --------
         bg = 2.30 #eV
         pd = PerfData.sq_limit(bg, show = True)
 
@@ -714,7 +714,7 @@ class IVData(XYData):
         --------
         >>> obj._format_nid_rs_rsh_label()
         """
-        return f'$n_{{id}} = {nid:.2f}, \ R_s = {Rs*1e3:.2e} \ \Omega \cdot cm^2, \ R_{{sh}} = {Rsh*1e3:.2e} \ \Omega \cdot cm^2$'  # type: ignore
+        return f'$n_{{id}} = {nid:.2f}, \\ R_s = {Rs*1e3:.2e} \\ \\Omega \\cdot cm^2, \\ R_{{sh}} = {Rsh*1e3:.2e} \\ \\Omega \\cdot cm^2$'  # type: ignore
 
     def det_voc(self, use_interpolate_extrapolate_method: bool=True) -> Any:
         """
@@ -834,7 +834,7 @@ class IVData(XYData):
         delta = np.exp(q * (self.Rs * self.Jsc - self.Voc) / (k * T))
         if delta > 0.1:
             text1 = "IVData.check_assumption: \n"
-            text2 = 'Attention: The assumption $\Delta \ll 1$ (eq. 6) is not satisfied!'
+            text2 = 'Attention: The assumption $\\Delta \\ll 1$ (eq. 6) is not satisfied!'
             plx(text1+text2)
         return delta
     
@@ -1059,9 +1059,9 @@ class IVData(XYData):
         >>> obj.table_param()
         """
             
-        row_labels = ['$PCE\ (\%)$', '$V_{OC}\ (V)$', '$J_{SC}\ (mA/cm^2)$', '$FF\ (\%)$', 
-                      '$V_{mpp} \ (V)$', '$J_{mpp} \ (mA/cm^2)$', 
-                      '$Light \ int \ (mW/cm^2)$', '$Cell \ area \ (cm^2)$']
+        row_labels = ['$PCE\\ (\\%)$', '$V_{OC}\\ (V)$', '$J_{SC}\\ (mA/cm^2)$', '$FF\\ (\\%)$', 
+                      '$V_{mpp} \\ (V)$', '$J_{mpp} \\ (mA/cm^2)$', 
+                      '$Light \\ int \\ (mW/cm^2)$', '$Cell \\ area \\ (cm^2)$']
         cell_text = []
         cell_text.append([f'{PCE:1.1f}'])
         cell_text.append([f'{Voc:1.3f}'])
@@ -1238,7 +1238,7 @@ class IVData(XYData):
             #x_max = max(self.x)
             x_max = fp_sq.Voc + 0.01
         new_x = np.arange(0, x_max, step = 0.001, dtype = np.float64)
-        iv_sq = IVData.from_fp(new_x, fp_sq, name = f'SQ limit ($E_g = {bg:.3f} \ eV): \ V_{{oc,SQ}} = {fp_sq.Voc:.3f} \ V, \ J_{{sc,SQ}} = {fp_sq.Jsc:.2f} \ mA/cm^2, \ n_{{id}} = 1,\ R_s = 0,\ R_{{sh}} = \infty$')
+        iv_sq = IVData.from_fp(new_x, fp_sq, name = f'SQ limit ($E_g = {bg:.3f} \\ eV): \\ V_{{oc,SQ}} = {fp_sq.Voc:.3f} \\ V, \\ J_{{sc,SQ}} = {fp_sq.Jsc:.2f} \\ mA/cm^2, \\ n_{{id}} = 1,\\ R_s = 0,\\ R_{{sh}} = \\infty$')
         iv_sq.det_perfparam()
         return iv_sq
     
@@ -1272,7 +1272,7 @@ class IVData(XYData):
         step = 0.001
         new_x = np.arange(0, x_max+2*step, step= step, dtype= np.float64)
         Jrad = np.array([IVData.i_of_v(new_x[i], Jsc, Voc = Vocrad, nid = 1, Rs = 0, Rsh = 1e15, T = T_RT) for i in range(len(new_x))])
-        iv_rad = IVData(new_x, Jrad, light_int = light_int, name = f'Radiative limit: $V_{{oc,rad}} = {Vocrad:.3f} \ V, \ J_{{sc,rad}} = {Jsc:.2f} \ mA/cm^2, \ n_{{id}} = 1,\ R_s = 0,\ R_{{sh}} = \infty$')
+        iv_rad = IVData(new_x, Jrad, light_int = light_int, name = f'Radiative limit: $V_{{oc,rad}} = {Vocrad:.3f} \\ V, \\ J_{{sc,rad}} = {Jsc:.2f} \\ mA/cm^2, \\ n_{{id}} = 1,\\ R_s = 0,\\ R_{{sh}} = \\infty$')
         iv_rad.det_perfparam()
         return iv_rad
     
@@ -1304,7 +1304,7 @@ class IVData(XYData):
         >>> obj.iv_trans()
         """
         Jtrans = np.array([IVData.i_of_v(V_arr[i], Jsc, Voc = Voc, nid = nid_rec, Rs = 0, Rsh = 1e10, T = T_RT) for i in range(len(V_arr))])
-        iv_trans = IVData(V_arr, Jtrans, light_int = light_int, name = f'Transport limit: $V_{{oc}} = {Voc:.3f} \ V, \ J_{{sc,trans}} = {Jsc:.2f} \ mA/cm^2, \ n_{{id}} = {nid_rec:.2f},\ R_s = 0,\ R_{{sh}} = \infty$')
+        iv_trans = IVData(V_arr, Jtrans, light_int = light_int, name = f'Transport limit: $V_{{oc}} = {Voc:.3f} \\ V, \\ J_{{sc,trans}} = {Jsc:.2f} \\ mA/cm^2, \\ n_{{id}} = {nid_rec:.2f},\\ R_s = 0,\\ R_{{sh}} = \\infty$')
         iv_trans.det_perfparam()
         return iv_trans
         
@@ -1317,7 +1317,7 @@ class IVData(XYData):
         """
         def print5param(Jsc: float, Voc: float, nid: float, Rs: float, Rsh: float) -> Any:
             #text = f'Voc = {Voc:.3f} V, Jsc = {Jsc:.2f} mA/cm2' '\n' f'nid = {nid:.2f}, Rs = {Rs:.2e} Ohm cm2, Rsh = {Rsh:.2e} Ohm cm2'
-            text = f'Voc = {Voc:.3f} V, Jsc = {Jsc:.2f} mA/cm$^2$, $n_{{id}} = {nid:.2f}, \ R_s = {Rs*1e3:.2e} \ \Omega \cdot cm^2, \ R_{{sh}} = {Rsh*1e3:.2e} \ \Omega \cdot cm^2$'
+            text = f'Voc = {Voc:.3f} V, Jsc = {Jsc:.2f} mA/cm$^2$, $n_{{id}} = {nid:.2f}, \\ R_s = {Rs*1e3:.2e} \\ \\Omega \\cdot cm^2, \\ R_{{sh}} = {Rsh*1e3:.2e} \\ \\Omega \\cdot cm^2$'
             return text
         
         #fp_sq = IVData.sq_limit(bg)
@@ -1642,14 +1642,17 @@ class IVData(XYData):
         See: Zhang et al., J. of Appl. Phys. 110, 064504 (2011) --> Eq. 8
 
             V   : terminal voltage  [V]
-            Isc : short‑circuit current density [mA/cm2 or mA if cell_area is None]
-            Voc : open‑circuit voltage [V]
-            nid : ideality factor   [–]
-            Rs  : series resistance [kΩcm2]
-            Rsh : shunt resistance  [kΩcm2]  (use np.inf if absent)
+            Isc : short-circuit current density [mA/cm2 or mA if cell_area is None]
+            Voc : open-circuit voltage [V]
+            nid : ideality factor   [-]
+            Rs  : series resistance [kOhm cm2]
+            Rsh : shunt resistance  [kOhm cm2]  (use np.inf if absent)
             T   : temperature       [K]
+
         Returns
-            I   : current [mA/cm2]  (NumPy array, same shape as V)
+        -------
+        I : array
+            Current [mA/cm2] (NumPy array, same shape as V).
         """
         if Rs * Isc > 700:
             print(f'i_of_v error: The factor Rs * Isc is {Rs*Isc:.1e}, i.e. > 700, np.exp(Rs*Isc) is too large, decrease Rs (in kOhm cm2) to below {700/Isc:.0f}!')

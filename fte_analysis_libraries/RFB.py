@@ -127,50 +127,50 @@ def calc_conc_functions(c_V: np.ndarray, c_SO4: Any) -> Any:
     We have the following five equations:  
 
     $\begin{equation}
-    \ce{ H2O <=> HO- + H+ , \, K_w = \frac{[OH-] \ [H+]}{[H2O]} = [OH-] \ [H+] =  10^{-14} , \, [H2O] = 1 } \tag{1}
-    \end{equation}$
+    \\ce{ H2O <=> HO- + H+ , \\, K_w = \frac{[OH-] \\ [H+]}{[H2O]} = [OH-] \\ [H+] =  10^{-14} , \\, [H2O] = 1 } \tag{1}
+    \\end{equation}$
     
     $\begin{equation}
-    \ce{ H2SO4 <=> HSO4- + H+ , \, K_{a1} = \frac{[HSO4-] \ [H+]}{[H2SO4]} = 10^{2.8} } \tag{2}
-    \end{equation}$
+    \\ce{ H2SO4 <=> HSO4- + H+ , \\, K_{a1} = \frac{[HSO4-] \\ [H+]}{[H2SO4]} = 10^{2.8} } \tag{2}
+    \\end{equation}$
     
     $\begin{equation}
-    \ce{ HSO4- <=> SO4^{2-} + H+ , \, K_{a2} = \frac{[SO4^{2-}] \ [H+]}{[HSO4-]} = 10^{-1.99} } \tag{3}
-    \end{equation}$
+    \\ce{ HSO4- <=> SO4^{2-} + H+ , \\, K_{a2} = \frac{[SO4^{2-}] \\ [H+]}{[HSO4-]} = 10^{-1.99} } \tag{3}
+    \\end{equation}$
     
     $\begin{equation}
-    \ce{ [H2SO4] + [HSO4-] + [SO4^{2-}] = [SO4] } \tag{4}
-    \end{equation}$
+    \\ce{ [H2SO4] + [HSO4-] + [SO4^{2-}] = [SO4] } \tag{4}
+    \\end{equation}$
     
     Charge balance:
     
     $\begin{equation}
-    \ce{ c_{pos_V} + [H+] = [HSO4-] + 2 * [SO4^{2-}] + [OH-] } \tag{5}
-    \end{equation}$
+    \\ce{ c_{pos_V} + [H+] = [HSO4-] + 2 * [SO4^{2-}] + [OH-] } \tag{5}
+    \\end{equation}$
     
     $\begin{equation}
-    \ce{ c_{pos_V} \equiv 2 \cdot [V^{2+}] + 3 \cdot [V^{3+}] + 2 \cdot [VO^{2+}] + 1 \cdot [VO_2^{+}]  \tag{6}}
-    \end{equation}$
+    \\ce{ c_{pos_V} \\equiv 2 \\cdot [V^{2+}] + 3 \\cdot [V^{3+}] + 2 \\cdot [VO^{2+}] + 1 \\cdot [VO_2^{+}]  \tag{6}}
+    \\end{equation}$
     
-    Knowns: $\ce{K_a_1, K_a_2, K_w, c_{pos_V}, [SO4] }$  
-    Unknowns: $\ce{ [H2SO4], [HSO4-], [SO4^{2-}], [H+], [OH-]}$  
+    Knowns: $\\ce{K_a_1, K_a_2, K_w, c_{pos_V}, [SO4] }$  
+    Unknowns: $\\ce{ [H2SO4], [HSO4-], [SO4^{2-}], [H+], [OH-]}$  
     So, 5 equations and 5 unknowns!
     
     Once we have the proton concentration we can calculate the sulfate and bisulfate concentrations using equations (2) and (3):  
     
     $\begin{equation}
-    \ce{ [HSO4-] = \frac{[H+] [SO4]}{[H+] + K_{a2}} } \tag{7}
-    \end{equation}$
+    \\ce{ [HSO4-] = \frac{[H+] [SO4]}{[H+] + K_{a2}} } \tag{7}
+    \\end{equation}$
     
     $\begin{equation}
-    \ce{ [SO4^{2-}] = [SO4] - [HSO4-] } \tag{8}
-    \end{equation}$
+    \\ce{ [SO4^{2-}] = [SO4] - [HSO4-] } \tag{8}
+    \\end{equation}$
     
     Vanadium: Concentrations  
-    -$\ce{V^{2+}}$: c_2  
-    -$\ce{V^{3+}}$: c_3  
-    -$\ce{(V^{IV}O)^{2+}}$: c_4    
-    -$\ce{(V^{V}O_2)^{+}}$: c_5  
+    -$\\ce{V^{2+}}$: c_2  
+    -$\\ce{V^{3+}}$: c_3  
+    -$\\ce{(V^{IV}O)^{2+}}$: c_4    
+    -$\\ce{(V^{V}O_2)^{+}}$: c_5  
     
     """
     
