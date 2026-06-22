@@ -71,6 +71,7 @@ from fte_analysis_libraries import Spectrum as spc
 | Function | Old kwarg | New kwarg |
 |---|---|---|
 | `all_values_greater_min` | `min` | `min_val` |
+| `XYData.load` / `MXYData.load` | `FN` | `filepath` |
 
 ### 4. Method renames
 

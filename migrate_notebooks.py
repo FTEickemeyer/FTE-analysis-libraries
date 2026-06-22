@@ -135,6 +135,13 @@ REGEX_REPLACEMENTS = [
         r"\1min_val=",
         "all_values_greater_min(min=) -> all_values_greater_min(min_val=)",
     ),
+    # XYData.load() / MXYData.load() kwarg rename: FN= → filepath=
+    # Matches only when preceded by a comma (keyword argument position).
+    (
+        re.compile(r",(\s*)FN\s*="),
+        r",\1filepath=",
+        ", FN= -> , filepath=  [review: ensure this is a .load() call]",
+    ),
 ]
 
 _COMPILED = [(re.compile(r"\b" + re.escape(old) + r"\b"), old, new)
