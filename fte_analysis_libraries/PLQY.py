@@ -611,7 +611,22 @@ class PLQYDataset:
             sp_.equidist(left = left, right = right, delta = delta)
 
             def f(fac: float) -> Any:
-                pass
+                diff = sp_.y - fac * fs_.y
+                return math.sqrt(1 / len(diff) * np.dot(diff, diff))
+
+            result = least_squares(fun=f, x0=[1])
+            return result.x[0]
+
+        left = self.PL_peak + self.param.corr_offs_left
+        right = self.PL_peak + self.param.corr_offs_right
+
+        if adj_factor is None:
+            factor = guess_factor(left=left, right=right)
+        else:
+            factor = adj_factor
+
+        self.adj_factor = factor
+
         if show_adjust_factor:
             print(f'The inbeam/outofbeam adjust factor is {factor:.2e}')  # type: ignore
 
