@@ -45,6 +45,7 @@ SKIP_DIRS = {
     Path(r"C:\Users\dreickem\switchdrive\Work\Python\My_packages\impedance.py-main_original"),
     Path(r"C:\Users\dreickem\switchdrive\Work\Python\old\UW\Ryan\PVtools-master"),
     Path(r"C:\Users\dreickem\switchdrive\Work\Python\PV tools\SQ limit\llight_spectra\Sandy"),
+    Path(r"C:\Users\dreickem\switchdrive\Work\Python\PV tools\IV evaluation\other\PVLIB_Python-master"),
 }
 
 _WORD_COMPILED = [
@@ -87,6 +88,9 @@ def _is_excluded(path: Path) -> bool:
             return True
         except ValueError:
             pass
+    # Skip any file inside a directory literally named "old"
+    if "old" in path.parts:
+        return True
     return False
 
 
