@@ -64,7 +64,13 @@ from fte_analysis_libraries import Spectrum as spc
 |---|---|
 | `.add(item)` | `.append(item)` |
 
-> **Note:** `.add()` cannot be auto-migrated by `migrate_notebooks.py` (too generic — conflicts with pandas `.add()` and other uses). Search manually for `\.add\(` in your notebooks.
+> **Note:** `.add()` cannot be word-boundary auto-migrated (conflicts with pandas `.add()`). It is handled via regex in `migrate_notebooks.py` and `update_notebooks_post_v1.py` — inspect `[review]` hits manually.
+
+### 3d. Keyword argument renames (MXYData / XYData)
+
+| Function | Old kwarg | New kwarg |
+|---|---|---|
+| `all_values_greater_min` | `min` | `min_val` |
 
 ### 4. Method renames
 

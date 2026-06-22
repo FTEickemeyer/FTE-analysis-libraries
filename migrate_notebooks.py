@@ -118,6 +118,25 @@ REPLACEMENTS = [
 # positives in comments / strings.  Flagged in the output.
 NEEDS_REVIEW = {"spectrum", "spectra", "Mobility", "Vsq"}
 
+# Raw regex replacements — for renames that word boundaries can't express
+# (e.g. keyword argument renames, method-call patterns).  Always flagged [review].
+# Each entry: (compiled_pattern, replacement_string, label)
+REGEX_REPLACEMENTS = [
+    # MXYData.add() / MTRPLData.add() → .append()
+    # NOTE: also matches pandas .add() — inspect [review] hits manually.
+    (
+        re.compile(r"\.add\("),
+        ".append(",
+        ".add( -> .append(  [review: check not pandas/list .add()]",
+    ),
+    # MXYData.all_values_greater_min(min=) → all_values_greater_min(min_val=)
+    (
+        re.compile(r"(all_values_greater_min\(\s*)min\s*="),
+        r"\1min_val=",
+        "all_values_greater_min(min=) -> all_values_greater_min(min_val=)",
+    ),
+]
+
 _COMPILED = [(re.compile(r"\b" + re.escape(old) + r"\b"), old, new)
              for old, new in REPLACEMENTS]
 
@@ -129,6 +148,11 @@ def apply_replacements(source: str) -> tuple[str, list[str]]:
         if n:
             flag = " [review]" if old in NEEDS_REVIEW else ""
             changes.append(f"{old} -> {new}  ({n}x){flag}")
+            source = new_source
+    for pattern, replacement, label in REGEX_REPLACEMENTS:
+        new_source, n = pattern.subn(replacement, source)
+        if n:
+            changes.append(f"{label}  ({n}x)")
             source = new_source
     return source, changes
 
