@@ -52,6 +52,9 @@ SKIP_DIRS = {
     Path(r"C:\Users\dreickem\switchdrive\Work\Python\PV tools\SQ limit\llight_spectra\Sandy"),
     Path(r"C:\Users\dreickem\switchdrive\Work\Python\PV tools\IV evaluation\other\PVLIB_Python-master"),
     Path(r"C:\Users\dreickem\switchdrive\Work\Python\Laboratory\Optoelectronics_lab\IPCE\python\FTE-analysis-libraries-main"),
+    # FN= used as custom function param / dict key — not library .load() calls
+    Path(r"C:\Users\dreickem\switchdrive\Work\Python\Electrochemistry\Diffusion-BV"),
+    Path(r"C:\Users\dreickem\switchdrive\Work\Python\Laboratory\Optoelectronics_lab\dae-py-relay-controller_example"),
 }
 
 _WORD_COMPILED = [
