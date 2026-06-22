@@ -48,6 +48,7 @@ SKIP_DIRS = {
     Path(r"C:\Users\dreickem\switchdrive\Work\Python\old\UW\Ryan\PVtools-master"),
     Path(r"C:\Users\dreickem\switchdrive\Work\Python\PV tools\SQ limit\llight_spectra\Sandy"),
     Path(r"C:\Users\dreickem\switchdrive\Work\Python\PV tools\IV evaluation\other\PVLIB_Python-master"),
+    Path(r"C:\Users\dreickem\switchdrive\Work\Python\Laboratory\Optoelectronics_lab\IPCE\python\FTE-analysis-libraries-main"),
 }
 
 _WORD_COMPILED = [
