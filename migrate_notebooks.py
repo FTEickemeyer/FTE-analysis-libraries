@@ -79,6 +79,7 @@ REPLACEMENTS = [
 
     # Electrochemistry functions
     ("import_datum",         "import_biologic_mpt_data"),
+    # NOTE: MXYData.add() → .append() cannot be auto-migrated (too generic).
 
     # Spectrum methods — longer / more specific first
     ("normalize_to_Jsc",    "normalize_to_jsc"),

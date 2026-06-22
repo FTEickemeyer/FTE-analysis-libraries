@@ -58,6 +58,14 @@ from fte_analysis_libraries import Spectrum as spc
 |---|---|
 | `import_datum` | `import_biologic_mpt_data` |
 
+### 3c. Method renames (MXYData / MTRPLData / Spectra)
+
+| Old | New |
+|---|---|
+| `.add(item)` | `.append(item)` |
+
+> **Note:** `.add()` cannot be auto-migrated by `migrate_notebooks.py` (too generic — conflicts with pandas `.add()` and other uses). Search manually for `\.add\(` in your notebooks.
+
 ### 4. Method renames
 
 **IVData**
