@@ -48,6 +48,33 @@ All modules live in `FTE_analysis_libraries/` and use PascalCase filenames. The 
 
 **Physical constants** — defined in `General.py` (`q`, `k`, `T_RT`, `h`, `c`, `f1240`, etc.). Import from there; do not redefine.
 
+## v1.0.0 migration — ongoing fixes
+
+The package was renamed from `FTE_analysis_libraries` (v0.9.1) to `fte_analysis_libraries` (v1.0.0) with many class, function, and parameter renames. A bulk migration was applied to ~1,800 notebooks and scripts in June 2026. New errors still surface as notebooks are run for the first time.
+
+### Triage workflow for new errors
+
+1. **AttributeError / TypeError on a known class or function** — likely a rename missed by migration. Check `MIGRATION_v0.9.1_to_v1.0.0.md` for the new name, then add the rename to `update_notebooks_post_v3.py` (or a new `post_vN.py`) and to `migrate_notebooks.py`.
+
+2. **NameError / broken logic inside a library function** — likely a function body gutted by the ruff auto-fix pass (see warning below). Compare the current code against git history (`git show 71d9a91:FTE_analysis_libraries/<Module>.py`) to recover the original logic.
+
+3. **New rename not yet in any script** — add it to both the current `post_vN.py` and `migrate_notebooks.py` so full reruns stay consistent.
+
+### Migration scripts
+
+| Script | Covers | Backup suffix |
+|---|---|---|
+| `migrate_notebooks.py` | All v0.9.1→v1.0.0 renames (use for full reruns) | `.bak_v091` |
+| `update_notebooks_post_v1.py` | `import_datum→import_biologic_mpt_data`, `.add()→.append()` | `.bak_post_v1` |
+| `update_notebooks_post_v2.py` | `all_values_greater_min(min=)→(min_val=)` | `.bak_post_v2` |
+| `update_notebooks_post_v3.py` | `, FN=→, filepath=` in `.load()` calls | `.bak_post_v3` |
+
+Run any script without arguments for a dry run; add `--apply` to write changes.
+
+### Warning: ruff-gutted function bodies
+
+The ruff auto-fix pass (commit `f9be141`) silently emptied at least one function body: `PLQYDataset.inb_oob_adjust` in `PLQY.py` (restored in commit `5ed00ef`). If a library function raises `NameError` on a variable that should have been computed internally, check whether its body was similarly truncated. Use `git show 71d9a91:FTE_analysis_libraries/<Module>.py` to see the original.
+
 ## Planned refactoring
 
 `FTE_analysis_libraries/CLAUDE.md` documents the target architecture (snake_case names, `pyproject.toml`, pytest, ruff, Sphinx). The current codebase is a pre-refactor snapshot. When working on the refactoring:
