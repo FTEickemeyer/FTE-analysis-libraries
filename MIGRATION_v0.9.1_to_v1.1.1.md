@@ -1,6 +1,6 @@
-# Migration notes: FTE-analysis-libraries v0.9.1 → v1.0.0
+# Migration notes: FTE-analysis-libraries v0.9.1 → v1.1.1
 
-This file documents the breaking API changes introduced in v1.0.0 and the
+This file documents the breaking API changes introduced in v1.1.1 and the
 migration work already done. Paste it into a new Claude Code session when
 working on related issues.
 

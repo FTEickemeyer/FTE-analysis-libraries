@@ -1,5 +1,8 @@
 """Migrate Jupyter notebooks from FTE-analysis-libraries v0.9.1 to v1.0.0 API.
 
+Covers all renames from the original migration plus fixes discovered in
+update_notebooks_post_v1/v2/v3.py (consolidated June 2026).
+
 Usage:
     python migrate_notebooks.py           # dry run (shows what would change)
     python migrate_notebooks.py --apply   # apply changes (creates .bak_v091 backups)
@@ -196,6 +199,12 @@ SKIP_DIRS = {
     # Other people's code
     Path(r"C:\Users\dreickem\switchdrive\Work\Python\old\UW\Ryan\PVtools-master"),
     Path(r"C:\Users\dreickem\switchdrive\Work\Python\PV tools\SQ limit\llight_spectra\Sandy"),
+    Path(r"C:\Users\dreickem\switchdrive\Work\Python\PV tools\IV evaluation\other\PVLIB_Python-master"),
+    # Lab copy of library — not user notebooks
+    Path(r"C:\Users\dreickem\switchdrive\Work\Python\Laboratory\Optoelectronics_lab\IPCE\python\FTE-analysis-libraries-main"),
+    # FN= used as custom function param / dict key — not library .load() calls
+    Path(r"C:\Users\dreickem\switchdrive\Work\Python\Electrochemistry\Diffusion-BV"),
+    Path(r"C:\Users\dreickem\switchdrive\Work\Python\Laboratory\Optoelectronics_lab\dae-py-relay-controller_example"),
 }
 
 
@@ -206,6 +215,8 @@ def _is_excluded(path: Path) -> bool:
             return True
         except ValueError:
             pass
+    if "old" in path.parts:
+        return True
     return False
 
 
@@ -268,7 +279,12 @@ def main() -> None:
     )
     pyfiles = sorted(
         p for p in NOTEBOOKS_ROOT.rglob("*.py")
-        if not _is_excluded(p) and p.name != "migrate_notebooks.py"
+        if not _is_excluded(p) and p.name not in {
+            "migrate_notebooks.py",
+            "update_notebooks_post_v1.py",
+            "update_notebooks_post_v2.py",
+            "update_notebooks_post_v3.py",
+        }
     )
 
     total = len(notebooks) + len(pyfiles)
@@ -301,6 +317,8 @@ def main() -> None:
     print(f"{'Would change' if dry_run else 'Changed'} {len(changed_files)} / {total} files.")
     if dry_run and changed_files:
         print("\nRe-run with --apply to write changes (backups saved as .bak_v091).")
+    if any("[review" in c for _, changes in changed_files for c in changes):
+        print("\n[!] Some changes are marked [review] — verify .add() replacements are not pandas/list calls, and FN= replacements are inside .load() calls.")
 
 
 if __name__ == "__main__":
